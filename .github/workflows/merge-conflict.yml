@@ -2,7 +2,7 @@ name: Merge Conflict Check
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   conflict-check:
@@ -11,8 +11,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check for merge conflicts
         run: |
-          git fetch origin master
-          git merge --no-commit --no-ff origin/master || {
-            echo '::error ::Merge conflict detected with master branch.'
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main || {
+            echo '::error ::Merge conflict detected with main branch.'
             exit 1
           }

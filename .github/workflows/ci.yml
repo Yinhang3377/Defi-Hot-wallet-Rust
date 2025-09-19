@@ -1,31 +1,15 @@
-name: CI/CD Pipeline
+name: (Deprecated) Legacy CI/CD Pipeline
 
+# 此工作流仅为向后兼容保留，主 CI 请看 rust-ci.yml
 on:
   push:
-    branches:
-      - master
+    branches: [ main ]
   pull_request:
-    branches:
-      - master
+    branches: [ main ]
 
 jobs:
-  build:
+  legacy-build:
+    if: false  # 禁用执行，仅保留文件避免引用报错
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
-
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-
-    - name: Build project
-      run: cargo build --release
-
-    - name: Run tests
-      run: cargo test
+      - run: echo "Legacy CI is deprecated; see rust-ci.yml"

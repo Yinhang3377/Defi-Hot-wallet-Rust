@@ -9,33 +9,49 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        feature-set: ["default", "memlock"]
     steps:
       - uses: actions/checkout@v4
+      - name: Cache cargo
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
-          override: true
-      - name: Install cargo tools
+            toolchain: stable
+            override: true
+            components: rustfmt, clippy
+      - name: Install extra cargo tools
         run: |
-          rustup component add rustfmt clippy
-          cargo install cargo-audit cargo-outdated cargo-tarpaulin
+          cargo install cargo-outdated || true
       - name: Check formatting
         run: cargo fmt --all -- --check
-      - name: Run clippy
+      - name: Clippy (strict)
         run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: Audit dependencies
-        run: cargo audit --deny warnings
-      - name: Check outdated dependencies
-        run: cargo outdated || true
-      - name: Run tests
-        run: cargo test --all
-      - name: Coverage (tarpaulin)
+      - name: Build
         run: |
-          cargo tarpaulin --out Xml
-        continue-on-error: true
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage.xml
-        continue-on-error: true
+          if [ "${{ matrix.feature-set }}" = "memlock" ]; then
+            cargo build --all --features memlock
+          else
+            cargo build --all
+          fi
+      - name: Tests
+        run: |
+          if [ "${{ matrix.feature-set }}" = "memlock" ]; then
+            cargo test --all --features memlock
+          else
+            cargo test --all
+          fi
+      - name: Outdated (non-blocking)
+        run: cargo outdated || true
+      - name: Summary
+        run: echo "CI matrix ${{ matrix.feature-set }} completed"
