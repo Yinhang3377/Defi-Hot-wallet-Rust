@@ -74,7 +74,8 @@ fn test_tampered_ciphertext_fails_decryption() {
         encryption_key,
         aad
     ).unwrap();
-    encrypted[encrypted.len() - 1] ^= 0xff; // 篡改最后一个字节
+    let len = encrypted.len();
+    encrypted[len - 1] ^= 0xff; // 篡改最后一个字节
 
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad);
     assert!(matches!(result, Err(WalletError::EncryptionError(_))));

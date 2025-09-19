@@ -32,6 +32,8 @@ use crate::tools::error::WalletError;
 use crate::security::memory_protection::{ SensitiveData, MemoryLock };
 use argon2::{ Argon2 };
 use aes_gcm::aead::Aead;
+use crate::config::config::WalletConfig;
+use base64::{ engine::general_purpose, Engine as _ };
 /// KDF: 使用 Argon2 对明文 ENCRYPTION_KEY 进行二次加固，输出 32 字节密钥
 fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
     let mut output = [0u8; 32];
@@ -76,9 +78,10 @@ pub fn encrypt_private_key_sensitive(
     let nonce_bytes: [u8; 12] = rand::random();
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let payload = [&private_key.data[..], aad].concat();
+    // 使用 AES-GCM AAD，而不是拼接到明文，确保认证但不被加密
+    use aes_gcm::aead::Payload;
     let ciphertext = cipher
-        .encrypt(nonce, payload.as_ref())
+        .encrypt(nonce, Payload { msg: &private_key.data[..], aad })
         .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
 
     let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
@@ -149,9 +152,9 @@ impl WalletSecurity {
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // 加密私钥
-        let payload = [&private_key[..], aad].concat();
+        use aes_gcm::aead::Payload;
         let ciphertext = cipher
-            .encrypt(nonce, payload.as_ref())
+            .encrypt(nonce, Payload { msg: &private_key[..], aad })
             .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
 
         let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
@@ -205,10 +208,10 @@ impl WalletSecurity {
         let (nonce_bytes, actual_ciphertext) = ciphertext.split_at(12);
         let nonce = Nonce::from_slice(nonce_bytes);
 
-        // 解密数据
-        let payload = [&actual_ciphertext[..], aad].concat();
+        // 解密（使用相同 AAD）
+        use aes_gcm::aead::Payload;
         let decrypted_data = cipher
-            .decrypt(nonce, payload.as_ref())
+            .decrypt(nonce, Payload { msg: actual_ciphertext, aad })
             .map_err(|e| WalletError::EncryptionError(format!("解密失败: {}", e)))?;
 
         Ok(decrypted_data)
@@ -242,18 +245,52 @@ impl WalletSecurity {
     pub fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
         derive_key_from_env_key(env_key, salt)
     }
+
+    /// Derives an encryption key using Argon2 and integrates with WalletConfig.
+    ///
+    /// # Parameters
+    /// * `password` - The input password to derive the key from.
+    /// * `config` - WalletConfig instance containing the salt.
+    ///
+    /// # Returns
+    /// A 32-byte derived encryption key.
+    pub fn derive_encryption_key(
+        password: &str,
+        config: &WalletConfig
+    ) -> Result<[u8; 32], WalletError> {
+        // Decode the salt from WalletConfig.salt (NOT encryption_key)
+        let salt = general_purpose::STANDARD
+            .decode(&config.salt)
+            .map_err(|e| WalletError::InvalidSalt(format!("Failed to decode salt: {}", e)))?;
+
+        // Configure Argon2 parameters
+        let argon2 = Argon2::default();
+
+        // Derive the key
+        let mut derived_key = [0u8; 32];
+        argon2
+            .hash_password_into(password.as_bytes(), &salt, &mut derived_key)
+            .map_err(|e| {
+                WalletError::EncryptionError(format!("Key derivation failed: {}", e))
+            })?;
+
+        Ok(derived_key)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::engine::general_purpose;
+    use crate::config::config::WalletConfig;
 
     #[test]
     fn test_encrypt_decrypt_cycle() {
         // 测试加密解密流程
         let private_key = b"32_byte_private_key_1234567890ab";
         // 64位十六进制字符串
-        let encryption_key = "33325f627974655f656e6372797074696f6e5f6b65795f31323334353637383930";
+        // 使用有效长度(64 hex chars -> 32 bytes)的非弱随机分布密钥
+        let encryption_key = "0123456789abcdef1032547698badcfe1133557799bbddff123456789abcdef0";
         let aad = b"associated_data";
 
         let encrypted = WalletSecurity::encrypt_private_key(
@@ -303,5 +340,42 @@ mod tests {
             aad
         );
         assert!(matches!(result2, Err(WalletError::EncryptionError(_))));
+    }
+
+    #[test]
+    fn test_derive_encryption_key_valid() {
+        let password = "password123";
+        let config = WalletConfig {
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            network: "testnet".to_string(),
+            salt: general_purpose::STANDARD.encode(b"testsalt"),
+        };
+        let result = WalletSecurity::derive_encryption_key(password, &config);
+        assert!(result.is_ok());
+        let key = result.unwrap();
+        assert_eq!(key.len(), 32);
+    }
+
+    #[test]
+    fn test_derive_encryption_key_invalid_salt() {
+        let password = "password123";
+        let config = WalletConfig {
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            network: "testnet".to_string(),
+            salt: "invalid-base64!".to_string(),
+        };
+        let result = WalletSecurity::derive_encryption_key(password, &config);
+        assert!(matches!(result, Err(WalletError::InvalidSalt(_))));
+    }
+
+    #[test]
+    fn test_derive_encryption_key_empty_password() {
+        let config = WalletConfig {
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            network: "testnet".to_string(),
+            salt: general_purpose::STANDARD.encode(b"testsalt"),
+        };
+        let result = WalletSecurity::derive_encryption_key("", &config);
+        assert!(result.is_ok()); // Argon2 allows empty passwords
     }
 }

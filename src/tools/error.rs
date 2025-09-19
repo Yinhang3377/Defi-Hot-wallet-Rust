@@ -13,6 +13,9 @@ pub enum WalletError {
     /// 解密相关错误，携带详细信息
     #[error("Decryption error: {0}")]
     DecryptionError(String),
+    /// 盐值无效错误
+    #[error("Invalid salt: {0}")]
+    InvalidSalt(String),
     /// 其他未知错误
     #[error("Other error: {0}")]
     #[allow(dead_code)]

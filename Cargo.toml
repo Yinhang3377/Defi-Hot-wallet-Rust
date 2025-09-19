@@ -24,4 +24,5 @@ zeroize = "1.8.1" # 保持最新
 rand = "0.8.5" # 保持最新
 hex = "0.4.3"
 clap = { version = "4.5", features = ["derive"] }
-argon2 = "0.3"
+argon2 = { version = "0.6.0-rc.1" }
+base64 = "0.22"

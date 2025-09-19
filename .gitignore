@@ -1,0 +1,25 @@
+## Rust build artifacts
+/target/
+
+## Generated wallet file (should not be committed)
+wallet.json
+
+## Environment configuration (contains secrets, do not commit)
+.env
+
+## Backup & editor files
+*.rs.bk
+*.swp
+*.swo
+*.log
+
+## Platform specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Binaries & debug symbols (normally inside target, but just in case)
+*.exe
+*.pdb
+*.rlib
+*.d

@@ -1,13 +1,18 @@
 //! 配置模块：负责加载和管理环境变量（如 ENCRYPTION_KEY、NETWORK）
 use std::env;
 
+use base64::{ engine::general_purpose, Engine as _ };
+use serde::{ Deserialize, Serialize };
+
 /// 钱包配置结构体
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletConfig {
     /// 加密密钥（建议32字节）
     pub encryption_key: String,
     /// 网络类型（如 mainnet/testnet）
     pub network: String,
+    /// 盐值（base64 编码）
+    pub salt: String,
 }
 
 impl WalletConfig {
@@ -25,6 +30,9 @@ impl WalletConfig {
             return Err("ENCRYPTION_KEY 必须只包含十六进制字符 (0-9, a-f, A-F)".to_string());
         }
         let network = env::var("NETWORK").unwrap_or_else(|_| "testnet".to_string());
-        Ok(WalletConfig { encryption_key, network })
+        let salt = env
+            ::var("SALT")
+            .unwrap_or_else(|_| { general_purpose::STANDARD.encode("default_salt") });
+        Ok(WalletConfig { encryption_key, network, salt })
     }
 }
