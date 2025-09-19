@@ -1,0 +1,11 @@
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/debug/deps/fragile-d3c297312a746527.d: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/errors.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/fragile.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/registry.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/semisticky.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/sticky.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/thread_id.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/debug/deps/libfragile-d3c297312a746527.rmeta: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/errors.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/fragile.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/registry.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/semisticky.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/sticky.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/thread_id.rs
+
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/lib.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/errors.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/fragile.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/registry.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/semisticky.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/sticky.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fragile-2.0.1/src/thread_id.rs:

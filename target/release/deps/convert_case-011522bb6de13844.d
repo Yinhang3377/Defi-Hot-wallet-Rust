@@ -1,0 +1,11 @@
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/convert_case-011522bb6de13844.d: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/case.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/converter.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/pattern.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/segmentation.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libconvert_case-011522bb6de13844.rlib: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/case.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/converter.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/pattern.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/segmentation.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libconvert_case-011522bb6de13844.rmeta: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/case.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/converter.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/pattern.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/segmentation.rs
+
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/lib.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/case.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/converter.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/pattern.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.6.0/src/segmentation.rs:

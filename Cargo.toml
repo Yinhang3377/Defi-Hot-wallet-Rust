@@ -1,0 +1,118 @@
+[package]
+name = "defi-hot-wallet"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yinhang3377"]
+description = "DeFi级热钱包，Rust打造，安全如堡垒！量子安全、助记词分片、多重签名"
+license = "MIT"
+repository = "https://github.com/Yinhang3377/Defi-Hot-wallet-Rust"
+keywords = ["defi", "wallet", "crypto", "security", "rust"]
+categories = ["cryptography", "network-programming"]
+
+[dependencies]
+# Core async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-util = "0.7"
+
+# Cryptography
+sha2 = "0.10"
+sha3 = "0.10"
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+hkdf = "0.12"
+pbkdf2 = "0.12"
+scrypt = "0.11"
+ring = "0.17"
+zeroize = { version = "1.3", features = ["derive"] }
+
+# Quantum-safe cryptography (Kyber) - using alternative since pqcrypto may not be available
+# pqcrypto-kyber = "0.7"
+# pqcrypto-traits = "0.3"
+
+# Secret sharing (Shamir)
+sharks = "0.5"
+
+# Blockchain integrations
+ethers = { version = "2.0", features = ["abigen", "rustls", "ws"] }
+# Temporarily disable Solana to avoid version conflicts
+# solana-client = "1.17"
+# solana-sdk = "1.17"
+# solana-program = "1.17"
+
+# BIP standards
+bip39 = "2.0"
+bip32 = "0.5"
+coins-bip32 = "0.8"
+coins-bip39 = "0.8"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"] }
+
+# Logging and monitoring
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+prometheus = "0.13"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+
+# Configuration
+config = "0.14"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# UUID generation
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# HTTP client/server
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Internationalization
+fluent = "0.16"
+fluent-bundle = "0.15"
+intl-memoizer = "0.5"
+
+# Additional dependencies
+async-trait = "0.1"
+hex = "0.4"
+base58 = "0.2"
+toml = "0.8"
+once_cell = "1.19"
+
+# Testing
+mockall = "0.12"
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3.8"
+test-log = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+debug = true
+
+[[bin]]
+name = "defi-wallet"
+path = "src/main.rs"
+
+[[bin]]
+name = "wallet-cli"
+path = "src/cli.rs"
+
