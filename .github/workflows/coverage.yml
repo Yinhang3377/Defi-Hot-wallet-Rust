@@ -1,0 +1,27 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Run coverage
+        run: cargo tarpaulin --out Xml --workspace
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: tarpaulin-report.xml

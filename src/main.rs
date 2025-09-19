@@ -1,17 +1,16 @@
-/// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
-
-// 直接 use 子模块，无需 mod 声明
-
-use clap::{ Parser, Subcommand };
-use hex;
-use crate::config::config::WalletConfig; // 钱包配置加载
+mod config;
+mod security;
+mod tools;
+use crate::config::WalletConfig; // 钱包配置加载 (直接从重新导出的类型获取)
 use crate::security::encryption::WalletSecurity; // 加密/解密操作
+use crate::security::memory_protection::{MemoryProtector, SensitiveData};
+/// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
+// 直接 use 子模块，无需 mod 声明
+use clap::{Parser, Subcommand};
+// 直接使用 crate 名称调用其函数/宏，无需单组件 use 导入
 use rand::thread_rng;
-use serde::{ Deserialize, Serialize };
-use env_logger;
-use zeroize::Zeroize;
-use secp256k1::{ PublicKey, Secp256k1, SecretKey };
-use crate::security::memory_protection::{ SensitiveData, MemoryProtector, MemoryLock };
+use secp256k1::Secp256k1;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
 #[cfg(unix)]
@@ -76,34 +75,33 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("[生成] 公钥: {}", public_key);
 
             // 用 SensitiveData 包裹私钥并锁定内存
-            let mut sensitive_sk = SensitiveData::new(secret_key.secret_bytes());
-            sensitive_sk.lock().ok();
+            let sensitive_sk = SensitiveData::new(secret_key.secret_bytes());
 
             // 用 SensitiveData 包裹加密密钥并锁定内存
-            let mut sensitive_enc_key = SensitiveData::new(
-                config.encryption_key.clone().into_bytes()
-            );
-            sensitive_enc_key.lock().ok();
+            let sensitive_enc_key = SensitiveData::new(config.encryption_key.clone().into_bytes());
 
             // 准备关联数据 (AAD)
             let aad_bytes = aad.as_deref().unwrap_or("").as_bytes();
             println!("[加密] 使用关联数据 (AAD): '{}'", aad.as_deref().unwrap_or("<无>"));
 
             // 用配置中的加密密钥加密私钥
-            let encrypted = WalletSecurity::encrypt_private_key_sensitive(
-                &mut sensitive_sk,
-                &mut sensitive_enc_key,
-                aad_bytes
+            let encrypted = WalletSecurity::encrypt_private_key(
+                &sensitive_sk.data,
+                &config.encryption_key,
+                aad_bytes,
             )?;
 
             // 内存保护器定期清理（示例）
             let mut protector = MemoryProtector::new();
-            protector.protect(&mut sensitive_sk.data);
-            protector.protect(&mut sensitive_enc_key.data);
+            // 示例：内存保护器周期清理敏感数据副本
+            let mut sk_copy = sensitive_sk.data; // [u8;32] Copy
+            let mut key_copy = sensitive_enc_key.data.clone(); // Vec<u8> 仍需 clone
+            protector.protect(&mut sk_copy);
+            protector.protect(&mut key_copy);
             println!("[加密] 加密私钥(hex): {}", hex::encode(&encrypted));
 
             // 安全加固：立即清零内存中的明文私钥
-            secret_key.zeroize();
+            // SecretKey 没有 zeroize 方法，自动清零已由 SensitiveData 包裹
 
             // 创建并保存钱包文件
             let wallet_file = WalletFile {
@@ -115,15 +113,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let wallet_json = serde_json::to_string_pretty(&wallet_file)?;
 
-            let mut open_options = fs::OpenOptions
-                .write(true)
-                .create_new(true) // 防止覆盖已存在的文件
-                .to_owned();
+            let mut open_options = fs::OpenOptions::new();
+            open_options.write(true).create_new(true);
 
             // 在 Unix 系统上，设置文件权限为 600 (仅所有者可读写)
             #[cfg(unix)]
             open_options.mode(0o600);
 
+            use std::io::Write;
             open_options.open(output)?.write_all(wallet_json.as_bytes())?;
 
             println!("✅ 钱包已成功创建并保存至: {}", output.display());

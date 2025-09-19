@@ -3,6 +3,10 @@ name = "hot_wallet"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+# 可选的内存锁定功能，占位实现，默认关闭。
+memlock = []
+
 [dependencies]
 # --- 核心依赖说明 ---
 # aes-gcm：对称加密算法（AES-GCM），用于钱包数据加密
@@ -14,23 +18,14 @@ edition = "2021"
 # zeroize：内存敏感数据自动清零，防止泄露
 # rand：安全随机数生成
 aes-gcm = "0.10.3" # 保持最新
-secp256k1 = { version = "0.29.0", features = ["rand-std", "zeroize"] } # 修正版本并启用 zeroize 特性
+secp256k1 = { version = "0.29.0", features = ["rand-std"] } # 修正版本
 thiserror = "1.0.63"
 log = "0.4.22"
 env_logger = "0.11.5"
-aes-gcm = "0.10.3"
-secp256k1 = { version = "0.29.0", features = ["rand-std", "zeroize"] }
-thiserror = "1.0"
-log = "0.4"
-env_logger = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0" # 添加缺失的依赖
 zeroize = "1.8.1" # 保持最新
 rand = "0.8.5" # 保持最新
-serde_json = "1.0"
-zeroize = "1.8"
-rand = "0.8.5"
 hex = "0.4.3"
 clap = { version = "4.5", features = ["derive"] }
-memlock = "0.1.1" # 用于内存锁定，防止敏感数据被交换到磁盘
-memlock = "0.1.1" # 用于内存锁定，防止敏感数据被交换到磁盘
+secrecy = "0.8" # 用于内存保护，防止敏感数据泄露

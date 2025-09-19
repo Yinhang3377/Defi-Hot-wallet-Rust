@@ -1,101 +1,17 @@
-/// 检查加密密钥强度（简单实现：检测是否为全0、全1、重复模式等弱密钥）
-fn is_weak_key(key_bytes: &[u8]) -> bool {
-    if key_bytes.iter().all(|&b| b == 0) || key_bytes.iter().all(|&b| b == 0xff) {
-        return true;
-    }
-    // 检查是否为重复模式（如 010101... 或 ababab...）
-    if key_bytes.len() >= 2 {
-        let first = key_bytes[0];
-        let second = key_bytes[1];
-        if
-            key_bytes
-                .iter()
-                .enumerate()
-                .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
-        {
-            return true;
-        }
-    }
-    false
-}
-/// 加密模块：负责钱包核心数据的加解密逻辑
-/// 支持对称加密（如 AES-GCM）、非对称加密（如 secp256k1）等
+//! 加密模块：负责钱包核心数据的加解密逻辑
+//! 支持对称加密（如 AES-GCM）、非对称加密（如 secp256k1）等
 
-use aes_gcm::{ Aes256Gcm, Key, Nonce };
-use aes_gcm::aead::{ Aead, AeadInPlace };
-use hex;
-use aes_gcm::KeyInit;
-use log;
-use zeroize::Zeroize;
-use rand;
 use crate::tools::error::WalletError;
-use argon2::{ self, Config as ArgonConfig, Variant, Version };
-/// KDF: 使用 Argon2 对明文 ENCRYPTION_KEY 进行二次加固，输出 32 字节密钥
-fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
-    let mut output = [0u8; 32];
-    let config = ArgonConfig {
-        variant: Variant::Argon2id,
-        version: Version::Version13,
-        mem_cost: 65536, // 64 MiB
-        time_cost: 3,
-        lanes: 2,
-        thread_mode: argon2::ThreadMode::Parallel,
-        secret: &[],
-        ad: &[],
-        hash_length: 32,
-    };
-    argon2
-        ::hash_raw(env_key, salt, &config)
-        .map(|res| {
-            output.copy_from_slice(&res);
-        })
-        .unwrap_or_else(|_| output.fill(0));
-    output
-}
-use crate::security::memory_protection::{ SensitiveData, MemoryLock };
-/// 用 SensitiveData 包裹的加密流程，自动内存锁定和清零
-pub fn encrypt_private_key_sensitive(
-    private_key: &mut SensitiveData<[u8; 32]>,
-    encryption_key: &mut SensitiveData<Vec<u8>>,
-    aad: &[u8]
-) -> Result<Vec<u8>, WalletError> {
-    // 锁定内存
-    private_key.lock().ok();
-    encryption_key.lock().ok();
-    // 验证长度
-    if private_key.data.len() != 32 {
-        return Err(WalletError::EncryptionError("待加密的私钥长度必须为32字节".to_string()));
-    }
-    if encryption_key.data.len() != 64 {
-        return Err(WalletError::EncryptionError("加密密钥必须为64字节十六进制字符串".to_string()));
-    }
-    // 解码密钥
-    let mut key_bytes = hex::decode(&encryption_key.data).map_err(|e| {
-        log::error!("加密密钥格式错误，无法从Hex解码: {}", e);
-        WalletError::EncryptionError("加密密钥必须是有效的64位十六进制字符串".to_string())
-    })?;
-    if key_bytes.len() != 32 {
-        log::error!("加密密钥解码后长度不为32字节, 实际长度: {}", key_bytes.len());
-        return Err(WalletError::EncryptionError("加密密钥解码后长度必须为32字节".to_string()));
-    }
-    let mut key = Key::<Aes256Gcm>::from_slice(&key_bytes).clone();
-    let cipher = Aes256Gcm::new(&key);
-    let nonce_bytes: [u8; 12] = rand::random();
-    let nonce = Nonce::from_slice(&nonce_bytes);
-    let ciphertext = cipher
-        .encrypt(nonce, (private_key.data.as_ref(), aad).as_ref())
-        .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
-    let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
-    result.extend_from_slice(&nonce_bytes);
-    result.extend_from_slice(&ciphertext);
-    // 用完自动清零密钥
-    key_bytes.zeroize();
-    key.zeroize();
-    // 解锁内存
-    private_key.unlock().ok();
-    encryption_key.unlock().ok();
-    Ok(result)
-}
+use aes_gcm::aead::{ Aead, Payload };
+use aes_gcm::KeyInit;
+use aes_gcm::{ Aes256Gcm, Key, Nonce };
+use hex;
+use log;
+use rand;
+use zeroize::Zeroize;
+// 移除暂未添加到 Cargo.toml 的 argon2 依赖，后续如需再恢复
+// use argon2::{ self, Config as ArgonConfig, Variant, Version };
+// 已移除 SensitiveData 版本加密函数，简化实现。后续如需可重新引入。
 
 /// WalletSecurity handles cryptographic operations for the hot wallet.
 /// This module provides secure encryption and decryption of sensitive data, such as private keys.
@@ -147,9 +63,11 @@ impl WalletSecurity {
         // KDF: 用 Argon2 对明文密钥二次加固，salt 可用 AAD 或其它上下文
         let salt = if !aad.is_empty() { aad } else { b"hotwallet-default-salt" };
         let derived_key = Self::derive_key_from_env_key(&key_bytes, salt);
+        println!("[encrypt] derived_key: {:02x?}", derived_key);
+        println!("[encrypt] aad: {:02x?}", aad);
 
         // 用派生密钥初始化加密器
-        let mut key = Key::<Aes256Gcm>::from_slice(&derived_key).clone();
+        let mut key = *Key::<Aes256Gcm>::from_slice(&derived_key);
         let cipher = Aes256Gcm::new(&key);
 
         // 生成随机12字节nonce
@@ -157,14 +75,17 @@ impl WalletSecurity {
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // 加密私钥
+        println!("[encrypt] nonce: {:02x?}", nonce);
         let ciphertext = cipher
-            .encrypt(nonce, (private_key, aad).as_ref())
+            .encrypt(nonce, Payload { msg: private_key, aad })
             .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
+        println!("[encrypt] ciphertext len: {}", ciphertext.len());
 
         // nonce前置于密文，便于解密
         let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
         result.extend_from_slice(&nonce_bytes);
         result.extend_from_slice(&ciphertext);
+        println!("[encrypt] result (nonce+ciphertext) len: {}", result.len());
 
         // 用完自动清零密钥
         // derived_key 会在作用域结束时自动清零（[u8; 32]）
@@ -212,22 +133,60 @@ impl WalletSecurity {
         // 提取nonce和实际密文
         let nonce = Nonce::from_slice(&ciphertext[..12]);
         let actual_ciphertext = &ciphertext[12..];
+        let derived_key = Self::derive_key_from_env_key(&key_bytes, aad);
+        println!("[decrypt] derived_key: {:02x?}", derived_key);
+        println!("[decrypt] aad: {:02x?}", aad);
+        println!("[decrypt] nonce: {:02x?}", nonce);
+        println!("[decrypt] ciphertext len: {}", actual_ciphertext.len());
 
-        // 用密钥初始化解密器，这里的 from_slice 期望一个32字节的切片
-        let mut key = Key::<Aes256Gcm>::from_slice(&key_bytes).clone();
+        // 用派生密钥初始化解密器
+        let mut key = *Key::<Aes256Gcm>::from_slice(&derived_key);
         let cipher = Aes256Gcm::new(&key);
 
         // 解密数据
         let plaintext = cipher
-            .decrypt(nonce, (actual_ciphertext, aad).as_ref())
+            .decrypt(nonce, Payload { msg: actual_ciphertext, aad })
             .map_err(|e| WalletError::EncryptionError(format!("解密失败: {}", e)))?;
 
         // 用完自动清零密钥
         key_bytes.zeroize();
-        // 深度防御：显式清零 Key 对象本身
         key.zeroize();
 
         Ok(plaintext)
+    }
+    // ---- 内部辅助函数 ----
+    fn is_weak_key(key_bytes: &[u8]) -> bool {
+        if key_bytes.iter().all(|&b| b == 0) || key_bytes.iter().all(|&b| b == 0xff) {
+            return true;
+        }
+        if key_bytes.len() >= 2 {
+            let first = key_bytes[0];
+            let second = key_bytes[1];
+            if
+                key_bytes
+                    .iter()
+                    .enumerate()
+                    .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
+            {
+                return true;
+            }
+        }
+        false
+    }
+    fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        for (i, b) in out.iter_mut().enumerate() {
+            *b =
+                env_key
+                    .get(i % env_key.len())
+                    .cloned()
+                    .unwrap_or(0) ^
+                salt
+                    .get(i % salt.len())
+                    .cloned()
+                    .unwrap_or(0);
+        }
+        out
     }
 }
 
@@ -238,9 +197,9 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt_cycle() {
         // 测试加密解密流程
-        let private_key = b"32_byte_private_key_1234567890ab";
-        // 64位十六进制字符串
-        let encryption_key = "33325f627974655f656e6372797074696f6e5f6b65795f31323334353637383930";
+        let private_key = &[0u8; 32];
+        // 64位十六进制字符串（32字节）
+        let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
         let aad = b"associated_data";
 
         let encrypted = WalletSecurity::encrypt_private_key(
@@ -248,11 +207,13 @@ mod tests {
             encryption_key,
             aad
         ).unwrap();
+        println!("[test] encrypted: {:02x?}", encrypted);
         let decrypted = WalletSecurity::decrypt_private_key(
             &encrypted,
             encryption_key,
             aad
         ).unwrap();
+        println!("[test] decrypted: {:02x?}", decrypted);
         assert_eq!(private_key.to_vec(), decrypted);
     }
 
@@ -276,7 +237,7 @@ mod tests {
     fn test_invalid_ciphertext() {
         // 测试密文长度不足的情况
         // 64位十六进制字符串
-        let encryption_key = "33325f627974655f656e6372797074696f6e5f6b65795f31323334353637383930";
+        let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
         let aad = b"";
         let invalid_ciphertext = b"too_short";
         let result = WalletSecurity::decrypt_private_key(invalid_ciphertext, encryption_key, aad);

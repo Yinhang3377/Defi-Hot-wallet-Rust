@@ -1,53 +1,41 @@
-/// 内存保护模块：防止敏感数据在内存中泄露
-/// 包含自动清零、内存锁定等机制
-
+use std::time::{Duration, Instant};
 use zeroize::Zeroize;
 
-/// 敏感数据包装器，在销毁时自动清零并尝试解锁内存
-#[allow(dead_code)]
+/// 敏感数据包装器，在销毁时自动清零
 pub struct SensitiveData<T: Zeroize> {
     pub data: T,
 }
 
+impl<T: Zeroize> SensitiveData<T> {
+    pub fn new(data: T) -> Self {
+        Self { data }
+    }
+}
+
 impl<T: Zeroize> Drop for SensitiveData<T> {
-    /// 在销毁时，先解锁内存，然后清零数据
     fn drop(&mut self) {
-        // self.unlock(); // 如果实现了自动解锁
         self.data.zeroize();
     }
 }
 
-#[allow(dead_code)]
-impl<T: Zeroize> SensitiveData<T> {
-    /// 创建新的敏感数据包装器，并尝试锁定其内存
-    pub fn new(data: T) -> Self {
-        let s = Self { data };
-        // s.lock(); // 如果实现了自动锁定
-        s
-    }
-}
-
-/// 内存锁定接口（预留，平台相关实现）
+// 可选的内存锁定接口，默认不启用，避免未使用产生的编译告警。
+// 启用方式：在 Cargo.toml 增加 `features = ["memlock"]` 并在需要的模块使用。
+#[cfg(feature = "memlock")]
 #[allow(dead_code)]
 pub trait MemoryLock {
-    /// 锁定内存，防止被交换到磁盘
-    fn lock(&mut self) -> Result<(), memlock::Error>;
-    /// 解锁内存
-    fn unlock(&mut self) -> Result<(), memlock::Error>;
+    fn lock(&mut self) -> Result<(), std::io::Error>;
+    fn unlock(&mut self) -> Result<(), std::io::Error>;
 }
 
+#[cfg(feature = "memlock")]
 impl<T: AsMut<[u8]>> MemoryLock for T {
-    fn lock(&mut self) -> Result<(), memlock::Error> {
-        memlock::mlock(self.as_mut())
+    fn lock(&mut self) -> Result<(), std::io::Error> {
+        Ok(())
     }
-    fn unlock(&mut self) -> Result<(), memlock::Error> {
-        memlock::munlock(self.as_mut())
+    fn unlock(&mut self) -> Result<(), std::io::Error> {
+        Ok(())
     }
 }
-/// 内存保护与敏感数据定期清理
-
-use std::time::{Duration, Instant};
-use std::thread;
 
 pub struct MemoryProtector {
     last_clean: Instant,
@@ -56,12 +44,8 @@ pub struct MemoryProtector {
 
 impl MemoryProtector {
     pub fn new() -> Self {
-        MemoryProtector {
-            last_clean: Instant::now(),
-            interval: Duration::from_secs(60), // 每60秒清理一次
-        }
+        Self { last_clean: Instant::now(), interval: Duration::from_secs(60) }
     }
-    /// 定期清理敏感数据（示例：这里只是模拟，实际应结合 SensitiveData 使用）
     pub fn protect(&mut self, data: &mut [u8]) {
         if self.last_clean.elapsed() > self.interval {
             data.zeroize();
@@ -69,5 +53,10 @@ impl MemoryProtector {
             println!("[内存保护] 已定期清理敏感数据");
         }
     }
+}
+
+impl Default for MemoryProtector {
+    fn default() -> Self {
+        Self::new()
     }
 }
