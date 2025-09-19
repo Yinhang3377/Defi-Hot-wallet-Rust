@@ -1,0 +1,14 @@
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/serde-09a9fd3fde8204b5.d: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/integer128.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/de.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/ser.rs /home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/build/serde-6911127ab5bbffaa/out/private.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libserde-09a9fd3fde8204b5.rlib: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/integer128.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/de.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/ser.rs /home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/build/serde-6911127ab5bbffaa/out/private.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libserde-09a9fd3fde8204b5.rmeta: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/integer128.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/de.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/ser.rs /home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/build/serde-6911127ab5bbffaa/out/private.rs
+
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/lib.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/integer128.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/mod.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/de.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.225/src/private/ser.rs:
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/build/serde-6911127ab5bbffaa/out/private.rs:
+
+# env-dep:OUT_DIR=/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/build/serde-6911127ab5bbffaa/out

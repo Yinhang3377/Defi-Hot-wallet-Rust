@@ -1,0 +1,10 @@
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/fluent_langneg-d856af034eae07e3.d: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libfluent_langneg-d856af034eae07e3.rlib: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/runner/work/Defi-Hot-wallet-Rust/Defi-Hot-wallet-Rust/target/release/deps/libfluent_langneg-d856af034eae07e3.rmeta: /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/lib.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/lib.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/accepted_languages.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/mod.rs:
+/home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs:
