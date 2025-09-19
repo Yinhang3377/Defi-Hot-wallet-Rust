@@ -5,7 +5,6 @@ use crate::tools::error::WalletError;
 use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::KeyInit;
 use aes_gcm::{Aes256Gcm, Key, Nonce};
-use argon2::Argon2;
 use hex;
 use log;
 use rand;
@@ -162,11 +161,11 @@ impl WalletSecurity {
     ///
     /// # 返回值
     /// 返回派生的 32 字节加密密钥
-    pub fn derive_encryption_key(password: &[u8], salt: &[u8]) -> Vec<u8> {
-        let mut key = [0u8; 32]; // 目标密钥长度
-        Argon2::default().hash_password_into(password, salt, &mut key).expect("密钥派生失败");
-        key.to_vec()
-    }
+    // pub fn derive_encryption_key(password: &[u8], salt: &[u8]) -> Vec<u8> {
+    //     let mut key = [0u8; 32]; // 目标密钥长度
+    //     Argon2::default().hash_password_into(password, salt, &mut key).expect("密钥派生失败");
+    //     key.to_vec()
+    // }
     // ---- 内部辅助函数 ----
     fn is_weak_key(key_bytes: &[u8]) -> bool {
         if key_bytes.iter().all(|&b| b == 0) || key_bytes.iter().all(|&b| b == 0xff) {

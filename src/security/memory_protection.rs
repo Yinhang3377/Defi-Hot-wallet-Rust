@@ -1,4 +1,3 @@
-use std::time::{Duration, Instant};
 use zeroize::Zeroize;
 
 /// 敏感数据包装器，在销毁时自动清零
@@ -34,29 +33,5 @@ impl<T: AsMut<[u8]>> MemoryLock for T {
     }
     fn unlock(&mut self) -> Result<(), std::io::Error> {
         Ok(())
-    }
-}
-
-pub struct MemoryProtector {
-    last_clean: Instant,
-    interval: Duration,
-}
-
-impl MemoryProtector {
-    pub fn new() -> Self {
-        Self { last_clean: Instant::now(), interval: Duration::from_secs(60) }
-    }
-    pub fn protect(&mut self, data: &mut [u8]) {
-        if self.last_clean.elapsed() > self.interval {
-            data.zeroize();
-            self.last_clean = Instant::now();
-            println!("[内存保护] 已定期清理敏感数据");
-        }
-    }
-}
-
-impl Default for MemoryProtector {
-    fn default() -> Self {
-        Self::new()
     }
 }

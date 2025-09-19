@@ -3,7 +3,7 @@ mod security;
 mod tools;
 use crate::config::WalletConfig; // 钱包配置加载 (直接从重新导出的类型获取)
 use crate::security::encryption::WalletSecurity; // 加密/解密操作
-use crate::security::memory_protection::{MemoryProtector, SensitiveData};
+use crate::security::memory_protection::SensitiveData;
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
 // 直接 use 子模块，无需 mod 声明
 use clap::{Parser, Subcommand};

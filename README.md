@@ -43,3 +43,11 @@ cargo run --example basic_usage
 - tests/       单元/集成测试
 - ci/          CI/CD配置
 - docs/        开发文档
+
+## 🛠️ 近期变更
+
+### 2025-09-19
+- 移除未使用的 `encryption_key` 字段，改为使用 `salt` 动态生成密钥。
+- 删除未集成的 `derive_encryption_key` 函数。
+- 移除 `MemoryProtector` 结构体及其方法。
+- 测试覆盖率优化，确保核心功能稳定。
