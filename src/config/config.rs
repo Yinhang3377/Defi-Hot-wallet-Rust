@@ -1,5 +1,6 @@
 //! 配置模块：负责加载和管理环境变量（如 ENCRYPTION_KEY、NETWORK）
 use std::env;
+use base64;
 
 use base64::{ engine::general_purpose, Engine as _ };
 use serde::{ Deserialize, Serialize };
@@ -34,5 +35,16 @@ impl WalletConfig {
             ::var("SALT")
             .unwrap_or_else(|_| { general_purpose::STANDARD.encode("default_salt") });
         Ok(WalletConfig { encryption_key, network, salt })
+    }
+
+    /// 使用配置中的 base64 盐值与提供的口令派生 32 字节加密密钥
+    pub fn derive_key_with_password(
+        &self,
+        password: &str
+    ) -> Result<[u8; 32], crate::tools::error::WalletError> {
+        crate::security::encryption::WalletSecurity::derive_encryption_key_from_config(
+            password,
+            self
+        )
     }
 }

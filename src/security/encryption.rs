@@ -4,14 +4,14 @@
 use crate::tools::error::WalletError;
 use aes_gcm::aead::{ Aead, Payload };
 use aes_gcm::{ Aes256Gcm, Key, Nonce, KeyInit };
+use argon2::Argon2;
+use base64::engine::general_purpose;
+use base64::Engine as _;
+use crate::config::WalletConfig;
 use hex;
 use log;
 use rand;
 use zeroize::Zeroize;
-use argon2::Argon2;
-use crate::config::WalletConfig;
-use base64::engine::general_purpose;
-use base64::Engine as _;
 
 /// WalletSecurity handles cryptographic operations for the hot wallet.
 /// This module provides secure encryption and decryption of sensitive data, such as private keys.
@@ -61,8 +61,6 @@ impl WalletSecurity {
         // KDF: 用 Argon2 对明文密钥二次加固，salt 可用 AAD 或其它上下文
         let salt = if !aad.is_empty() { aad } else { b"hotwallet-default-salt" };
         let derived_key = Self::derive_key_from_env_key(&key_bytes, salt);
-        println!("[encrypt] derived_key: {:02x?}", derived_key);
-        println!("[encrypt] aad: {:02x?}", aad);
 
         // 用派生密钥初始化加密器
         let key = Key::<Aes256Gcm>::from_slice(&derived_key);
@@ -76,12 +74,16 @@ impl WalletSecurity {
         let ciphertext = cipher
             .encrypt(nonce, Payload { msg: &private_key[..], aad })
             .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
-        println!("[encrypt] ciphertext len: {}", ciphertext.len());
 
         let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());
         result.extend_from_slice(&nonce_bytes);
         result.extend_from_slice(&ciphertext);
-        println!("[encrypt] result (nonce+ciphertext) len: {}", result.len());
+        log::debug!(
+            "Encrypted private key: aad_len={}, ct_len={} total_len={}",
+            aad.len(),
+            ciphertext.len(),
+            result.len()
+        );
 
         Ok(result)
     }
@@ -138,9 +140,9 @@ impl WalletSecurity {
         Ok(decrypted_data)
     }
 
-    /// 检查加密密钥强度（简单实现：检测是否为全0、全1、重复模式等弱密钥）
-    #[allow(dead_code)]
-    pub fn is_weak_key(key_bytes: &[u8]) -> bool {
+    // ---- 内部辅助函数 ----
+    // 检查加密密钥强度（简单实现：检测是否为全0、全1、重复模式等弱密钥）
+    fn is_weak_key(key_bytes: &[u8]) -> bool {
         if key_bytes.iter().all(|&b| b == 0) || key_bytes.iter().all(|&b| b == 0xff) {
             return true;
         }
@@ -152,59 +154,46 @@ impl WalletSecurity {
                 key_bytes
                     .iter()
                     .enumerate()
-                    .all(|(i, &b)| {
-                        if i % 2 == 0 { b == first } else { b == second }
-                    })
+                    .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
             {
                 return true;
             }
         }
         false
     }
-
-    /// 使用 Argon2 从环境密钥派生加密密钥
-    pub fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
+    /// 使用 Argon2 从环境密钥派生加密密钥（低级内部函数）
+    fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
         let mut output = [0u8; 32];
-        let salt_bytes = std::str::from_utf8(salt).unwrap_or("default-salt").as_bytes();
         let argon2 = Argon2::default();
-        if argon2.hash_password_into(env_key, salt_bytes, &mut output).is_err() {
-            output.fill(0);
+        if argon2.hash_password_into(env_key, salt, &mut output).is_err() {
+            output.fill(0); // 失败时用零填充，避免返回未初始化内存
         }
         output
     }
 
-    /// Derives an encryption key using Argon2 and integrates with WalletConfig.
-    ///
-    /// # Parameters
-    /// * `password` - The input password to derive the key from.
-    /// * `config` - WalletConfig instance containing the salt.
-    ///
-    /// # Returns
-    /// A 32-byte derived encryption key.
-    pub fn derive_encryption_key(
+    /// 使用 Argon2 派生加密密钥（低级 API）
+    /// password: 原始密码字节切片
+    /// salt: 原始盐字节切片
+    pub fn derive_encryption_key(password: &[u8], salt: &[u8]) -> Vec<u8> {
+        let mut key = [0u8; 32];
+        Argon2::default().hash_password_into(password, salt, &mut key).expect("密钥派生失败");
+        key.to_vec()
+    }
+
+    /// 高级 API：结合 WalletConfig 与用户密码派生 32 字节密钥
+    pub fn derive_encryption_key_from_config(
         password: &str,
         config: &WalletConfig
     ) -> Result<[u8; 32], WalletError> {
-        // Decode the salt from WalletConfig.salt (NOT encryption_key)
         let salt = general_purpose::STANDARD
             .decode(&config.salt)
             .map_err(|e| WalletError::InvalidSalt(format!("Failed to decode salt: {}", e)))?;
-
-        // Configure Argon2 parameters
-        let argon2 = Argon2::default();
-
-        // Derive the key
         let mut derived_key = [0u8; 32];
-        argon2
+        Argon2::default()
             .hash_password_into(password.as_bytes(), &salt, &mut derived_key)
-            .map_err(|e| {
-                WalletError::EncryptionError(format!("Key derivation failed: {}", e))
-            })?;
-
+            .map_err(|e| WalletError::EncryptionError(format!("Key derivation failed: {}", e)))?;
         Ok(derived_key)
     }
-    // ---- 内部辅助函数 ----
-    // 上面已实现 is_weak_key 与 derive_key_from_env_key（Argon2 版本），此处不再重复
 }
 
 #[cfg(test)]
@@ -280,7 +269,7 @@ mod tests {
             network: "testnet".to_string(),
             salt: general_purpose::STANDARD.encode(b"testsalt"),
         };
-        let result = WalletSecurity::derive_encryption_key(password, &config);
+        let result = WalletSecurity::derive_encryption_key_from_config(password, &config);
         assert!(result.is_ok());
         let key = result.unwrap();
         assert_eq!(key.len(), 32);
@@ -294,7 +283,7 @@ mod tests {
             network: "testnet".to_string(),
             salt: "invalid-base64!".to_string(),
         };
-        let result = WalletSecurity::derive_encryption_key(password, &config);
+        let result = WalletSecurity::derive_encryption_key_from_config(password, &config);
         assert!(matches!(result, Err(WalletError::InvalidSalt(_))));
     }
 
@@ -305,7 +294,7 @@ mod tests {
             network: "testnet".to_string(),
             salt: general_purpose::STANDARD.encode(b"testsalt"),
         };
-        let result = WalletSecurity::derive_encryption_key("", &config);
+        let result = WalletSecurity::derive_encryption_key_from_config("", &config);
         assert!(result.is_ok()); // Argon2 allows empty passwords
     }
 }

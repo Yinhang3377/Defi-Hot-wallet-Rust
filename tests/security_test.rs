@@ -79,3 +79,39 @@ fn test_tampered_ciphertext_fails_decryption() {
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad);
     assert!(matches!(result, Err(WalletError::EncryptionError(_))));
 }
+
+#[test]
+fn test_short_private_key() {
+    let short_private_key = b"short_key";
+    let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
+    let aad = b"user_id:123";
+
+    let result = WalletSecurity::encrypt_private_key(short_private_key, encryption_key, aad);
+    assert!(matches!(result, Err(WalletError::EncryptionError(_))));
+}
+
+#[test]
+fn test_aad_mismatch() {
+    let private_key = &[0u8; 32];
+    let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
+    let aad_encrypt = b"user_id:123";
+    let aad_decrypt = b"user_id:456";
+
+    let encrypted =
+        WalletSecurity::encrypt_private_key(private_key, encryption_key, aad_encrypt).unwrap();
+    let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad_decrypt);
+    assert!(matches!(result, Err(WalletError::EncryptionError(_))));
+}
+
+#[test]
+fn test_derive_encryption_key() {
+    use hot_wallet::security::encryption::WalletSecurity;
+
+    let password = b"test_password";
+    let salt = b"test_salt";
+
+    let derived_key = WalletSecurity::derive_encryption_key(password, salt);
+
+    assert_eq!(derived_key.len(), 32);
+    assert_ne!(derived_key, vec![0u8; 32]); // 确保派生的密钥不是全零
+}
