@@ -11,7 +11,7 @@ use crate::config::WalletConfig;
 use hex;
 use log;
 use rand;
-use zeroize::Zeroize;
+// zeroize is handled at a higher abstraction layer (memory_protection); remove unused import.
 
 /// WalletSecurity handles cryptographic operations for the hot wallet.
 /// This module provides secure encryption and decryption of sensitive data, such as private keys.
@@ -72,7 +72,7 @@ impl WalletSecurity {
 
         // 加密私钥
         let ciphertext = cipher
-            .encrypt(nonce, Payload { msg: &private_key[..], aad })
+            .encrypt(nonce, Payload { msg: private_key, aad })
             .map_err(|e| WalletError::EncryptionError(format!("加密失败: {}", e)))?;
 
         let mut result = Vec::with_capacity(nonce_bytes.len() + ciphertext.len());

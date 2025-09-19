@@ -1,7 +1,5 @@
 //! 配置模块：负责加载和管理环境变量（如 ENCRYPTION_KEY、NETWORK、SALT）。
-//! 该目录下的 `config.rs` 定义了包含 `salt` 字段的完整 `WalletConfig`。
+#![allow(clippy::module_inception)]
 
-pub mod config;
-
-// 方便外部直接使用 WalletConfig
+pub mod config; // keep existing structure; allow the clippy lint instead of refactoring now.
 pub use config::WalletConfig;
