@@ -4,7 +4,9 @@ use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
 use hot_wallet::security::memory_protection::SensitiveData;
 use serde::{ Deserialize, Serialize };
-use secp256k1::{ PublicKey, Secp256k1 };
+use secp256k1::{ PublicKey, Secp256k1, SecretKey };
+use rand::rngs::OsRng;
+use rand::RngCore;
 use std::error::Error;
 use std::fs::OpenOptions;
 use std::io::{ self, Write };
@@ -77,10 +79,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             // 提示用户输入加密密钥
             let encryption_key = Cli::prompt_password()?;
 
-            // 生成 secp256k1 密钥对（使用 crate 内部 re-export 的 rand，避免不同 rand 版本冲突）
+            // 生成 secp256k1 密钥对（手动随机 32 字节，避免依赖 crate 的 rand feature）
             let secp = Secp256k1::new();
-            let mut rng = secp256k1::rand::rngs::OsRng;
-            let (secret_key, public_key) = secp.generate_keypair(&mut rng);
+            let mut rng = OsRng;
+            let mut sk_bytes = [0u8; 32];
+            rng.fill_bytes(&mut sk_bytes);
+            let secret_key = SecretKey::from_slice(&sk_bytes).expect("32-byte secret key");
+            let public_key = PublicKey::from_secret_key(&secp, &secret_key);
             println!("[生成] 公钥: {}", public_key);
 
             // 用 SensitiveData 包裹私钥并锁定内存
