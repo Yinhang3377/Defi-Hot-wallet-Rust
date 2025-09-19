@@ -145,3 +145,24 @@ impl<T: Zeroize> MemoryLock for SensitiveData<T> {
         Ok(())
     }
 }
+
+#[allow(dead_code)]
+pub struct MemoryProtector {
+    last_clean: Instant,
+    interval: Duration,
+}
+
+#[allow(dead_code)]
+impl MemoryProtector {
+    pub fn new() -> Self {
+        Self { last_clean: Instant::now(), interval: Duration::from_secs(60) }
+    }
+
+    pub fn protect(&mut self, data: &mut [u8]) {
+        if self.last_clean.elapsed() > self.interval {
+            data.zeroize();
+            self.last_clean = Instant::now();
+            println!("[内存保护] 已定期清理敏感数据");
+        }
+    }
+}
