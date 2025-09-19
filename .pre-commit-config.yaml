@@ -1,0 +1,23 @@
+repos:
+  - repo: https://github.com/rust-lang/rustfmt
+    rev: stable
+    hooks:
+      - id: rustfmt
+        name: Rustfmt
+        entry: cargo fmt -- --check
+        language: system
+        types: [rust]
+  - repo: https://github.com/rust-lang/rust-clippy
+    rev: stable
+    hooks:
+      - id: clippy
+        name: Clippy
+        entry: cargo clippy -- -D warnings
+        language: system
+        types: [rust]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.2.5
+    hooks:
+      - id: prettier
+        name: Prettier
+        files: \.(md|yml|yaml|json)$

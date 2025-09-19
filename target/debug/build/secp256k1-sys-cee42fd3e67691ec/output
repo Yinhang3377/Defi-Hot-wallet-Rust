@@ -1,0 +1,188 @@
+OUT_DIR = Some(C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug\build\secp256k1-sys-cee42fd3e67691ec\out)
+OPT_LEVEL = Some(0)
+TARGET = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug\deps;C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug;C:\Users\plant\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\ProgramData\chocolatey\bin;C:\Program Files\nodejs\;C:\Program Files\Git\cmd;C:\E\Gpg4win\..\GnuPG\bin;C:\Program Files\GitHub CLI\;C:\Users\plant\.cargo\bin;C:\Users\plant\AppData\Local\Microsoft\WindowsApps;C:\D\Microsoft VS Code\bin;C:\D\PyCharm Community Edition 2024.3.4\bin;;C:\Users\plant\AppData\Roaming\npm;c:\Users\plant\.vscode\extensions\ms-python.debugpy-2025.10.0-win32-x64\bundled\scripts\noConfigScripts;c:\Users\plant\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand;C:\Users\plant\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+HOST = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+CARGO_CFG_TARGET_FEATURE = Some(cmpxchg16b,fxsr,sse,sse2,sse3)
+DEBUG = Some(true)
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+CARGO_ENCODED_RUSTFLAGS = Some()
+OUT_DIR = Some(C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug\build\secp256k1-sys-cee42fd3e67691ec\out)
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+TARGET = Some(x86_64-pc-windows-msvc)
+CARGO_CFG_TARGET_FEATURE = Some(cmpxchg16b,fxsr,sse,sse2,sse3)
+HOST = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+OUT_DIR = Some(C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug\build\secp256k1-sys-cee42fd3e67691ec\out)
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+TARGET = Some(x86_64-pc-windows-msvc)
+CARGO_CFG_TARGET_FEATURE = Some(cmpxchg16b,fxsr,sse,sse2,sse3)
+HOST = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+lax_der_parsing.c
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\include\secp256k1.h(151): warning C4005: “SECP256K1_API”: 宏重定义
+depend/secp256k1/contrib/lax_der_parsing.c: note: 参见“SECP256K1_API”的前一个定义
+depend/secp256k1/contrib/lax_der_parsing.c(12): warning C4273: “rustsecp256k1_v0_11_ecdsa_signature_parse_compact”: dll 链接不一致
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\include\secp256k1.h(465): note: 参见“rustsecp256k1_v0_11_ecdsa_signature_parse_compact”的前一个定义
+precomputed_ecmult_gen.c
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\../include/secp256k1.h(151): warning C4005: “SECP256K1_API”: 宏重定义
+depend/secp256k1/src/precomputed_ecmult_gen.c: note: 参见“SECP256K1_API”的前一个定义
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(324): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(337): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(386): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(387): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(388): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(406): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(407): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(408): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(409): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(410): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(411): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(412): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+precomputed_ecmult.c
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\../include/secp256k1.h(151): warning C4005: “SECP256K1_API”: 宏重定义
+depend/secp256k1/src/precomputed_ecmult.c: note: 参见“SECP256K1_API”的前一个定义
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(324): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(337): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(386): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(387): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(388): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(406): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(407): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(408): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(409): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(410): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(411): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(412): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+secp256k1.c
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\../include/secp256k1.h(145): warning C4005: “SECP256K1_API”: 宏重定义
+depend/secp256k1/src/secp256k1.c: note: 参见“SECP256K1_API”的前一个定义
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(324): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(337): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(386): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(387): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(388): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(406): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(407): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(408): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(409): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(410): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(411): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\util.h(412): warning C4244: “=”: 从“uint64_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(45): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(46): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(47): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(51): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(52): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(53): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(57): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(58): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(59): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(75): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\assumptions.h(76): warning C4310: 类型强制转换截断常量值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(188): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(267): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(268): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(269): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(279): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(289): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(290): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(290): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(370): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(380): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(381): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modinv64_impl.h(381): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\field_5x52_impl.h(365): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\scalar_4x64_impl.h(112): warning C4244: “=”: 从“uint64_t”转换到“int”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\scalar_4x64_impl.h(209): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\scalar_4x64_impl.h(635): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\scalar_4x64_impl.h(655): warning C4244: “=”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\scalar_4x64_impl.h(675): warning C4244: “函数”: 从“uint64_t”转换到“unsigned int”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_impl.h(521): warning C4267: “=”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_const_impl.h(251): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_const_impl.h(262): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\hash_impl.h(151): warning C4244: “函数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\hash_impl.h(152): warning C4244: “函数”: 从“uint64_t”转换到“uint32_t”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\hash_impl.h(268): warning C4267: “初始化”: 从“size_t”转换到“int”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_gen_impl.h(233): warning C4146: 一元负运算符应用于无符号类型，结果仍为无符号类型
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecdsa_impl.h(185): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecdsa_impl.h(187): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecdsa_impl.h(190): warning C4267: “=”: 从“size_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\int128_struct_impl.h(85): warning C4244: “函数”: 从“unsigned int”转换到“unsigned char”，可能丢失数据
+depend/secp256k1/src/secp256k1.c(301): warning C4127: 条件表达式是常量
+depend/secp256k1/src/secp256k1.c(314): warning C4127: 条件表达式是常量
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modules/ellswift/main_impl.h(316): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modules/ellswift/main_impl.h(317): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\modules/ellswift/main_impl.h(318): warning C4244: “=”: 从“uint32_t”转换到“unsigned char”，可能丢失数据
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_impl.h(325) : warning C4706: 条件表达式内的赋值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_impl.h(329) : warning C4706: 条件表达式内的赋值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_impl.h(334) : warning C4706: 条件表达式内的赋值
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\secp256k1-sys-0.11.0\depend\secp256k1\src\ecmult_impl.h(338) : warning C4706: 条件表达式内的赋值
+cargo:rerun-if-env-changed=AR_x86_64-pc-windows-msvc
+AR_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=AR_x86_64_pc_windows_msvc
+AR_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_AR
+HOST_AR = None
+cargo:rerun-if-env-changed=AR
+AR = None
+cargo:rerun-if-env-changed=ARFLAGS
+ARFLAGS = None
+cargo:rerun-if-env-changed=HOST_ARFLAGS
+HOST_ARFLAGS = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64_pc_windows_msvc
+ARFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64-pc-windows-msvc
+ARFLAGS_x86_64-pc-windows-msvc = None
+cargo:rustc-link-lib=static=secp256k1
+cargo:rustc-link-search=native=C:\Users\plant\Desktop\Rust鍖哄潡閾綷HotWallet\target\debug\build\secp256k1-sys-cee42fd3e67691ec\out

@@ -1,0 +1,134 @@
+/// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
+
+// 直接 use 子模块，无需 mod 声明
+
+use clap::{ Parser, Subcommand };
+use hex;
+use crate::config::config::WalletConfig; // 钱包配置加载
+use crate::security::encryption::WalletSecurity; // 加密/解密操作
+use rand::thread_rng;
+use serde::{ Deserialize, Serialize };
+use env_logger;
+use zeroize::Zeroize;
+use secp256k1::{ PublicKey, Secp256k1, SecretKey };
+use crate::security::memory_protection::{ SensitiveData, MemoryProtector, MemoryLock };
+use std::error::Error;
+use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
+use std::path::PathBuf;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about = "A secure, multi-chain hot wallet framework", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Create a new encrypted wallet keypair
+    Create {
+        /// Optional associated data to bind to the encryption
+        #[arg(long)]
+        aad: Option<String>,
+
+        /// Path to save the wallet file
+        #[arg(short, long)]
+        output: PathBuf,
+    },
+}
+
+#[derive(Serialize, Deserialize)]
+struct WalletFile {
+    public_key: String,
+    encrypted_private_key: String,
+    network: String,
+    aad: String,
+}
+
+/// 程序主入口
+fn main() -> Result<(), Box<dyn Error>> {
+    // 初始化日志记录器，以便在加密等模块中打印错误日志
+    env_logger::init();
+
+    // 1. 使用 clap 解析命令行参数
+    let cli = Cli::parse();
+
+    // 2. 加载环境变量配置
+    let config = match WalletConfig::from_env() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("[配置错误] {}", e);
+            return Err(Box::from(e));
+        }
+    };
+    println!("[配置] network: {}", config.network);
+
+    // 3. 根据解析的命令执行相应操作
+    match &cli.command {
+        Commands::Create { aad, output } => {
+            println!("正在创建新的加密钱包...");
+
+            // 生成 secp256k1 密钥对
+            let secp = Secp256k1::new();
+            let (secret_key, public_key) = secp.generate_keypair(&mut thread_rng());
+            println!("[生成] 公钥: {}", public_key);
+
+            // 用 SensitiveData 包裹私钥并锁定内存
+            let mut sensitive_sk = SensitiveData::new(secret_key.secret_bytes());
+            sensitive_sk.lock().ok();
+
+            // 用 SensitiveData 包裹加密密钥并锁定内存
+            let mut sensitive_enc_key = SensitiveData::new(
+                config.encryption_key.clone().into_bytes()
+            );
+            sensitive_enc_key.lock().ok();
+
+            // 准备关联数据 (AAD)
+            let aad_bytes = aad.as_deref().unwrap_or("").as_bytes();
+            println!("[加密] 使用关联数据 (AAD): '{}'", aad.as_deref().unwrap_or("<无>"));
+
+            // 用配置中的加密密钥加密私钥
+            let encrypted = WalletSecurity::encrypt_private_key_sensitive(
+                &mut sensitive_sk,
+                &mut sensitive_enc_key,
+                aad_bytes
+            )?;
+
+            // 内存保护器定期清理（示例）
+            let mut protector = MemoryProtector::new();
+            protector.protect(&mut sensitive_sk.data);
+            protector.protect(&mut sensitive_enc_key.data);
+            println!("[加密] 加密私钥(hex): {}", hex::encode(&encrypted));
+
+            // 安全加固：立即清零内存中的明文私钥
+            secret_key.zeroize();
+
+            // 创建并保存钱包文件
+            let wallet_file = WalletFile {
+                public_key: public_key.to_string(),
+                encrypted_private_key: hex::encode(&encrypted),
+                network: config.network.clone(),
+                aad: aad.as_deref().unwrap_or("").to_string(),
+            };
+
+            let wallet_json = serde_json::to_string_pretty(&wallet_file)?;
+
+            let mut open_options = fs::OpenOptions
+                .write(true)
+                .create_new(true) // 防止覆盖已存在的文件
+                .to_owned();
+
+            // 在 Unix 系统上，设置文件权限为 600 (仅所有者可读写)
+            #[cfg(unix)]
+            open_options.mode(0o600);
+
+            open_options.open(output)?.write_all(wallet_json.as_bytes())?;
+
+            println!("✅ 钱包已成功创建并保存至: {}", output.display());
+        }
+    }
+
+    Ok(())
+}
