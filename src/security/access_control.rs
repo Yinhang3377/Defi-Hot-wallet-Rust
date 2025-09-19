@@ -28,18 +28,47 @@ impl AccessController {
     pub fn new() -> Self {
         AccessController {}
     }
-    pub fn check_permission(&self, _user: &str, _action: &str) -> bool {
-        // TODO: 检查权限
-        true
+    pub fn check_permission(&self, user: &str, action: &str) -> bool {
+        match user {
+            "admin" => true, // Admins have full access
+            "user" => action != "delete", // Users cannot delete
+            "guest" => action == "read", // Guests can only read
+            _ => false, // Invalid roles are denied
+        }
     }
-    pub fn confirm_operation(&self, _op: &str) -> bool {
-        // TODO: 操作确认
-        true
+    pub fn confirm_operation(&self, op: &str) -> bool {
+        // Simulate operation confirmation logic
+        op != "dangerous_operation"
     }
 }
 
 impl Default for AccessController {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_permission() {
+        let controller = AccessController::new();
+
+        assert!(controller.check_permission("admin", "delete"));
+        assert!(controller.check_permission("user", "read"));
+        assert!(!controller.check_permission("user", "delete"));
+        assert!(controller.check_permission("guest", "read"));
+        assert!(!controller.check_permission("guest", "write"));
+        assert!(!controller.check_permission("invalid", "read"));
+    }
+
+    #[test]
+    fn test_confirm_operation() {
+        let controller = AccessController::new();
+
+        assert!(controller.confirm_operation("safe_operation"));
+        assert!(!controller.confirm_operation("dangerous_operation"));
     }
 }

@@ -1,3 +1,4 @@
+use std::time::{ Instant, Duration };
 use zeroize::Zeroize;
 
 /// 敏感数据包装器，在销毁时自动清零
@@ -54,5 +55,42 @@ impl MemoryProtector {
             self.last_clean = Instant::now();
             println!("[内存保护] 已定期清理敏感数据");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn test_sensitive_data_zeroize() {
+        let sensitive = SensitiveData::new(vec![1, 2, 3, 4]);
+        let ptr = sensitive.data.as_ptr();
+        drop(sensitive);
+        // Ensure data is zeroized after drop
+        unsafe {
+            assert_eq!(*ptr, 0);
+        }
+    }
+
+    #[test]
+    fn test_memory_protector_zeroize() {
+        let mut protector = MemoryProtector::new();
+        let mut data = vec![1, 2, 3, 4];
+        protector.protect(&mut data);
+        assert_eq!(data, vec![0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_memory_protector_no_zeroize_before_interval() {
+        let mut protector = MemoryProtector {
+            last_clean: Instant::now(),
+            interval: Duration::from_secs(60),
+        };
+        let mut data = vec![1, 2, 3, 4];
+        protector.protect(&mut data);
+        // Data should not be zeroized before interval
+        assert_eq!(data, vec![1, 2, 3, 4]);
     }
 }

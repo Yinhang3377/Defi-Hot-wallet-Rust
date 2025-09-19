@@ -1,31 +1,72 @@
-name: CI/CD Pipeline
+name: Rust CI/CD Pipeline
 
 on:
   push:
     branches:
-      - master
+      - "*"
   pull_request:
     branches:
-      - master
+      - "*"
 
 jobs:
   build:
+    name: Build and Test
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
+      - name: Install Rust nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      - name: Run cargo fmt
+        run: cargo fmt --check
 
-    - name: Build project
-      run: cargo build --release
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
 
-    - name: Run tests
-      run: cargo test
+      - name: Run cargo test
+        run: cargo test --workspace --all-targets --nocapture
+
+      - name: Run tarpaulin for coverage
+        uses: actions-rs/tarpaulin@v1
+        with:
+          args: --out GitHub --output-dir coverage
+
+      - name: Check coverage
+        id: check-coverage
+        run: |
+          COVERAGE=$(grep -oP '\d+\.\d+' coverage/coverage.json | head -1)
+          if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+            echo "::error::Coverage is below 90% ($COVERAGE%)"
+            echo "::set-output name=coverage_status::failure"
+          else
+            echo "Coverage is sufficient ($COVERAGE%)"
+            echo "::set-output name=coverage_status::success"
+          fi
+
+      - name: Create issue for low coverage
+        if: steps.check-coverage.outputs.coverage_status == 'failure'
+        uses: peter-evans/create-issue-from-file@v4
+        with:
+          title: "Coverage below 90%"
+          content-file: coverage/coverage.json
+
+      - name: Tag and push if all green
+        if: steps.check-coverage.outputs.coverage_status == 'success'
+        run: |
+          git tag ready-for-demo
+          git push origin ready-for-demo
+
+      - name: Push to GitHub Container Registry
+        if: steps.check-coverage.outputs.coverage_status == 'success'
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/defi-hot-wallet-rs:latest

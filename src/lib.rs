@@ -5,5 +5,5 @@ pub mod security;
 pub mod tools;
 
 // Convenient re-exports
-pub use security::encryption::WalletSecurity;
+pub use security::encryption::EncryptionService;
 pub use tools::error::WalletError;

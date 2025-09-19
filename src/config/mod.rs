@@ -18,8 +18,24 @@ impl WalletConfig {
         if salt.len() != 64 {
             return Err(format!("SALT 长度必须为64个字符，当前长度为 {}", salt.len()));
         }
-        let network =
-            env::var("NETWORK").map_err(|_| "必须在环境变量中设置 NETWORK".to_string())?;
+        let network = env::var("NETWORK").map_err(|_| "必须在环境变量中设置 NETWORK".to_string())?;
         Ok(Self { salt, network })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+
+    #[test]
+    fn test_mod_init() {
+        // Provide a raw string of exactly 64 characters for SALT
+        env::set_var("SALT", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+        // Set the NETWORK environment variable
+        env::set_var("NETWORK", "test-network");
+        let config = WalletConfig::from_env().unwrap();
+        assert!(!config.salt.is_empty());
+        assert_eq!(config.network, "test-network");
     }
 }
