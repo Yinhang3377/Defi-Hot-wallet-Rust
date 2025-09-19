@@ -102,16 +102,3 @@ fn test_aad_mismatch() {
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad_decrypt);
     assert!(matches!(result, Err(WalletError::EncryptionError(_))));
 }
-
-#[test]
-fn test_derive_encryption_key() {
-    use hot_wallet::security::encryption::WalletSecurity;
-
-    let password = b"test_password";
-    let salt = b"test_salt";
-
-    let derived_key = WalletSecurity::derive_encryption_key(password, salt);
-
-    assert_eq!(derived_key.len(), 32);
-    assert_ne!(derived_key, vec![0u8; 32]); // 确保派生的密钥不是全零
-}

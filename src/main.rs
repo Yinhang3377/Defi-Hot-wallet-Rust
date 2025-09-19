@@ -1,9 +1,9 @@
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
 use clap::{ Parser, Subcommand };
 use hex;
-use hot_wallet::config::config::WalletConfig; // 钱包配置加载
+use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
-use hot_wallet::security::memory_protection::SensitiveData; // MemoryProtector unused currently
+use hot_wallet::security::memory_protection::SensitiveData;
 use serde::{ Deserialize, Serialize };
 use env_logger;
 use secp256k1::{ PublicKey, Secp256k1, SecretKey };

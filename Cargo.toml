@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-# 可选的内存锁定功能，占位实现，默认关闭。
-memlock = []
+# 可选的内存锁定功能：启用后会尝试在支持的平台锁定敏感数据所在内存页，防止被交换/转储。
+# 默认关闭，需要显式 --features memlock
+memlock = ["libc", "windows"]
 
 [dependencies]
 # --- 核心依赖说明 ---
@@ -30,3 +31,8 @@ hex = "0.4.3"
 clap = { version = "4.5", features = ["derive"] }
 argon2 = { version = "0.6.0-rc.1" }
 base64 = "0.22"
+libc = { version = "0.2", optional = true }
+windows = { version = "0.58", features = ["Win32_System_Memory"], optional = true }
+
+[profile.release]
+debug = true
