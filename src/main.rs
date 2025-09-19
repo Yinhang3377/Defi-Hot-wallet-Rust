@@ -4,7 +4,7 @@ use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
 use hot_wallet::security::memory_protection::SensitiveData;
 use serde::{ Deserialize, Serialize };
-use secp256k1::{ PublicKey, Secp256k1, SecretKey };
+use secp256k1::{ PublicKey, Secp256k1 };
 use std::error::Error;
 use std::fs::OpenOptions;
 use std::io::{ self, Write };
@@ -54,7 +54,7 @@ impl Cli {
 /// 程序主入口
 fn main() -> Result<(), Box<dyn Error>> {
     // 初始化日志记录器，以便在加密等模块中打印错误日志
-    env_logger::init();
+    env_logger::init(); // 使用全限定调用，无需单组件 use 导入
 
     // 1. 使用 clap 解析命令行参数
     let cli = Cli::parse();
