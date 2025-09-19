@@ -1,0 +1,40 @@
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Keys and certificates
+*.key
+*.pem
+*.crt
+/keys/
+
+# Backup files
+*.backup
+*.bak
