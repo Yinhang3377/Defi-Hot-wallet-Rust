@@ -1,5 +1,5 @@
-/// 访问控制模块：管理操作权限与安全策略
-/// 支持多级权限、操作授权等
+//! 访问控制模块：管理操作权限与安全策略
+//! 支持多级权限、操作授权等
 
 /// 权限级别
 #[allow(dead_code)]
@@ -35,5 +35,11 @@ impl AccessController {
     pub fn confirm_operation(&self, _op: &str) -> bool {
         // TODO: 操作确认
         true
+    }
+}
+
+impl Default for AccessController {
+    fn default() -> Self {
+        Self::new()
     }
 }

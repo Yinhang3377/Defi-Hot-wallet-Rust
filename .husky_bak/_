@@ -1,0 +1,3 @@
+#!/bin/sh
+# Husky hook runner (required for Windows compatibility)
+. "$(dirname "$0")/_husky.sh"

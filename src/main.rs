@@ -1,12 +1,9 @@
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
-
-// 直接 use 子模块，无需 mod 声明
-
 use clap::{ Parser, Subcommand };
 use hex;
 use hot_wallet::config::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
-use hot_wallet::security::memory_protection::{ SensitiveData, MemoryProtector, MemoryLock };
+use hot_wallet::security::memory_protection::{ SensitiveData, MemoryProtector };
 use serde::{ Deserialize, Serialize };
 use env_logger;
 use secp256k1::{ PublicKey, Secp256k1, SecretKey };
@@ -84,14 +81,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("[生成] 公钥: {}", public_key);
 
             // 用 SensitiveData 包裹私钥并锁定内存
-            let mut sensitive_sk = SensitiveData::new(secret_key.secret_bytes());
-            sensitive_sk.lock().ok();
+            let sensitive_sk = SensitiveData::new(secret_key.secret_bytes());
 
             // 用 SensitiveData 包裹加密密钥并锁定内存
-            let mut sensitive_enc_key = SensitiveData::new(
-                config.encryption_key.clone().into_bytes()
-            );
-            sensitive_enc_key.lock().ok();
+            let sensitive_enc_key = SensitiveData::new(config.encryption_key.clone().into_bytes());
 
             // 准备关联数据 (AAD)
             let aad_bytes = aad.as_deref().unwrap_or("").as_bytes();
@@ -109,8 +102,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // 内存保护器定期清理（示例）
             let mut protector = MemoryProtector::new();
-            protector.protect(&mut sensitive_sk.data);
-            protector.protect(&mut sensitive_enc_key.data);
+            // 示例：内存保护器周期清理敏感数据副本
+            let mut sk_copy = sensitive_sk.data; // [u8;32] Copy
+            let mut key_copy = sensitive_enc_key.data.clone(); // Vec<u8> 仍需 clone
+            protector.protect(&mut sk_copy);
+            protector.protect(&mut key_copy);
             println!("[加密] 加密私钥(hex): {}", hex::encode(&encrypted));
 
             // 创建并保存钱包文件
@@ -130,6 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             #[cfg(unix)]
             open_options.mode(0o600);
 
+            use std::io::Write;
             open_options.open(output)?.write_all(wallet_json.as_bytes())?;
 
             println!("✅ 钱包已成功创建并保存至: {}", output.display());

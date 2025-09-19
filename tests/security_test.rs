@@ -68,7 +68,6 @@ fn test_tampered_ciphertext_fails_decryption() {
     let private_key = &[0u8; 32];
     let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
     let aad = b"some_aad";
-
     let mut encrypted = WalletSecurity::encrypt_private_key(
         private_key,
         encryption_key,
