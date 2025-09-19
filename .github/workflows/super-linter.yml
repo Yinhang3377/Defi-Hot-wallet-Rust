@@ -1,19 +1,25 @@
-name: Lint Code Base
+name: Lint (Non-Rust)
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 jobs:
-  build:
-    name: Lint Code Base
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Lint Code Base
+      - uses: actions/checkout@v4
+      - name: Super Linter (docs & configs only)
         uses: github/super-linter@v6
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 关闭 Rust（由 rust-ci.yml 覆盖）
+          VALIDATE_RUST: false
+          # 保留常见文档与配置检查
+          VALIDATE_MARKDOWN: true
+          VALIDATE_YAML: true
+          VALIDATE_JSON: true
+          VALIDATE_GITHUB_ACTIONS: true
+          # 视需要可加: VALIDATE_DOCKERFILE, VALIDATE_SHELL_SH 等

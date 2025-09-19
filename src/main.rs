@@ -1,11 +1,9 @@
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
 use clap::{ Parser, Subcommand };
-use hex;
 use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
 use hot_wallet::security::memory_protection::SensitiveData;
 use serde::{ Deserialize, Serialize };
-use env_logger;
 use secp256k1::{ PublicKey, Secp256k1, SecretKey };
 use std::error::Error;
 use std::fs::OpenOptions;
@@ -13,8 +11,6 @@ use std::io::{ self, Write };
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
-use rand::rngs::OsRng;
-use rand::RngCore;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A secure, multi-chain hot wallet framework", long_about = None)]
@@ -81,16 +77,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             // 提示用户输入加密密钥
             let encryption_key = Cli::prompt_password()?;
 
-            // 生成 secp256k1 密钥对
+            // 生成 secp256k1 密钥对（使用 crate 内部 re-export 的 rand，避免不同 rand 版本冲突）
             let secp = Secp256k1::new();
-            // Updated secret key generation to use a random 32-byte array
-            let mut rng = OsRng;
-            let mut secret_key_bytes = [0u8; 32];
-            rng.fill_bytes(&mut secret_key_bytes);
-            let secret_key = SecretKey::from_slice(&secret_key_bytes).expect(
-                "Failed to create secret key"
-            );
-            let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+            let mut rng = secp256k1::rand::rngs::OsRng;
+            let (secret_key, public_key) = secp.generate_keypair(&mut rng);
             println!("[生成] 公钥: {}", public_key);
 
             // 用 SensitiveData 包裹私钥并锁定内存
