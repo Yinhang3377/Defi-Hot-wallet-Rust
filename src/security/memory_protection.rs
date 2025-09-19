@@ -21,11 +21,14 @@ impl<T: Zeroize + AsRef<[u8]> + AsMut<[u8]>> SensitiveData<T> {
     }
 
     /// 创建并在启用 feature 时尝试加锁。
+    #[cfg_attr(not(feature = "memlock"), allow(unused_mut))]
     pub fn secure_new(data: T) -> Self {
         let mut s = Self::new(data);
         #[cfg(feature = "memlock")]
-        if let Err(e) = s.try_lock_memory() {
-            log::warn!("[memlock] 内存锁定失败: {} (继续运行)", e);
+        {
+            if let Err(e) = s.try_lock_memory() {
+                log::warn!("[memlock] 内存锁定失败: {} (继续运行)", e);
+            }
         }
         s
     }
@@ -48,7 +51,7 @@ impl<T: Zeroize + AsRef<[u8]> + AsMut<[u8]>> SensitiveData<T> {
             }
             #[cfg(target_os = "windows")]
             if let Err(e) = VirtualLock(ptr as *const _, len) {
-                return Err(io::Error::new(io::ErrorKind::Other, format!("VirtualLock 失败: {e}")));
+                return Err(io::Error::other(format!("VirtualLock 失败: {e}")));
             }
         }
         self.locked = true;
