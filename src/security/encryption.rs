@@ -2,9 +2,10 @@
 //! 支持对称加密（如 AES-GCM）、非对称加密（如 secp256k1）等
 
 use crate::tools::error::WalletError;
-use aes_gcm::aead::{ Aead, Payload };
+use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::KeyInit;
-use aes_gcm::{ Aes256Gcm, Key, Nonce };
+use aes_gcm::{Aes256Gcm, Key, Nonce};
+use argon2::Argon2;
 use hex;
 use log;
 use rand;
@@ -36,7 +37,7 @@ impl WalletSecurity {
     pub fn encrypt_private_key(
         private_key: &[u8],
         encryption_key: &str,
-        aad: &[u8]
+        aad: &[u8],
     ) -> Result<Vec<u8>, WalletError> {
         // 1. 验证私钥长度
         if private_key.len() != 32 {
@@ -54,11 +55,9 @@ impl WalletSecurity {
         }
         if Self::is_weak_key(&key_bytes) {
             log::error!("检测到弱加密密钥: [已隐藏]");
-            return Err(
-                WalletError::EncryptionError(
-                    "加密密钥过于简单，存在安全风险，请更换更复杂的密钥！".to_string()
-                )
-            );
+            return Err(WalletError::EncryptionError(
+                "加密密钥过于简单，存在安全风险，请更换更复杂的密钥！".to_string(),
+            ));
         }
         // KDF: 用 Argon2 对明文密钥二次加固，salt 可用 AAD 或其它上下文
         let salt = if !aad.is_empty() { aad } else { b"hotwallet-default-salt" };
@@ -112,7 +111,7 @@ impl WalletSecurity {
     pub fn decrypt_private_key(
         ciphertext: &[u8],
         encryption_key: &str,
-        aad: &[u8]
+        aad: &[u8],
     ) -> Result<Vec<u8>, WalletError> {
         // 检查密文长度（必须大于12字节的nonce）
         if ciphertext.len() <= 12 {
@@ -154,6 +153,20 @@ impl WalletSecurity {
 
         Ok(plaintext)
     }
+
+    /// 使用 Argon2 派生加密密钥
+    ///
+    /// # 参数
+    /// * `password` - 用户提供的密码
+    /// * `salt` - 派生密钥的盐值
+    ///
+    /// # 返回值
+    /// 返回派生的 32 字节加密密钥
+    pub fn derive_encryption_key(password: &[u8], salt: &[u8]) -> Vec<u8> {
+        let mut key = [0u8; 32]; // 目标密钥长度
+        Argon2::default().hash_password_into(password, salt, &mut key).expect("密钥派生失败");
+        key.to_vec()
+    }
     // ---- 内部辅助函数 ----
     fn is_weak_key(key_bytes: &[u8]) -> bool {
         if key_bytes.iter().all(|&b| b == 0) || key_bytes.iter().all(|&b| b == 0xff) {
@@ -162,11 +175,10 @@ impl WalletSecurity {
         if key_bytes.len() >= 2 {
             let first = key_bytes[0];
             let second = key_bytes[1];
-            if
-                key_bytes
-                    .iter()
-                    .enumerate()
-                    .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
+            if key_bytes
+                .iter()
+                .enumerate()
+                .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
             {
                 return true;
             }
@@ -176,15 +188,8 @@ impl WalletSecurity {
     fn derive_key_from_env_key(env_key: &[u8], salt: &[u8]) -> [u8; 32] {
         let mut out = [0u8; 32];
         for (i, b) in out.iter_mut().enumerate() {
-            *b =
-                env_key
-                    .get(i % env_key.len())
-                    .cloned()
-                    .unwrap_or(0) ^
-                salt
-                    .get(i % salt.len())
-                    .cloned()
-                    .unwrap_or(0);
+            *b = env_key.get(i % env_key.len()).cloned().unwrap_or(0)
+                ^ salt.get(i % salt.len()).cloned().unwrap_or(0);
         }
         out
     }
@@ -202,17 +207,11 @@ mod tests {
         let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
         let aad = b"associated_data";
 
-        let encrypted = WalletSecurity::encrypt_private_key(
-            private_key,
-            encryption_key,
-            aad
-        ).unwrap();
+        let encrypted =
+            WalletSecurity::encrypt_private_key(private_key, encryption_key, aad).unwrap();
         println!("[test] encrypted: {:02x?}", encrypted);
-        let decrypted = WalletSecurity::decrypt_private_key(
-            &encrypted,
-            encryption_key,
-            aad
-        ).unwrap();
+        let decrypted =
+            WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad).unwrap();
         println!("[test] decrypted: {:02x?}", decrypted);
         assert_eq!(private_key.to_vec(), decrypted);
     }
@@ -245,11 +244,8 @@ mod tests {
 
         // 刚好12字节，也应该报错
         let invalid_ciphertext_2 = b"123456789012";
-        let result2 = WalletSecurity::decrypt_private_key(
-            invalid_ciphertext_2,
-            encryption_key,
-            aad
-        );
+        let result2 =
+            WalletSecurity::decrypt_private_key(invalid_ciphertext_2, encryption_key, aad);
         assert!(matches!(result2, Err(WalletError::EncryptionError(_))));
     }
 }

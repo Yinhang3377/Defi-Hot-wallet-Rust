@@ -29,3 +29,5 @@ rand = "0.8.5" # 保持最新
 hex = "0.4.3"
 clap = { version = "4.5", features = ["derive"] }
 secrecy = "0.8" # 用于内存保护，防止敏感数据泄露
+argon2 = "0.5"
+base64 = "0.21"

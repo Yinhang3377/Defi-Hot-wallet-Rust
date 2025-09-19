@@ -1,5 +1,6 @@
 //! 配置模块：负责加载和管理环境变量（如 ENCRYPTION_KEY、NETWORK）
 use std::env;
+use base64;
 
 /// 钱包配置结构体
 #[derive(Debug, Clone)]
@@ -26,5 +27,11 @@ impl WalletConfig {
         }
         let network = env::var("NETWORK").unwrap_or_else(|_| "testnet".to_string());
         Ok(WalletConfig { encryption_key, network })
+    }
+
+    /// 从环境变量加载盐值并派生加密密钥
+    pub fn get_encryption_key(&self, salt: &[u8]) -> Vec<u8> {
+        let decoded_salt = base64::decode(salt).expect("SALT 必须是有效的 Base64 编码");
+        WalletSecurity::derive_encryption_key(self.encryption_key.as_bytes(), &decoded_salt)
     }
 }

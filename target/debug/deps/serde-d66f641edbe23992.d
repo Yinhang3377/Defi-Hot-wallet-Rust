@@ -1,0 +1,14 @@
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\deps\serde-d66f641edbe23992.d: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\lib.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\integer128.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\mod.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\de.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\ser.rs C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\serde-cbf72edc0c49143e\out/private.rs
+
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\deps\libserde-d66f641edbe23992.rlib: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\lib.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\integer128.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\mod.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\de.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\ser.rs C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\serde-cbf72edc0c49143e\out/private.rs
+
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\deps\libserde-d66f641edbe23992.rmeta: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\lib.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\integer128.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\mod.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\de.rs C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\ser.rs C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\serde-cbf72edc0c49143e\out/private.rs
+
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\lib.rs:
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\integer128.rs:
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\mod.rs:
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\de.rs:
+C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.225\src\private\ser.rs:
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\serde-cbf72edc0c49143e\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\Users\\plant\\Desktop\\Rust区块链\\Defi-Hot-wallet-Rust\\target\\debug\\build\\serde-cbf72edc0c49143e\\out

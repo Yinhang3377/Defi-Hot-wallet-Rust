@@ -1,5 +1,5 @@
-C:\Users\plant\Desktop\Rust区块链\HotWallet\target\debug\build\generic-array-b25a0056dc262dd8\build_script_build-b25a0056dc262dd8.d: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\generic-array-0.14.7\build.rs
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\generic-array-b25a0056dc262dd8\build_script_build-b25a0056dc262dd8.d: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\generic-array-0.14.7\build.rs
 
-C:\Users\plant\Desktop\Rust区块链\HotWallet\target\debug\build\generic-array-b25a0056dc262dd8\build_script_build-b25a0056dc262dd8.exe: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\generic-array-0.14.7\build.rs
+C:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\target\debug\build\generic-array-b25a0056dc262dd8\build_script_build-b25a0056dc262dd8.exe: C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\generic-array-0.14.7\build.rs
 
 C:\Users\plant\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\generic-array-0.14.7\build.rs:
