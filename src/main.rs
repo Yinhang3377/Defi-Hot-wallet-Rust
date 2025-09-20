@@ -82,10 +82,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // 生成 secp256k1 密钥对（手动随机 32 字节，避免依赖 crate 的 rand feature）
             let secp = Secp256k1::new();
-            let mut rng = rand::thread_rng();
+            // rand 0.9: thread_rng() 已弃用，使用 rng()
+            let mut rng = rand::rng();
             let mut sk_bytes = [0u8; 32];
             rng.fill(&mut sk_bytes);
-            let secret_key = SecretKey::from_slice(&sk_bytes).expect("32-byte secret key");
+            // secp256k1 0.31: from_slice 已弃用，改用 from_byte_array
+            let secret_key = SecretKey::from_byte_array(sk_bytes).expect("32-byte secret key");
             let public_key = PublicKey::from_secret_key(&secp, &secret_key);
             println!("[生成] 公钥: {}", public_key);
 
