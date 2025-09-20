@@ -8,11 +8,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        feature-set: ["default", "memlock"]
+        include:
+          - os: ubuntu-latest
+            feature-set: default
+          - os: windows-latest
+            feature-set: default
+          - os: windows-latest
+            feature-set: memlock
     steps:
       - uses: actions/checkout@v4
         with:
