@@ -1,9 +1,9 @@
 //! 配置模块：负责加载和管理环境变量（如 ENCRYPTION_KEY、NETWORK）
-use std::env;
 use base64;
+use std::env;
 
-use base64::{ engine::general_purpose, Engine as _ };
-use serde::{ Deserialize, Serialize };
+use base64::{engine::general_purpose, Engine as _};
+use serde::{Deserialize, Serialize};
 
 /// 钱包配置结构体
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -19,32 +19,30 @@ pub struct WalletConfig {
 impl WalletConfig {
     /// 从环境变量加载配置，优雅返回 Result，避免 panic
     pub fn from_env() -> Result<Self, String> {
-        let encryption_key = env
-            ::var("ENCRYPTION_KEY")
+        let encryption_key = env::var("ENCRYPTION_KEY")
             .map_err(|_| "必须在环境变量中设置 ENCRYPTION_KEY".to_string())?;
         if encryption_key.len() != 64 {
-            return Err(
-                format!("ENCRYPTION_KEY 长度必须为64个字符，当前长度为 {}", encryption_key.len())
-            );
+            return Err(format!(
+                "ENCRYPTION_KEY 长度必须为64个字符，当前长度为 {}",
+                encryption_key.len()
+            ));
         }
         if !encryption_key.chars().all(|c| c.is_ascii_hexdigit()) {
             return Err("ENCRYPTION_KEY 必须只包含十六进制字符 (0-9, a-f, A-F)".to_string());
         }
         let network = env::var("NETWORK").unwrap_or_else(|_| "testnet".to_string());
-        let salt = env
-            ::var("SALT")
-            .unwrap_or_else(|_| { general_purpose::STANDARD.encode("default_salt") });
+        let salt =
+            env::var("SALT").unwrap_or_else(|_| general_purpose::STANDARD.encode("default_salt"));
         Ok(WalletConfig { encryption_key, network, salt })
     }
 
     /// 使用配置中的 base64 盐值与提供的口令派生 32 字节加密密钥
     pub fn derive_key_with_password(
         &self,
-        password: &str
+        password: &str,
     ) -> Result<[u8; 32], crate::tools::error::WalletError> {
         crate::security::encryption::WalletSecurity::derive_encryption_key_from_config(
-            password,
-            self
+            password, self,
         )
     }
 }

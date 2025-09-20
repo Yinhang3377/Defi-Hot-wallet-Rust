@@ -51,11 +51,8 @@ fn test_aad_mismatch_fails_decryption() {
     let aad_encrypt = b"correct_aad";
     let aad_decrypt = b"wrong_aad";
 
-    let encrypted = WalletSecurity::encrypt_private_key(
-        private_key,
-        encryption_key,
-        aad_encrypt
-    ).unwrap();
+    let encrypted =
+        WalletSecurity::encrypt_private_key(private_key, encryption_key, aad_encrypt).unwrap();
 
     // 使用错误的 AAD 进行解密，应该失败
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad_decrypt);
@@ -68,11 +65,8 @@ fn test_tampered_ciphertext_fails_decryption() {
     let private_key = &[0u8; 32];
     let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
     let aad = b"some_aad";
-    let mut encrypted = WalletSecurity::encrypt_private_key(
-        private_key,
-        encryption_key,
-        aad
-    ).unwrap();
+    let mut encrypted =
+        WalletSecurity::encrypt_private_key(private_key, encryption_key, aad).unwrap();
     let len = encrypted.len();
     encrypted[len - 1] ^= 0xff; // 篡改最后一个字节
 

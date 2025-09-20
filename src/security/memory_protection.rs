@@ -1,11 +1,11 @@
-use zeroize::Zeroize;
-use std::time::{ Instant, Duration };
 #[cfg(all(feature = "memlock", unix))]
-use libc::{ mlock, munlock };
-#[cfg(all(feature = "memlock", target_os = "windows"))]
-use windows::Win32::System::Memory::{ VirtualLock, VirtualUnlock };
+use libc::{mlock, munlock};
 #[cfg(feature = "memlock")]
 use std::io;
+use std::time::{Duration, Instant};
+#[cfg(all(feature = "memlock", target_os = "windows"))]
+use windows::Win32::System::Memory::{VirtualLock, VirtualUnlock};
+use zeroize::Zeroize;
 
 /// 敏感数据包装器：在 Drop 时自动清零；开启 feature "memlock" 时尝试锁定内存。
 /// 为保证实现简单并避免重复方法冲突，这里约束 T 必须能映射到字节切片。
@@ -17,7 +17,11 @@ pub struct SensitiveData<T: Zeroize + AsRef<[u8]> + AsMut<[u8]>> {
 
 impl<T: Zeroize + AsRef<[u8]> + AsMut<[u8]>> SensitiveData<T> {
     pub fn new(data: T) -> Self {
-        Self { data, #[cfg(feature = "memlock")] locked: false }
+        Self {
+            data,
+            #[cfg(feature = "memlock")]
+            locked: false,
+        }
     }
 
     /// 创建并在启用 feature 时尝试加锁。

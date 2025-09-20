@@ -1,10 +1,10 @@
 use assert_cmd::prelude::*;
-use std::process::Command;
-use tempfile::tempdir;
-use std::fs;
+use base64::Engine;
 use serde_json::Value;
+use std::fs;
 use std::path::PathBuf;
-use base64::Engine; // bring encode into scope
+use std::process::Command;
+use tempfile::tempdir; // bring encode into scope
 
 // Helper to build a valid 64-hex encryption key (32 bytes)
 fn sample_key() -> String {
@@ -59,18 +59,12 @@ fn cli_create_generates_wallet_file() {
     // Fields
     assert!(v.get("public_key").is_some(), "public_key field");
     assert!(v.get("encrypted_private_key").is_some(), "encrypted_private_key field");
-    assert_eq!(
-        v.get("network").and_then(|n| n.as_str()),
-        Some("testnet")
-    );
+    assert_eq!(v.get("network").and_then(|n| n.as_str()), Some("testnet"));
     assert!(v.get("aad").is_some(), "aad field present");
 
     // encrypted_private_key should be hex and length > 12 (nonce) *2 due to hex
     if let Some(enc) = v.get("encrypted_private_key").and_then(|e| e.as_str()) {
         assert!(enc.len() > 24, "encrypted_private_key length seems too small");
-        assert!(
-            enc.chars().all(|c| c.is_ascii_hexdigit()),
-            "encrypted_private_key should be hex"
-        );
+        assert!(enc.chars().all(|c| c.is_ascii_hexdigit()), "encrypted_private_key should be hex");
     }
 }
