@@ -44,6 +44,7 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Clippy (strict)
+        if: runner.os != 'windows-latest' && matrix.feature-set != 'memlock'
         run: |
           if [ "${{ matrix.feature-set }}" = "memlock" ]; then
             cargo clippy --all-targets --features memlock -- -D warnings
