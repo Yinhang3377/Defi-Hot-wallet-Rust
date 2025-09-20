@@ -1,14 +1,13 @@
 //! 加密模块：负责钱包核心数据的加解密逻辑
 //! 支持对称加密（如 AES-GCM）、非对称加密（如 secp256k1）等
 
+use crate::config::WalletConfig;
 use crate::tools::error::WalletError;
-use aes_gcm::aead::{ Aead, Payload };
-use aes_gcm::{ Aes256Gcm, Key, Nonce, KeyInit };
+use aes_gcm::aead::{Aead, Payload};
+use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce};
 use argon2::Argon2;
 use base64::engine::general_purpose;
 use base64::Engine as _;
-use crate::config::WalletConfig;
-use hex;
 use log;
 use rand;
 // zeroize is handled at a higher abstraction layer (memory_protection); remove unused import.
@@ -36,7 +35,7 @@ impl WalletSecurity {
     pub fn encrypt_private_key(
         private_key: &[u8],
         encryption_key: &str,
-        aad: &[u8]
+        aad: &[u8],
     ) -> Result<Vec<u8>, WalletError> {
         if private_key.len() != 32 {
             return Err(WalletError::EncryptionError("待加密的私钥长度必须为32字节".to_string()));
@@ -52,11 +51,9 @@ impl WalletSecurity {
         }
         if Self::is_weak_key(&key_bytes) {
             log::error!("检测到弱加密密钥: [已隐藏]");
-            return Err(
-                WalletError::EncryptionError(
-                    "加密密钥过于简单，存在安全风险，请更换更复杂的密钥！".to_string()
-                )
-            );
+            return Err(WalletError::EncryptionError(
+                "加密密钥过于简单，存在安全风险，请更换更复杂的密钥！".to_string(),
+            ));
         }
         // KDF: 用 Argon2 对明文密钥二次加固，salt 可用 AAD 或其它上下文
         let salt = if !aad.is_empty() { aad } else { b"hotwallet-default-salt" };
@@ -106,7 +103,7 @@ impl WalletSecurity {
     pub fn decrypt_private_key(
         ciphertext: &[u8],
         encryption_key: &str,
-        aad: &[u8]
+        aad: &[u8],
     ) -> Result<Vec<u8>, WalletError> {
         let key_bytes = hex::decode(encryption_key).map_err(|_| {
             log::error!("解密密钥格式错误，无法从Hex解码: [已隐藏]");
@@ -150,11 +147,10 @@ impl WalletSecurity {
         if key_bytes.len() >= 2 {
             let first = key_bytes[0];
             let second = key_bytes[1];
-            if
-                key_bytes
-                    .iter()
-                    .enumerate()
-                    .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
+            if key_bytes
+                .iter()
+                .enumerate()
+                .all(|(i, &b)| if i % 2 == 0 { b == first } else { b == second })
             {
                 return true;
             }
@@ -183,7 +179,7 @@ impl WalletSecurity {
     /// 高级 API：结合 WalletConfig 与用户密码派生 32 字节密钥
     pub fn derive_encryption_key_from_config(
         password: &str,
-        config: &WalletConfig
+        config: &WalletConfig,
     ) -> Result<[u8; 32], WalletError> {
         let salt = general_purpose::STANDARD
             .decode(&config.salt)
@@ -199,28 +195,22 @@ impl WalletSecurity {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::engine::general_purpose;
     use crate::config::WalletConfig;
+    use base64::engine::general_purpose;
 
     #[test]
     fn test_encrypt_decrypt_cycle() {
         // 测试加密解密流程
         let private_key = b"32_byte_private_key_1234567890ab"; // 32 bytes
-        // 64位十六进制字符串（32字节）使用良好分布随机密钥
+                                                               // 64位十六进制字符串（32字节）使用良好分布随机密钥
         let encryption_key = "0123456789abcdef1032547698badcfe1133557799bbddff123456789abcdef0";
         let aad = b"associated_data";
 
-        let encrypted = WalletSecurity::encrypt_private_key(
-            private_key,
-            encryption_key,
-            aad
-        ).unwrap();
+        let encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad)
+            .expect("Failed to encrypt private key");
         println!("[test] encrypted: {:02x?}", encrypted);
-        let decrypted = WalletSecurity::decrypt_private_key(
-            &encrypted,
-            encryption_key,
-            aad
-        ).unwrap();
+        let decrypted = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad)
+            .expect("Failed to decrypt private key");
         println!("[test] decrypted: {:02x?}", decrypted);
         assert_eq!(private_key.to_vec(), decrypted);
     }
@@ -253,11 +243,8 @@ mod tests {
 
         // 刚好12字节，也应该报错
         let invalid_ciphertext_2 = b"123456789012";
-        let result2 = WalletSecurity::decrypt_private_key(
-            invalid_ciphertext_2,
-            encryption_key,
-            aad
-        );
+        let result2 =
+            WalletSecurity::decrypt_private_key(invalid_ciphertext_2, encryption_key, aad);
         assert!(matches!(result2, Err(WalletError::EncryptionError(_))));
     }
 
@@ -265,13 +252,14 @@ mod tests {
     fn test_derive_encryption_key_valid() {
         let password = "password123";
         let config = WalletConfig {
-            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+                .to_string(),
             network: "testnet".to_string(),
             salt: general_purpose::STANDARD.encode(b"testsalt"),
         };
         let result = WalletSecurity::derive_encryption_key_from_config(password, &config);
         assert!(result.is_ok());
-        let key = result.unwrap();
+        let key = result.expect("Failed to derive encryption key");
         assert_eq!(key.len(), 32);
     }
 
@@ -279,7 +267,8 @@ mod tests {
     fn test_derive_encryption_key_invalid_salt() {
         let password = "password123";
         let config = WalletConfig {
-            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+                .to_string(),
             network: "testnet".to_string(),
             salt: "invalid-base64!".to_string(),
         };
@@ -290,7 +279,8 @@ mod tests {
     #[test]
     fn test_derive_encryption_key_empty_password() {
         let config = WalletConfig {
-            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2".to_string(),
+            encryption_key: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+                .to_string(),
             network: "testnet".to_string(),
             salt: general_purpose::STANDARD.encode(b"testsalt"),
         };

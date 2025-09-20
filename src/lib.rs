@@ -1,8 +1,8 @@
 //! Crate library entry: re-export modules for integration tests and external use.
 
 pub mod config;
-pub mod tools;
 pub mod security;
+pub mod tools;
 
 // Convenient re-exports
 pub use security::encryption::WalletSecurity;

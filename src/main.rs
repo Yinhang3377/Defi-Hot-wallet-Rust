@@ -1,20 +1,19 @@
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
-use clap::{ Parser, Subcommand };
-use hex;
+use clap::{Parser, Subcommand};
+use env_logger::init;
+use hex::encode;
 use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
 use hot_wallet::security::memory_protection::SensitiveData;
-use serde::{ Deserialize, Serialize };
-use env_logger;
-use secp256k1::{ PublicKey, Secp256k1, SecretKey };
+use rand::Rng;
+use secp256k1::{PublicKey, Secp256k1, SecretKey};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::OpenOptions;
-use std::io::{ self, Write };
+use std::io::{self, Write};
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
-use rand::rngs::OsRng;
-use rand::RngCore;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about = "A secure, multi-chain hot wallet framework", long_about = None)]
@@ -58,7 +57,7 @@ impl Cli {
 /// 程序主入口
 fn main() -> Result<(), Box<dyn Error>> {
     // 初始化日志记录器，以便在加密等模块中打印错误日志
-    env_logger::init();
+    init();
 
     // 1. 使用 clap 解析命令行参数
     let cli = Cli::parse();
@@ -81,15 +80,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             // 提示用户输入加密密钥
             let encryption_key = Cli::prompt_password()?;
 
-            // 生成 secp256k1 密钥对
+            // 生成 secp256k1 密钥对（手动随机 32 字节，避免依赖 crate 的 rand feature）
             let secp = Secp256k1::new();
-            // Updated secret key generation to use a random 32-byte array
-            let mut rng = OsRng;
-            let mut secret_key_bytes = [0u8; 32];
-            rng.fill_bytes(&mut secret_key_bytes);
-            let secret_key = SecretKey::from_slice(&secret_key_bytes).expect(
-                "Failed to create secret key"
-            );
+            // rand 0.9: thread_rng() 已弃用，使用 rng()
+            let mut rng = rand::rng();
+            let mut sk_bytes = [0u8; 32];
+            rng.fill(&mut sk_bytes);
+            // secp256k1 0.31: from_slice 已弃用，改用 from_byte_array
+            let secret_key = SecretKey::from_byte_array(sk_bytes).expect("32-byte secret key");
             let public_key = PublicKey::from_secret_key(&secp, &secret_key);
             println!("[生成] 公钥: {}", public_key);
 
@@ -104,15 +102,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             let encrypted = WalletSecurity::encrypt_private_key(
                 &sensitive_sk.data,
                 &encryption_key,
-                aad_bytes
+                aad_bytes,
             )?;
 
-            println!("[加密] 加密私钥(hex): {}", hex::encode(&encrypted));
+            println!("[加密] 加密私钥(hex): {}", encode(&encrypted));
 
             // 创建并保存钱包文件
             let wallet_file = WalletFile {
                 public_key: public_key.to_string(),
-                encrypted_private_key: hex::encode(&encrypted),
+                encrypted_private_key: encode(&encrypted),
                 network: config.network.clone(),
                 aad: aad.as_deref().unwrap_or("").to_string(),
             };
