@@ -10,7 +10,7 @@ edition = "2021"
 # - Unix 平台使用 libc::mlock
 # - Windows 平台使用 windows crate 的 VirtualLock
 # 通过 target-specific 依赖减少在不相关平台上编译 windows 生态子 crates（避免 windows-future 等错误）。
-memlock = ["libc", "windows"]
+memlock = ["libc"]
 
 [dependencies]
 # --- 核心依赖说明 ---
@@ -37,7 +37,10 @@ argon2 = { version = "0.6.0-rc.1" }
 base64 = "0.22"
 libc = { version = "0.2", optional = true }
 # 为避免拉入 windows-future 可选层，使用精简特性别名，或使用 windows crate 仍保留可选。
-windows = { version = "0.62", features = ["Win32_System_Memory", "Win32_Foundation"], optional = true }
+
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_System_Memory", "Win32_Foundation"] }
 
 
 

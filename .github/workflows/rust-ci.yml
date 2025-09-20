@@ -38,7 +38,12 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Clippy (strict)
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          if [ "${{ matrix.feature-set }}" = "memlock" ]; then
+            cargo clippy --all-targets --features memlock -- -D warnings
+          else
+            cargo clippy --all-targets -- -D warnings
+          fi
       - name: Build
         run: |
           if [ "${{ matrix.feature-set }}" = "memlock" ]; then
