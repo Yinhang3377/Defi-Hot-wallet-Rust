@@ -12,12 +12,10 @@ fn test_encrypt_decrypt_cycle() {
     // 关联数据
     let aad = b"user_id:123,context:backup";
 
-    let encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad).expect(
-        "Failed to encrypt private key"
-    );
-    let decrypted = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad).expect(
-        "Failed to decrypt private key"
-    );
+    let encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad)
+        .expect("Failed to encrypt private key");
+    let decrypted = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad)
+        .expect("Failed to decrypt private key");
     assert_eq!(private_key.to_vec(), decrypted);
 }
 
@@ -55,11 +53,8 @@ fn test_aad_mismatch_fails_decryption() {
     let aad_encrypt = b"correct_aad";
     let aad_decrypt = b"wrong_aad";
 
-    let encrypted = WalletSecurity::encrypt_private_key(
-        private_key,
-        encryption_key,
-        aad_encrypt
-    ).expect("Failed to encrypt private key");
+    let encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad_encrypt)
+        .expect("Failed to encrypt private key");
 
     // 使用错误的 AAD 进行解密，应该失败
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad_decrypt);
@@ -72,11 +67,8 @@ fn test_tampered_ciphertext_fails_decryption() {
     let private_key = &[0u8; 32];
     let encryption_key = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2";
     let aad = b"some_aad";
-    let mut encrypted = WalletSecurity::encrypt_private_key(
-        private_key,
-        encryption_key,
-        aad
-    ).expect("Failed to encrypt private key");
+    let mut encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad)
+        .expect("Failed to encrypt private key");
     let len = encrypted.len();
     encrypted[len - 1] ^= 0xff; // 篡改最后一个字节
 
@@ -101,11 +93,8 @@ fn test_aad_mismatch() {
     let aad_encrypt = b"user_id:123";
     let aad_decrypt = b"user_id:456";
 
-    let encrypted = WalletSecurity::encrypt_private_key(
-        private_key,
-        encryption_key,
-        aad_encrypt
-    ).expect("Failed to encrypt private key");
+    let encrypted = WalletSecurity::encrypt_private_key(private_key, encryption_key, aad_encrypt)
+        .expect("Failed to encrypt private key");
     let result = WalletSecurity::decrypt_private_key(&encrypted, encryption_key, aad_decrypt);
     assert!(matches!(result, Err(WalletError::EncryptionError(_))));
 }
