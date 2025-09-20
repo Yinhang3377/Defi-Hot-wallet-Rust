@@ -1,14 +1,16 @@
 /// 主入口：集成配置、安全、错误等模块，实现 wallet create 命令生成加密账户
-use clap::{Parser, Subcommand};
+use clap::{ Parser, Subcommand };
 use hot_wallet::config::WalletConfig; // 钱包配置加载
 use hot_wallet::security::encryption::WalletSecurity; // 加密/解密操作
 use hot_wallet::security::memory_protection::SensitiveData;
 use rand::Rng;
-use secp256k1::{PublicKey, Secp256k1, SecretKey};
-use serde::{Deserialize, Serialize};
+use hex::encode;
+use env_logger::init;
+use secp256k1::{ PublicKey, Secp256k1, SecretKey };
+use serde::{ Deserialize, Serialize };
 use std::error::Error;
 use std::fs::OpenOptions;
-use std::io::{self, Write};
+use std::io::{ self, Write };
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
@@ -55,7 +57,7 @@ impl Cli {
 /// 程序主入口
 fn main() -> Result<(), Box<dyn Error>> {
     // 初始化日志记录器，以便在加密等模块中打印错误日志
-    env_logger::init(); // 使用全限定调用，无需单组件 use 导入
+    init();
 
     // 1. 使用 clap 解析命令行参数
     let cli = Cli::parse();
@@ -98,15 +100,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             let encrypted = WalletSecurity::encrypt_private_key(
                 &sensitive_sk.data,
                 &encryption_key,
-                aad_bytes,
+                aad_bytes
             )?;
 
-            println!("[加密] 加密私钥(hex): {}", hex::encode(&encrypted));
+            println!("[加密] 加密私钥(hex): {}", encode(&encrypted));
 
             // 创建并保存钱包文件
             let wallet_file = WalletFile {
                 public_key: public_key.to_string(),
-                encrypted_private_key: hex::encode(&encrypted),
+                encrypted_private_key: encode(&encrypted),
                 network: config.network.clone(),
                 aad: aad.as_deref().unwrap_or("").to_string(),
             };
@@ -128,6 +130,3 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-// use hex; // removed as per clippy warning
-// use env_logger; // removed as per clippy warning
