@@ -41,27 +41,37 @@ jobs:
       - name: Install extra cargo tools
         run: |
           cargo install cargo-outdated || true
+        shell: bash
       - name: Check formatting
         run: cargo fmt --all -- --check
+        shell: bash
       - name: Clippy (strict)
-        if: "matrix.feature-set == 'memlock'"
+        if: ${{ matrix.feature-set == 'memlock' }}
         run: cargo clippy --all-targets --features memlock -- -D warnings
+        shell: bash
       - name: Clippy (strict, default)
-        if: "matrix.feature-set != 'memlock'"
+        if: ${{ matrix.feature-set != 'memlock' }}
         run: cargo clippy --all-targets -- -D warnings
+        shell: bash
       - name: Build (memlock)
-        if: "matrix.feature-set == 'memlock'"
+        if: ${{ matrix.feature-set == 'memlock' }}
         run: cargo build --all --features memlock
+        shell: bash
       - name: Build (default)
-        if: "matrix.feature-set != 'memlock'"
+        if: ${{ matrix.feature-set != 'memlock' }}
         run: cargo build --all
+        shell: bash
       - name: Tests (memlock)
-        if: "matrix.feature-set == 'memlock'"
+        if: ${{ matrix.feature-set == 'memlock' }}
         run: cargo test --all --features memlock
+        shell: bash
       - name: Tests (default)
-        if: "matrix.feature-set != 'memlock'"
+        if: ${{ matrix.feature-set != 'memlock' }}
         run: cargo test --all
+        shell: bash
       - name: Outdated (non-blocking)
         run: cargo outdated || true
+        shell: bash
       - name: Summary
         run: echo "CI matrix ${{ matrix.feature-set }} completed"
+        shell: bash
