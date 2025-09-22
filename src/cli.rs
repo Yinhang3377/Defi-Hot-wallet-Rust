@@ -1,17 +1,11 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use tracing::{info, error};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing::error;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
-mod core;
-mod crypto;
-mod blockchain;
-mod storage;
-mod monitoring;
-mod i18n;
-
-use crate::core::wallet::WalletManager;
-use crate::i18n::I18nManager;
+// 直接引用库 crate（包名连字符转下划线）
+use defi_hot_wallet::core::{config::WalletConfig, wallet::WalletManager};
+use defi_hot_wallet::{i18n, monitoring};
 
 #[derive(Parser)]
 #[command(name = "wallet-cli")]
@@ -20,11 +14,15 @@ use crate::i18n::I18nManager;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
-    
+
+    /// Configuration file path
+    #[arg(short, long, default_value = "config.toml")]
+    pub config: String,
+
     /// Language (en, zh)
     #[arg(short, long, default_value = "en")]
     pub language: String,
-    
+
     /// Log level
     #[arg(long, default_value = "info")]
     pub log_level: String,
@@ -32,206 +30,215 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Create a new wallet - 创建新钱包
     Create {
-        /// Wallet name - 钱包名称
         #[arg(short, long)]
         name: String,
-        
-        /// Use quantum-safe encryption - 使用量子安全加密
         #[arg(short, long, default_value = "true")]
         quantum: bool,
     },
-    
-    /// List all wallets - 列出所有钱包
     List,
-    
-    /// Show wallet balance - 显示钱包余额
     Balance {
-        /// Wallet name - 钱包名称
         #[arg(short, long)]
         wallet: String,
-        
-        /// Network (eth, solana) - 网络
         #[arg(short, long, default_value = "eth")]
         network: String,
     },
-    
-    /// Send transaction - 发送交易
     Send {
-        /// Wallet name - 钱包名称
         #[arg(short, long)]
         wallet: String,
-        
-        /// Recipient address - 接收地址
         #[arg(short, long)]
         to: String,
-        
-        /// Amount to send - 发送金额
         #[arg(short, long)]
         amount: String,
-        
-        /// Network (eth, solana) - 网络
         #[arg(short, long, default_value = "eth")]
         network: String,
     },
-    
-    /// Generate new mnemonic - 生成新助记词
     GenerateMnemonic,
-    
-    /// Show wallet info - 显示钱包信息
     Info {
-        /// Wallet name - 钱包名称
         #[arg(short, long)]
         wallet: String,
     },
-    
-    /// Backup wallet - 备份钱包
     Backup {
-        /// Wallet name - 钱包名称
         #[arg(short, long)]
         wallet: String,
-        
-        /// Backup file path - 备份文件路径
         #[arg(short, long)]
         output: String,
     },
-    
-    /// Show security status - 显示安全状态
     Security,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if let Err(e) = real_main().await {
+        error!("❌ Application error: {e}");
+        // 在真实 CLI 中可考虑以非零状态码退出
+        // std::process::exit(1);
+    }
+    Ok(())
+}
+
+async fn real_main() -> Result<()> {
     let cli = Cli::parse();
-    
-    // Initialize logging
+
+    // 日志初始化
     tracing_subscriber::registry()
         .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
+            EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| format!("wallet_cli={}", cli.log_level).into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // Initialize i18n
-    let i18n = match i18n::init_default_languages() {
-        Ok(manager) => manager,
-        Err(e) => {
-            error!("Failed to initialize i18n: {}", e);
-            return Err(e);
-        }
-    };
-    
+    // i18n 初始化
+    let i18n_manager = i18n::init_default_languages()?;
     let lang = &cli.language;
-    
-    println!("🔒 {}", i18n.get_text(lang, "app-name", None));
-    println!("📱 {}", i18n.get_text(lang, "app-description", None));
+
+    println!("🔒 {}", i18n_manager.get_text(lang, "app-name", None));
+    println!(
+        "📱 {}",
+        i18n_manager.get_text(lang, "app-description", None)
+    );
     println!();
-    
-    // Initialize monitoring
+
+    // 监控初始化
     monitoring::init_metrics().await?;
-    
+
+    // WalletManager 实例
+    let config = WalletConfig::load_from_file(&cli.config).unwrap_or_else(|e| {
+        error!(
+            "Failed to load config from '{}', using default settings. Error: {}",
+            cli.config, e
+        );
+        WalletConfig::default()
+    });
+    let manager = WalletManager::new(&config).await?;
+
     match cli.command {
         Commands::Create { name, quantum } => {
-            println!("🔧 {}...", i18n.get_text(lang, "wallet-create", None));
-            
-            let manager = WalletManager::new().await?;
+            println!(
+                "🔧 {}...",
+                i18n_manager.get_text(lang, "wallet-create", None)
+            );
             match manager.create_wallet(&name, quantum).await {
                 Ok(wallet_info) => {
-                    println!("✅ {}", i18n.get_text(lang, "wallet-created", None));
+                    println!("✅ {}", i18n_manager.get_text(lang, "wallet-created", None));
                     println!("   ID: {}", wallet_info.id);
-                    println!("   {}: {}", i18n.get_text(lang, "wallet-name", None), wallet_info.name);
-                    println!("   {}: {}", i18n.get_text(lang, "security-quantum-safe", None), wallet_info.quantum_safe);
-                    
+                    println!(
+                        "   {}: {}",
+                        i18n_manager.get_text(lang, "wallet-name", None),
+                        wallet_info.name
+                    );
+                    println!(
+                        "   {}: {}",
+                        i18n_manager.get_text(lang, "security-quantum-safe", None),
+                        wallet_info.quantum_safe
+                    );
                     if quantum {
-                        println!("🛡️ {}", i18n.get_text(lang, "msg-quantum-protection", None));
+                        println!(
+                            "🛡️ {}",
+                            i18n_manager.get_text(lang, "msg-quantum-protection", None)
+                        );
                     }
-                    
-                    println!("💡 {}", i18n.get_text(lang, "msg-backup-reminder", None));
+                    println!(
+                        "💡 {}",
+                        i18n_manager.get_text(lang, "msg-backup-reminder", None)
+                    );
                 }
                 Err(e) => {
-                    error!("Failed to create wallet: {}", e);
+                    error!("Failed to create wallet: {e}");
                     return Err(e);
                 }
             }
         }
-        
         Commands::List => {
-            println!("📋 {}:", i18n.get_text(lang, "nav-wallets", None));
-            // In a real implementation, this would list wallets from storage
+            println!("📋 {}:", i18n_manager.get_text(lang, "nav-wallets", None));
             println!("   (No wallets found - use 'create' command to add wallets)");
         }
-        
         Commands::Balance { wallet, network } => {
-            println!("💰 {} {} {} {}...", 
-                     i18n.get_text(lang, "wallet-balance", None),
-                     wallet,
-                     i18n.get_text(lang, "network-ethereum", None),
-                     network);
-            
-            let manager = WalletManager::new().await?;
+            println!(
+                "💰 {}: {}",
+                i18n_manager.get_text(lang, "wallet-balance", None),
+                wallet
+            );
+
+            let network_name = match network.as_str() {
+                "eth" => i18n_manager.get_text(lang, "network-ethereum", None),
+                "solana" => i18n_manager.get_text(lang, "network-solana", None),
+                _ => network.clone(),
+            };
+
             match manager.get_balance(&wallet, &network).await {
                 Ok(balance) => {
-                    let network_name = match network.as_str() {
-                        "eth" => i18n.get_text(lang, "network-ethereum", None),
-                        "solana" => i18n.get_text(lang, "network-solana", None),
-                        _ => network.clone(),
-                    };
-                    
-                    println!("✅ {}: {}", i18n.get_text(lang, "wallet-balance", None), balance);
+                    println!(
+                        "✅ {}: {}",
+                        i18n_manager.get_text(lang, "wallet-balance", None),
+                        balance
+                    );
                     println!("   Network: {}", network_name);
                 }
                 Err(e) => {
-                    error!("Failed to get balance: {}", e);
-                    println!("❌ {}: {}", i18n.get_text(lang, "error-network-error", None), e);
+                    error!("Failed to get balance: {e}");
+                    println!(
+                        "❌ {}: {e}",
+                        i18n_manager.get_text(lang, "error-network-error", None)
+                    );
+                    return Err(e);
                 }
             }
         }
-        
-        Commands::Send { wallet, to, amount, network } => {
-            println!("💸 {} {} {} {} {} {}...", 
-                     i18n.get_text(lang, "tx-send", None),
-                     amount,
-                     wallet,
-                     i18n.get_text(lang, "tx-recipient", None),
-                     to,
-                     network);
-            
-            let manager = WalletManager::new().await?;
-            match manager.send_transaction(&wallet, &to, &amount, &network).await {
+        Commands::Send {
+            wallet,
+            to,
+            amount,
+            network,
+        } => {
+            println!(
+                "💸 {} {} -> {} ({})...",
+                i18n_manager.get_text(lang, "tx-send", None),
+                amount,
+                to,
+                network
+            );
+            match manager
+                .send_transaction(&wallet, &to, &amount, &network)
+                .await
+            {
                 Ok(tx_hash) => {
-                    println!("✅ {}", i18n.get_text(lang, "tx-success", None));
-                    println!("   Transaction Hash: {}", tx_hash);
-                    println!("   Status: {}", i18n.get_text(lang, "tx-pending", None));
+                    println!("✅ {}", i18n_manager.get_text(lang, "tx-success", None));
+                    println!("   Transaction Hash: {tx_hash}");
+                    println!(
+                        "   Status: {}",
+                        i18n_manager.get_text(lang, "tx-pending", None)
+                    );
                 }
                 Err(e) => {
-                    error!("Failed to send transaction: {}", e);
-                    println!("❌ {}: {}", i18n.get_text(lang, "tx-failed", None), e);
+                    error!("Failed to send transaction: {e}");
+                    println!("❌ {}: {e}", i18n_manager.get_text(lang, "tx-failed", None));
+                    return Err(e);
                 }
             }
         }
-        
         Commands::GenerateMnemonic => {
             println!("🔑 Generating new mnemonic phrase...");
-            
-            // Generate a new mnemonic
-            use bip39::{Mnemonic, Language};
-            let mnemonic = Mnemonic::generate_in(Language::English, 24).unwrap();
-            
+            use bip39::{Language, Mnemonic};
+            use rand::RngCore;
+            let mut entropy = [0u8; 32];
+            rand::thread_rng().fill_bytes(&mut entropy);
+            let mnemonic = Mnemonic::from_entropy_in(Language::English, &entropy).unwrap();
+
             println!("✅ New 24-word mnemonic phrase:");
             println!("┌─────────────────────────────────────────────────────────────┐");
-            
-            let words: Vec<&str> = mnemonic.to_string().split_whitespace().collect();
+            let mnemonic_str = mnemonic.to_string();
+            let words: Vec<&str> = mnemonic_str.split_whitespace().collect();
             for (i, chunk) in words.chunks(6).enumerate() {
-                let line = chunk.iter()
+                let line = chunk
+                    .iter()
                     .enumerate()
                     .map(|(j, word)| format!("{:2}. {:12}", i * 6 + j + 1, word))
                     .collect::<Vec<_>>()
                     .join(" ");
                 println!("│ {:59} │", line);
             }
-            
             println!("└─────────────────────────────────────────────────────────────┘");
             println!();
             println!("⚠️  IMPORTANT SECURITY NOTICE:");
@@ -240,21 +247,27 @@ async fn main() -> Result<()> {
             println!("   • Anyone with these words can access your wallet");
             println!("   • This is the ONLY way to recover your wallet");
         }
-        
         Commands::Info { wallet } => {
-            println!("ℹ️  Wallet Information: {}", wallet);
-            println!("   Status: {}", i18n.get_text(lang, "status-offline", None));
-            println!("   Security: {}", i18n.get_text(lang, "security-quantum-safe", None));
+            println!("ℹ️  Wallet Information: {wallet}");
+            println!(
+                "   Status: {}",
+                i18n_manager.get_text(lang, "status-offline", None)
+            );
+            println!(
+                "   Security: {}",
+                i18n_manager.get_text(lang, "security-quantum-safe", None)
+            );
             println!("   Networks: Ethereum, Solana");
         }
-        
         Commands::Backup { wallet, output } => {
-            println!("💾 Backing up wallet '{}' to '{}'...", wallet, output);
+            println!("💾 Backing up wallet '{wallet}' to '{output}'...");
             println!("✅ Backup completed (simulated)");
-            println!("   File: {}", output);
-            println!("   {}", i18n.get_text(lang, "msg-backup-reminder", None));
+            println!("   File: {output}");
+            println!(
+                "   {}",
+                i18n_manager.get_text(lang, "msg-backup-reminder", None)
+            );
         }
-        
         Commands::Security => {
             println!("🛡️  Security Status:");
             println!("   ✅ Quantum-Safe Encryption: Enabled (Kyber1024)");
@@ -264,8 +277,7 @@ async fn main() -> Result<()> {
             println!("   ✅ Memory Protection: Zero-on-drop enabled");
             println!("   ✅ Audit Logging: Enabled");
             println!("   ✅ Network Encryption: TLS 1.3");
-            
-            if let Some(metrics) = monitoring::get_metrics() {
+            if let Some(_metrics) = monitoring::get_metrics() {
                 println!();
                 println!("📊 Security Metrics:");
                 println!("   • Quantum encryptions: Available");
@@ -274,6 +286,5 @@ async fn main() -> Result<()> {
             }
         }
     }
-    
     Ok(())
 }

@@ -363,7 +363,7 @@ version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db40d3dfbeab4e031d78c844642fa0caa0b0db11ce1607ac9d2986dff1405c69"
 dependencies = [
- "bs58",
+ "bs58 0.5.1",
  "hmac",
  "k256",
  "once_cell",
@@ -453,6 +453,12 @@ checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array",
 ]
+
+[[package]]
+name = "bs58"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
 
 [[package]]
 name = "bs58"
@@ -689,7 +695,7 @@ version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b6be4a5df2098cd811f3194f64ddb96c267606bffd9689ac7b0160097b01ad3"
 dependencies = [
- "bs58",
+ "bs58 0.5.1",
  "coins-core",
  "digest",
  "hmac",
@@ -723,7 +729,7 @@ checksum = "5286a0843c21f8367f7be734f89df9b822e0321d8bcce8d6e735aadff7d74979"
 dependencies = [
  "base64 0.21.7",
  "bech32",
- "bs58",
+ "bs58 0.5.1",
  "digest",
  "generic-array",
  "hex",
@@ -1000,6 +1006,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 name = "defi-hot-wallet"
 version = "0.1.0"
 dependencies = [
+ "aead",
  "aes-gcm",
  "anyhow",
  "async-trait",
@@ -1008,6 +1015,7 @@ dependencies = [
  "bincode",
  "bip32",
  "bip39",
+ "bs58 0.4.0",
  "chacha20poly1305",
  "chrono",
  "clap",
@@ -1025,6 +1033,7 @@ dependencies = [
  "once_cell",
  "pbkdf2 0.12.2",
  "prometheus",
+ "rand 0.8.5",
  "reqwest",
  "ring 0.17.14",
  "scrypt 0.11.0",

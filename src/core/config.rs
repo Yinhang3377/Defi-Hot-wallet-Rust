@@ -71,35 +71,47 @@ pub struct I18nConfig {
 impl Default for WalletConfig {
     fn default() -> Self {
         let mut blockchain_networks = HashMap::new();
-        
-        blockchain_networks.insert("eth".to_string(), NetworkConfig {
-            rpc_url: "https://mainnet.infura.io/v3/your-project-id".to_string(),
-            chain_id: Some(1),
-            explorer_url: "https://etherscan.io".to_string(),
-            native_token: "ETH".to_string(),
-        });
-        
-        blockchain_networks.insert("sepolia".to_string(), NetworkConfig {
-            rpc_url: "https://sepolia.infura.io/v3/your-project-id".to_string(),
-            chain_id: Some(11155111),
-            explorer_url: "https://sepolia.etherscan.io".to_string(),
-            native_token: "ETH".to_string(),
-        });
-        
-        blockchain_networks.insert("solana".to_string(), NetworkConfig {
-            rpc_url: "https://api.mainnet-beta.solana.com".to_string(),
-            chain_id: None,
-            explorer_url: "https://explorer.solana.com".to_string(),
-            native_token: "SOL".to_string(),
-        });
-        
-        blockchain_networks.insert("solana-devnet".to_string(), NetworkConfig {
-            rpc_url: "https://api.devnet.solana.com".to_string(),
-            chain_id: None,
-            explorer_url: "https://explorer.solana.com/?cluster=devnet".to_string(),
-            native_token: "SOL".to_string(),
-        });
-        
+
+        blockchain_networks.insert(
+            "eth".to_string(),
+            NetworkConfig {
+                rpc_url: "https://rpc.ankr.com/eth".to_string(),
+                chain_id: Some(1),
+                explorer_url: "https://etherscan.io".to_string(),
+                native_token: "ETH".to_string(),
+            },
+        );
+
+        blockchain_networks.insert(
+            "sepolia".to_string(),
+            NetworkConfig {
+                rpc_url: "https://rpc.sepolia.org".to_string(),
+                chain_id: Some(11155111),
+                explorer_url: "https://sepolia.etherscan.io".to_string(),
+                native_token: "ETH".to_string(),
+            },
+        );
+
+        blockchain_networks.insert(
+            "solana".to_string(),
+            NetworkConfig {
+                rpc_url: "https://api.mainnet-beta.solana.com".to_string(),
+                chain_id: None,
+                explorer_url: "https://explorer.solana.com".to_string(),
+                native_token: "SOL".to_string(),
+            },
+        );
+
+        blockchain_networks.insert(
+            "solana-devnet".to_string(),
+            NetworkConfig {
+                rpc_url: "https://api.devnet.solana.com".to_string(),
+                chain_id: None,
+                explorer_url: "https://explorer.solana.com/?cluster=devnet".to_string(),
+                native_token: "SOL".to_string(),
+            },
+        );
+
         Self {
             server: ServerConfig {
                 host: "127.0.0.1".to_string(),
@@ -122,7 +134,7 @@ impl Default for WalletConfig {
                 transaction_timeout_seconds: 300,
             },
             storage: StorageConfig {
-                database_url: "sqlite:./wallet.db".to_string(),
+                database_url: "sqlite://./data/wallet.db?mode=rwc".to_string(),
                 encryption_key_path: "./keys/master.key".to_string(),
                 backup_enabled: true,
                 backup_interval_hours: 24,
@@ -148,10 +160,10 @@ impl WalletConfig {
             .add_source(config::File::with_name(path))
             .add_source(config::Environment::with_prefix("WALLET"))
             .build()?;
-        
+
         settings.try_deserialize()
     }
-    
+
     pub fn save_to_file(&self, path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let toml_string = toml::to_string_pretty(self)?;
         std::fs::write(path, toml_string)?;

@@ -5,7 +5,7 @@ use async_trait::async_trait;
 pub trait BlockchainClient: Send + Sync {
     /// Get the balance of an address
     async fn get_balance(&self, address: &str) -> Result<String>;
-    
+
     /// Send a transaction
     async fn send_transaction(
         &self,
@@ -13,22 +13,22 @@ pub trait BlockchainClient: Send + Sync {
         to_address: &str,
         amount: &str,
     ) -> Result<String>;
-    
+
     /// Get transaction status
     async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus>;
-    
+
     /// Estimate transaction fee
     async fn estimate_fee(&self, to_address: &str, amount: &str) -> Result<String>;
-    
+
     /// Get current block number
     async fn get_block_number(&self) -> Result<u64>;
-    
+
     /// Validate an address
     fn validate_address(&self, address: &str) -> Result<bool>;
-    
+
     /// Get network name
     fn get_network_name(&self) -> &str;
-    
+
     /// Get native token symbol
     fn get_native_token(&self) -> &str;
 }

@@ -1,7 +1,9 @@
-pub mod wallet;
 pub mod config;
+pub mod domain;
 pub mod error;
+pub mod wallet;
 
-pub use wallet::WalletManager;
 pub use config::WalletConfig;
-pub use error::{WalletError, Result};
+pub use domain::*;
+pub use error::{Result, WalletError};
+pub use wallet::WalletManager;

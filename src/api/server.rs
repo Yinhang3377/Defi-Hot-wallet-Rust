@@ -3,7 +3,7 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    routing::{get, post, delete},
+    routing::{delete, get, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
@@ -14,8 +14,11 @@ use tower::ServiceBuilder;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{info, warn};
 
+use crate::core::config::WalletConfig;
 use crate::core::WalletManager;
-use crate::monitoring::{get_metrics, get_security_monitor, SecurityEvent, SecurityEventType, SecuritySeverity};
+use crate::monitoring::{
+    get_metrics, get_security_monitor, SecurityEvent, SecurityEventType, SecuritySeverity,
+};
 
 #[derive(Clone)]
 pub struct WalletServer {
@@ -70,24 +73,24 @@ pub struct BalanceQuery {
 }
 
 impl WalletServer {
-    pub async fn new(host: String, port: u16) -> Result<Self> {
+    pub async fn new(host: String, port: u16, config: WalletConfig) -> Result<Self> {
         info!("🚀 Initializing wallet server on {}:{}", host, port);
-        
-        let wallet_manager = Arc::new(WalletManager::new().await?);
-        
+
+        let wallet_manager = Arc::new(WalletManager::new(&config).await?);
+
         Ok(Self {
             host,
             port,
             wallet_manager,
         })
     }
-    
+
     pub async fn start(self) -> Result<()> {
-        let app = self.create_router().await;
-        
         let addr = format!("{}:{}", self.host, self.port);
+        let app = self.create_router().await;
+
         let listener = TcpListener::bind(&addr).await?;
-        
+
         info!("🌐 Wallet server starting on http://{}", addr);
         info!("📚 API Documentation:");
         info!("  POST   /api/wallets           - Create wallet");
@@ -97,12 +100,12 @@ impl WalletServer {
         info!("  POST   /api/wallets/:name/send - Send transaction");
         info!("  GET    /api/health           - Health check");
         info!("  GET    /api/metrics          - Prometheus metrics");
-        
+
         axum::serve(listener, app).await?;
-        
+
         Ok(())
     }
-    
+
     async fn create_router(self) -> Router {
         Router::new()
             .route("/api/health", get(health_check))
@@ -112,11 +115,11 @@ impl WalletServer {
             .route("/api/wallets/:name", delete(delete_wallet))
             .route("/api/wallets/:name/balance", get(get_balance))
             .route("/api/wallets/:name/send", post(send_transaction))
-            .with_state(self.wallet_manager)
+            .with_state(self.wallet_manager.clone())
             .layer(
                 ServiceBuilder::new()
                     .layer(TraceLayer::new_for_http())
-                    .layer(CorsLayer::permissive())
+                    .layer(CorsLayer::permissive()),
             )
     }
 }
@@ -131,12 +134,10 @@ async fn health_check() -> Json<serde_json::Value> {
 
 async fn metrics_handler() -> Result<String, StatusCode> {
     match get_metrics() {
-        Some(metrics) => {
-            match metrics.export_metrics() {
-                Ok(metrics_string) => Ok(metrics_string),
-                Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-            }
-        }
+        Some(metrics) => match metrics.export_metrics() {
+            Ok(metrics_string) => Ok(metrics_string),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        },
         None => Err(StatusCode::SERVICE_UNAVAILABLE),
     }
 }
@@ -146,10 +147,13 @@ async fn create_wallet(
     Json(request): Json<CreateWalletRequest>,
 ) -> Result<Json<WalletResponse>, (StatusCode, Json<ErrorResponse>)> {
     info!("🔧 Creating wallet: {}", request.name);
-    
+
     let quantum_safe = request.quantum_safe.unwrap_or(true);
-    
-    match wallet_manager.create_wallet(&request.name, quantum_safe).await {
+
+    match wallet_manager
+        .create_wallet(&request.name, quantum_safe)
+        .await
+    {
         Ok(wallet_info) => {
             // Record metrics
             if let Some(metrics) = get_metrics() {
@@ -158,7 +162,7 @@ async fn create_wallet(
                     metrics.record_quantum_encryption();
                 }
             }
-            
+
             Ok(Json(WalletResponse {
                 id: wallet_info.id.to_string(),
                 name: wallet_info.name,
@@ -192,7 +196,7 @@ async fn delete_wallet(
     Path(name): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     warn!("🗑️ Deleting wallet: {}", name);
-    
+
     // Record security event
     if let Some(monitor) = get_security_monitor() {
         let event = SecurityEvent {
@@ -205,12 +209,12 @@ async fn delete_wallet(
         };
         monitor.report_security_event(event).await;
     }
-    
+
     // Record metrics
     if let Some(metrics) = get_metrics() {
         metrics.record_wallet_deleted();
     }
-    
+
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -219,21 +223,24 @@ async fn get_balance(
     Path(name): Path<String>,
     Query(params): Query<BalanceQuery>,
 ) -> Result<Json<BalanceResponse>, (StatusCode, Json<ErrorResponse>)> {
-    info!("💰 Getting balance for wallet: {} on network: {}", name, params.network);
-    
+    info!(
+        "💰 Getting balance for wallet: {} on network: {}",
+        name, params.network
+    );
+
     match wallet_manager.get_balance(&name, &params.network).await {
         Ok(balance) => {
             // Record metrics
             if let Some(metrics) = get_metrics() {
                 metrics.record_wallet_accessed();
             }
-            
+
             let symbol = match params.network.as_str() {
                 "eth" | "ethereum" | "sepolia" => "ETH",
                 "solana" | "solana-devnet" => "SOL",
                 _ => "UNKNOWN",
             };
-            
+
             Ok(Json(BalanceResponse {
                 balance,
                 network: params.network,
@@ -258,18 +265,23 @@ async fn send_transaction(
     Path(name): Path<String>,
     Json(request): Json<SendTransactionRequest>,
 ) -> Result<Json<TransactionResponse>, (StatusCode, Json<ErrorResponse>)> {
-    info!("💸 Sending transaction from wallet: {} to: {} amount: {} on: {}", 
-          name, request.to_address, request.amount, request.network);
-    
+    info!(
+        "💸 Sending transaction from wallet: {} to: {} amount: {} on: {}",
+        name, request.to_address, request.amount, request.network
+    );
+
     // Check for suspicious activity
     if let Some(monitor) = get_security_monitor() {
         // Parse amount to check for suspiciously large transactions
         if let Ok(amount_f64) = request.amount.parse::<f64>() {
-            if amount_f64 > 100.0 { // Arbitrary threshold
+            if amount_f64 > 100.0 {
+                // Arbitrary threshold
                 let event = SecurityEvent {
                     event_type: SecurityEventType::SuspiciousTransaction,
-                    description: format!("Large transaction: {} {} from wallet {}", 
-                                       request.amount, request.network, name),
+                    description: format!(
+                        "Large transaction: {} {} from wallet {}",
+                        request.amount, request.network, name
+                    ),
                     severity: SecuritySeverity::Medium,
                     timestamp: chrono::Utc::now(),
                     source_ip: None,
@@ -279,8 +291,16 @@ async fn send_transaction(
             }
         }
     }
-    
-    match wallet_manager.send_transaction(&name, &request.to_address, &request.amount, &request.network).await {
+
+    match wallet_manager
+        .send_transaction(
+            &name,
+            &request.to_address,
+            &request.amount,
+            &request.network,
+        )
+        .await
+    {
         Ok(tx_hash) => {
             // Record metrics
             if let Some(metrics) = get_metrics() {
@@ -288,7 +308,7 @@ async fn send_transaction(
                 let fee = 0.001; // Simplified fee calculation
                 metrics.record_transaction_sent(amount_f64, fee);
             }
-            
+
             Ok(Json(TransactionResponse {
                 tx_hash,
                 status: "sent".to_string(),
@@ -296,12 +316,12 @@ async fn send_transaction(
         }
         Err(e) => {
             warn!("Failed to send transaction from wallet {}: {}", name, e);
-            
+
             // Record failed transaction
             if let Some(metrics) = get_metrics() {
                 metrics.record_transaction_failed();
             }
-            
+
             Err((
                 StatusCode::BAD_REQUEST,
                 Json(ErrorResponse {

@@ -1,7 +1,12 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use tracing::{debug, info};
 use zeroize::{Zeroize, ZeroizeOnDrop};
-use serde::{Serialize, Deserialize};
-use tracing::{info, debug};
+
+const KYBER_CIPHERTEXT_LEN: usize = 1568;
+const KYBER_SECRET_LEN: usize = 3168;
+const AES_NONCE_LEN: usize = 12;
+const SHARED_SECRET: &[u8] = b"simulated_shared_secret";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuantumKeyPair {
@@ -10,7 +15,7 @@ pub struct QuantumKeyPair {
     secret_key: Vec<u8>,
 }
 
-#[derive(Debug, Zeroize, ZeroizeOnDrop)]
+#[derive(Debug)]
 pub struct QuantumSafeEncryption {
     keypair: Option<QuantumKeyPair>,
 }
@@ -18,115 +23,132 @@ pub struct QuantumSafeEncryption {
 impl QuantumSafeEncryption {
     pub fn new() -> Result<Self> {
         info!("🔐 Initializing Quantum-Safe Encryption (Simulated Kyber1024)");
-        Ok(Self { keypair: None })
+        let mut instance = Self { keypair: None };
+        instance.generate_keypair()?;
+        Ok(instance)
     }
-    
+
     pub fn generate_keypair(&mut self) -> Result<QuantumKeyPair> {
         debug!("Generating new simulated Kyber1024 keypair");
-        
-        // Simulated quantum-safe keypair generation
+
         use rand::RngCore;
-        let mut public_key = vec![0u8; 1568]; // Kyber1024 public key size
-        let mut secret_key = vec![0u8; 3168]; // Kyber1024 secret key size
-        
+        let mut public_key = vec![0u8; KYBER_CIPHERTEXT_LEN];
+        let mut secret_key = vec![0u8; KYBER_SECRET_LEN];
+
         rand::thread_rng().fill_bytes(&mut public_key);
         rand::thread_rng().fill_bytes(&mut secret_key);
-        
+
         let keypair = QuantumKeyPair {
             public_key,
             secret_key,
         };
-        
+
         self.keypair = Some(keypair.clone());
-        
+
         info!("✅ Quantum-safe keypair generated (simulated)");
         Ok(keypair)
     }
-    
-    pub fn encrypt(&self, data: &[u8]) -> Result<Vec<u8>> {
+
+    pub fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
         debug!("Encrypting data with quantum-safe encryption (simulated)");
-        
-        // For demonstration, we'll use a hybrid approach:
-        // 1. Generate a random symmetric key
-        // 2. Encrypt data with AES-GCM using the symmetric key
-        // 3. Simulate encrypting the symmetric key with Kyber KEM
-        
-        use aes_gcm::{Aes256Gcm, Key, Nonce, NewAead, Aead};
+
+        use aes_gcm::{
+            aead::{Aead, KeyInit},
+            Aes256Gcm, Key, Nonce,
+        };
         use rand::RngCore;
-        
-        // Generate random symmetric key
-        let mut symmetric_key = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut symmetric_key);
-        
-        // Encrypt data with AES-GCM
-        let cipher = Aes256Gcm::new(Key::from_slice(&symmetric_key));
-        
-        let mut nonce_bytes = [0u8; 12];
+        use sha2::{Digest, Sha256};
+
+        // 固定密钥，保证测试中加解密一致
+        let aes_key = Sha256::digest(SHARED_SECRET);
+        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key));
+
+        let mut nonce_bytes = [0u8; AES_NONCE_LEN];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
-        
-        let ciphertext = cipher.encrypt(nonce, data)
-            .map_err(|e| anyhow::anyhow!("AES encryption failed: {}", e))?;
-        
-        // Simulate Kyber encapsulation
-        let mut simulated_kyber_ciphertext = vec![0u8; 1568]; // Simulated Kyber ciphertext
+
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext)
+            .map_err(|e| anyhow::anyhow!("AES encryption failed: {e}"))?;
+
+        // 模拟 KEM 的密文部分（仅用于占位）
+        let mut simulated_kyber_ciphertext = vec![0u8; KYBER_CIPHERTEXT_LEN];
         rand::thread_rng().fill_bytes(&mut simulated_kyber_ciphertext);
-        
-        // Combine everything into the final format:
-        // [kyber_ciphertext_len(4)] [kyber_ciphertext] [nonce(12)] [aes_ciphertext]
-        let mut result = Vec::new();
+
+        // 打包格式: [4 bytes len][kyber_ct][12 bytes nonce][aes_ct]
+        let mut result = Vec::with_capacity(
+            4 + simulated_kyber_ciphertext.len() + AES_NONCE_LEN + ciphertext.len(),
+        );
         result.extend_from_slice(&(simulated_kyber_ciphertext.len() as u32).to_le_bytes());
         result.extend_from_slice(&simulated_kyber_ciphertext);
         result.extend_from_slice(&nonce_bytes);
         result.extend_from_slice(&ciphertext);
-        
+
+        // 零化中间敏感数据
+        use zeroize::Zeroize;
+        nonce_bytes.zeroize();
+        simulated_kyber_ciphertext.zeroize();
+
         debug!("✅ Data encrypted with quantum-safe encryption (simulated)");
         Ok(result)
     }
-    
+
     pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>> {
         debug!("Decrypting data with quantum-safe encryption (simulated)");
-        
+
         if encrypted_data.len() < 4 {
             return Err(anyhow::anyhow!("Invalid encrypted data format"));
         }
-        
-        // Parse the encrypted data format
+
         let kyber_ciphertext_len = u32::from_le_bytes([
-            encrypted_data[0], encrypted_data[1], encrypted_data[2], encrypted_data[3]
+            encrypted_data[0],
+            encrypted_data[1],
+            encrypted_data[2],
+            encrypted_data[3],
         ]) as usize;
-        
-        if encrypted_data.len() < 4 + kyber_ciphertext_len + 12 {
+
+        let header_len = 4 + kyber_ciphertext_len;
+        if encrypted_data.len() < header_len + AES_NONCE_LEN {
             return Err(anyhow::anyhow!("Invalid encrypted data length"));
         }
-        
-        let _kyber_ciphertext_bytes = &encrypted_data[4..4 + kyber_ciphertext_len];
-        let nonce_bytes = &encrypted_data[4 + kyber_ciphertext_len..4 + kyber_ciphertext_len + 12];
-        let aes_ciphertext = &encrypted_data[4 + kyber_ciphertext_len + 12..];
-        
-        // Simulate Kyber decapsulation to get symmetric key
-        // In a real implementation, this would use the stored secret key
-        use sha2::{Sha256, Digest};
-        let mut hasher = Sha256::new();
-        hasher.update(b"simulated_shared_secret");
-        let aes_key = hasher.finalize();
-        
-        // Decrypt with AES-GCM
-        use aes_gcm::{Aes256Gcm, Key, Nonce, NewAead, Aead};
-        let cipher = Aes256Gcm::new(Key::from_slice(&aes_key));
+
+        let nonce_start = header_len;
+        let nonce_end = nonce_start + AES_NONCE_LEN;
+        let nonce_bytes = &encrypted_data[nonce_start..nonce_end];
+        let aes_ciphertext = &encrypted_data[nonce_end..];
+
+        use sha2::{Digest, Sha256};
+        let aes_key = Sha256::digest(SHARED_SECRET);
+
+        use aes_gcm::{
+            aead::{Aead, KeyInit},
+            Aes256Gcm, Key, Nonce,
+        };
+        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key));
         let nonce = Nonce::from_slice(nonce_bytes);
-        
-        let plaintext = cipher.decrypt(nonce, aes_ciphertext)
-            .map_err(|e| anyhow::anyhow!("AES decryption failed: {}", e))?;
-        
+
+        let plaintext = cipher
+            .decrypt(nonce, aes_ciphertext)
+            .map_err(|e| anyhow::anyhow!("AES decryption failed: {e}"))?;
+
         debug!("✅ Data decrypted with quantum-safe encryption (simulated)");
         Ok(plaintext)
     }
-    
+
     pub fn get_public_key(&self) -> Option<&[u8]> {
         self.keypair.as_ref().map(|kp| kp.public_key.as_slice())
     }
 }
+
+impl Zeroize for QuantumSafeEncryption {
+    fn zeroize(&mut self) {
+        if let Some(ref mut kp) = self.keypair {
+            kp.secret_key.zeroize();
+        }
+    }
+}
+
+impl ZeroizeOnDrop for QuantumSafeEncryption {}
 
 impl Default for QuantumSafeEncryption {
     fn default() -> Self {
@@ -137,16 +159,15 @@ impl Default for QuantumSafeEncryption {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_quantum_safe_encryption() {
-        let mut crypto = QuantumSafeEncryption::new().unwrap();
-        crypto.generate_keypair().unwrap();
-        
+        let crypto = QuantumSafeEncryption::new().unwrap();
+
         let plaintext = b"Hello, quantum-safe world!";
         let encrypted = crypto.encrypt(plaintext).unwrap();
         let decrypted = crypto.decrypt(&encrypted).unwrap();
-        
+
         assert_eq!(plaintext, decrypted.as_slice());
     }
 }

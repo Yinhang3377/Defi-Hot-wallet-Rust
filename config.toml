@@ -3,7 +3,7 @@
 
 [server]
 host = "127.0.0.1"
-port = 8080
+port = 8081
 tls_enabled = false
 # cert_path = "/app/keys/server.crt"
 # key_path = "/app/keys/server.key"
@@ -21,13 +21,13 @@ default_gas_limit = 21000
 transaction_timeout_seconds = 300
 
 [blockchain.networks.eth]
-rpc_url = "https://mainnet.infura.io/v3/YOUR-PROJECT-ID"
+rpc_url = "https://rpc.ankr.com/eth"   # 修正 ank r .ccom / 拼写错误
 chain_id = 1
 explorer_url = "https://etherscan.io"
 native_token = "ETH"
 
 [blockchain.networks.sepolia]
-rpc_url = "https://sepolia.infura.io/v3/YOUR-PROJECT-ID"
+rpc_url = "https://sepolia.infura.io/v3/YOUR-PROJECT-ID"   # 修正 infura 拼写并填入你的 project id
 chain_id = 11155111
 explorer_url = "https://sepolia.etherscan.io"
 native_token = "ETH"
@@ -44,6 +44,12 @@ chain_id = 56
 explorer_url = "https://bscscan.com"
 native_token = "BNB"
 
+[blockchain.networks.bsctestnet]
+rpc_url = "https://data-seed-prebsc-1-s1.binance.org:8545/"
+chain_id = 97
+explorer_url = "https://testnet.bscscan.com"
+native_token = "tBNB"
+
 [blockchain.networks.solana]
 rpc_url = "https://api.mainnet-beta.solana.com"
 explorer_url = "https://explorer.solana.com"
@@ -55,7 +61,7 @@ explorer_url = "https://explorer.solana.com/?cluster=devnet"
 native_token = "SOL"
 
 [storage]
-database_url = "sqlite:./wallet.db"
+database_url = "sqlite://./data/wallet.db?mode=rwc"
 encryption_key_path = "./keys/master.key"
 backup_enabled = true
 backup_interval_hours = 24
