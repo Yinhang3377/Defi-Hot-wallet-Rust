@@ -84,7 +84,7 @@ impl EthereumClient {
         // 验证传入的 chain_id 是否与 RPC 节点返回的一致
         let network_name = match chain_id {
             1 => "ethereum".to_string(),
-            // 修复拼写错误：seepolia -> sepolia
+            // 修复硬编码URL中的拼写错误：seepolia -> sepolia
             11155111 => "sepolia".to_string(),
             137 => "polygon".to_string(),
             56 => "bsc".to_string(),

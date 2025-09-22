@@ -85,7 +85,7 @@ impl Default for WalletConfig {
         blockchain_networks.insert(
             "sepolia".to_string(),
             NetworkConfig {
-                rpc_url: "https://rpc.sepolia.org".to_string(),
+                rpc_url: "https://sepolia.drpc.org".to_string(), // 修正拼写和使用公共RPC
                 chain_id: Some(11155111),
                 explorer_url: "https://sepolia.etherscan.io".to_string(),
                 native_token: "ETH".to_string(),
