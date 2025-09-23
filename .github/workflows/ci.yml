@@ -85,9 +85,6 @@ jobs:
   coverage:
     name: Code Coverage (tarpaulin)
     runs-on: ubuntu-latest
-    env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      HAS_CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,12 +100,12 @@ jobs:
       - name: Generate code coverage (XML)
         run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
-      - name: Upload to codecov.io (only if token exists)
-        if: env.HAS_CODECOV_TOKEN == 'true'
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ env.CODECOV_TOKEN }}
-          fail_ci_if_error: true
+      # 对公共仓库，Codecov 可不带 token。私有仓库请在仓库 Secrets 配置 CODECOV_TOKEN 后，取消下面注释并提交。
+      # - name: Upload to codecov.io
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     fail_ci_if_error: true
 
   build:
     name: Build and Package (${{ matrix.os }})
@@ -161,10 +158,6 @@ jobs:
     name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: [test, security]
-    env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-      HAS_DOCKER_CREDS: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -172,29 +165,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 未配置 DOCKER_USERNAME/DOCKER_PASSWORD 时可删除/保留此步骤（会在编辑器里出现黄色提示，但不影响运行）
       - name: Log in to Docker Hub
-        if: env.HAS_DOCKER_CREDS == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build image (no push when no creds)
-        if: env.HAS_DOCKER_CREDS != 'true'
+      - name: Build (no push if no creds)
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: yinhang3377/defi-hot-wallet:ci-preview
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push Docker image
-        if: env.HAS_DOCKER_CREDS == 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
+          push: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
           tags: |
             yinhang3377/defi-hot-wallet:latest
             yinhang3377/defi-hot-wallet:${{ github.sha }}
@@ -238,16 +220,6 @@ jobs:
           echo "$LOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create and push tag
-        run: |
-          TAG="v${{ steps.version.outputs.version }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists"
-          else
-            git tag "$TAG"
-            git push origin "$TAG"
-          fi
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -263,12 +235,15 @@ jobs:
           body: |
             ## Changes in this release
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ## Features
-            - 🔒 Quantum-safe encryption
-            - 🔐 Shamir secret sharing
-            - 🛡️ Multi-signature support
-            - 🚀 High-performance Rust implementation
+            - Quantum-safe encryption
+            - Shamir secret sharing
+            - Multi-signature support
+            - High-performance Rust implementation
+
+            ## Download
+            Download the appropriate binary for your platform from the assets below.
           files: |
             dist/**/defi-wallet
             dist/**/defi-wallet.exe
