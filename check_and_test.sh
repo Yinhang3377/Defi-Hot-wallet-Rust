@@ -73,9 +73,9 @@ cat > check_and_test.ps1 <<'PS1'
 
 $ErrorActionPreference = 'Stop'
 
-function Write-Info { Write-Host "[INFO]  $args" -ForegroundColor Cyan }
-function Write-Warn { Write-Host "[WARN]  $args" -ForegroundColor Yellow }
-function Write-Err  { Write-Host "[ERROR] $args" -ForegroundColor Red }
+function Write-Info { Write-Host ("[INFO]  " + ($args -join ' ')) -ForegroundColor Cyan }
+function Write-Warn { Write-Host ("[WARN]  " + ($args -join ' ')) -ForegroundColor Yellow }
+function Write-Err  { Write-Host ("[ERROR] " + ($args -join ' ')) -ForegroundColor Red }
 
 function Test-Command($name) {
   return (Get-Command $name -ErrorAction SilentlyContinue) -ne $null
@@ -92,7 +92,7 @@ if (Test-Command -name 'cargo') {
 
 # 2. Format check
 Write-Info "Format check: cargo fmt --all -- --check"
-if (& cargo fmt --version > $null 2>&1) {
+if (Test-Command -name 'cargo' -and (Try { & cargo fmt --version > $null 2>&1; $true } Catch { $false })) {
   try {
     & cargo fmt --all -- --check
   } catch {
@@ -105,7 +105,7 @@ if (& cargo fmt --version > $null 2>&1) {
 
 # 3. Static checks
 Write-Info "Static analysis: cargo clippy (deny warnings) if available"
-if (& cargo clippy --version > $null 2>&1) {
+if (Test-Command -name 'cargo' -and (Try { & cargo clippy --version > $null 2>&1; $true } Catch { $false })) {
   & cargo clippy --all-targets --all-features -- --deny warnings
 } else {
   Write-Warn "cargo clippy not available. Skipping clippy."
@@ -115,7 +115,7 @@ Write-Info "Type check / build check: cargo check --all-targets --all-features"
 & cargo check --all-targets --all-features
 
 # Optional: cargo-audit
-if (& cargo audit --version > $null 2>&1) {
+if (Test-Command -name 'cargo' -and (Try { & cargo audit --version > $null 2>&1; $true } Catch { $false })) {
   Write-Info "Security audit: cargo audit"
   try {
     & cargo audit
