@@ -14,7 +14,7 @@ function Write-Warn { Write-Host ("[WARN]  " + ($args -join ' ')) -ForegroundCol
 function Write-Err  { Write-Host ("[ERROR] " + ($args -join ' ')) -ForegroundColor Red }
 
 function Test-Command($name) {
-  return (Get-Command $name -ErrorAction SilentlyContinue) -ne $null
+  return $null -ne (Get-Command $name -ErrorAction SilentlyContinue)
 }
 
 # 1. Clean

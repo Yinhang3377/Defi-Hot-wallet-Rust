@@ -2563,7 +2563,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
 dependencies = [
  "equivalent",
- "hashbrown 0.16.0",
+ "hashbrown 0.15.5",
 ]
 
 [[package]]
@@ -2927,9 +2927,9 @@ dependencies = [
 
 [[package]]
 name = "multiexp"
-version = "0.4.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ec2ce93a6f06ac6cae04c1da3f2a6a24fcfc1f0eb0b4e0f3d302f0df45326cb"
+checksum = "b1258e91b04f25cd30e6c75a6d20b69edeaaef44dd0f131f737bbcd78f0a3fa8"
 dependencies = [
  "ff",
  "group",
@@ -5662,7 +5662,6 @@ dependencies = [
  "serde",
  "sha3",
  "subtle",
- "zeroize",
 ]
 
 [[package]]
