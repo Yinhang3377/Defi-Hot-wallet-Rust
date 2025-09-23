@@ -1,1 +1,3 @@
-﻿<PASTE THE ENTIRE FILE CONTENT HERE EXACTLY AS ABOVE>
+﻿<PASTE_BEGIN>
+# (the content above between the filepath block, without the leading // filepath line)
+<PASTE_END>
