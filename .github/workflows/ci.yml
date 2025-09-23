@@ -9,11 +9,19 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
-    name: Test Suite
+    name: Test Suite (${{ matrix.rust }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         rust: [stable, beta, nightly]
     steps:
@@ -23,25 +31,17 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt,clippy
+          components: rustfmt, clippy
 
-      - name: Cache cargo registry & index & target
-        uses: actions/cache@v4
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          save-if: ${{ github.event_name != 'pull_request' }}
 
       - name: Install system deps (Linux)
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y pkg-config libssl-dev build-essential ca-certificates curl jq nasm
@@ -49,14 +49,14 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Run clippy
+      - name: Clippy (all targets + features)
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-      - name: Run tests
-        run: cargo test --verbose
+      - name: Run tests (default features)
+        run: cargo test --workspace --verbose
 
-      - name: Run tests with all features
-        run: cargo test --all-features --verbose
+      - name: Run tests (all features)
+        run: cargo test --workspace --all-features --verbose
 
   security:
     name: Security Audit
@@ -64,66 +64,77 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+        run: cargo install --locked cargo-audit
 
-      - name: Run security audit
+      - name: Run cargo-audit
         run: cargo audit --deny warnings
 
       - name: Install cargo-deny
-        run: cargo install cargo-deny --force
+        run: cargo install --locked cargo-deny
 
       - name: Run cargo-deny
         run: cargo deny check
 
   coverage:
-    name: Code Coverage
+    name: Code Coverage (tarpaulin)
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      HAS_CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
 
       - name: Install tarpaulin
-        run: cargo install cargo-tarpaulin --force
+        run: cargo install --locked cargo-tarpaulin
 
-      - name: Generate code coverage
+      - name: Generate code coverage (XML)
         run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml
 
-      - name: Upload to codecov.io
+      - name: Upload to codecov.io (only if token exists)
+        if: env.HAS_CODECOV_TOKEN == 'true'
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ env.CODECOV_TOKEN }}
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
-    name: Build and Package
+    name: Build and Package (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install system deps (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev build-essential ca-certificates curl nasm
 
       - name: Install system deps (Windows)
         if: matrix.os == 'windows-latest'
-        run: choco install -y openssl nasm make curl || true
+        run: choco install -y openssl nasm make curl || powershell -c "Write-Host 'choco install step finished'"
 
       - name: Install system deps (macOS)
         if: matrix.os == 'macos-latest'
@@ -139,14 +150,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: defi-wallet-${{ matrix.os }}
+          if-no-files-found: warn
           path: |
-            target/release/defi-wallet*
-            target/release/wallet-cli*
+            target/release/defi-wallet
+            target/release/defi-wallet.exe
+            target/release/wallet-cli
+            target/release/wallet-cli.exe
 
   docker:
-    name: Docker Build
+    name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: [test, security]
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      HAS_DOCKER_CREDS: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -155,12 +173,24 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: env.HAS_DOCKER_CREDS == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Build image (no push when no creds)
+        if: env.HAS_DOCKER_CREDS != 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: yinhang3377/defi-hot-wallet:ci-preview
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push Docker image
+        if: env.HAS_DOCKER_CREDS == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -176,29 +206,60 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, security, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Get version
+      - name: Ensure jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Get version from Cargo.toml
         id: version
         run: echo "version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')" >> $GITHUB_OUTPUT
 
-      - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate changelog since last tag
+        id: changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            LOG=$(git log --pretty=format:"- %s")
+          else
+            LOG=$(git log --pretty=format:"- %s" ${LAST_TAG}..HEAD)
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: defi-wallet-*
+          merge-multiple: true
+          path: dist
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           body: |
             ## Changes in this release
             ${{ steps.changelog.outputs.changelog }}
@@ -208,8 +269,10 @@ jobs:
             - 🔐 Shamir secret sharing
             - 🛡️ Multi-signature support
             - 🚀 High-performance Rust implementation
-            
-            ## Download
-            Download the appropriate binary for your platform from the assets below.
-          draft: false
-          prerelease: false
+          files: |
+            dist/**/defi-wallet
+            dist/**/defi-wallet.exe
+            dist/**/wallet-cli
+            dist/**/wallet-cli.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
