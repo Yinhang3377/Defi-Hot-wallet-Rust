@@ -123,7 +123,10 @@ async fn main() -> Result<()> {
             // 优先使用命令行参数，否则从配置文件中读取
             let server_host = host.unwrap_or(config.server.host.clone());
             let server_port = port.unwrap_or(config.server.port);
-            info!("🚀 Starting wallet server on {}:{}", server_host, server_port);
+            info!(
+                "🚀 Starting wallet server on {}:{}",
+                server_host, server_port
+            );
             let server = WalletServer::new(server_host, server_port, config).await?;
             server.start().await?;
         }

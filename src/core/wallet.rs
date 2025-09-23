@@ -7,11 +7,11 @@ use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::blockchain::{ethereum::EthereumClient, solana::SolanaClient, traits::BlockchainClient};
+use crate::core::config::WalletConfig;
 use crate::crypto::{
     hsm::HSMManager, multisig::MultiSignature, quantum::QuantumSafeEncryption,
     shamir::ShamirSecretSharing,
 };
-use crate::core::config::WalletConfig;
 use crate::storage::WalletStorage;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,9 +57,11 @@ impl WalletManager {
         for (name, network_config) in &config.blockchain.networks {
             info!("Initializing client for network: {}", name);
             let client: Result<Box<dyn BlockchainClient>> = match name.as_str() {
-                "eth" | "sepolia" | "polygon" | "bsc" | "bsctestnet" => EthereumClient::new(&network_config.rpc_url)
-                    .await
-                    .map(|c| Box::new(c) as Box<dyn BlockchainClient>),
+                "eth" | "sepolia" | "polygon" | "bsc" | "bsctestnet" => {
+                    EthereumClient::new(&network_config.rpc_url)
+                        .await
+                        .map(|c| Box::new(c) as Box<dyn BlockchainClient>)
+                }
                 "solana" | "solana-devnet" => SolanaClient::new(&network_config.rpc_url)
                     .await
                     .map(|c| Box::new(c) as Box<dyn BlockchainClient>),
@@ -70,8 +72,11 @@ impl WalletManager {
                     // 先获取日志所需信息，避免在移动 c 之后再借用它
                     let native_token = c.get_native_token().to_string();
                     blockchain_clients.insert(name.clone(), c);
-                    info!("✅ {} client initialized for network '{}'", native_token, name);
-                },
+                    info!(
+                        "✅ {} client initialized for network '{}'",
+                        native_token, name
+                    );
+                }
                 Err(e) => warn!("⚠️ Failed to initialize client for {}: {}", name, e),
             }
         }
