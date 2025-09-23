@@ -246,7 +246,7 @@ impl WalletManager {
                 .encrypt(&bincode::serialize(wallet_data)?)?
         } else {
             // Use traditional AES-GCM encryption as fallback
-            self.encrypt_traditional(&bincode::serialize(wallet_data)?)?
+            self.encrypt_traditional(&bincode::serialize(wallet_data)?, &wallet_data.master_key)?
         };
 
         self.storage
@@ -261,22 +261,30 @@ impl WalletManager {
         // Try quantum-safe decryption first, fallback to traditional
         let decrypted_data = match self.quantum_crypto.decrypt(&encrypted_data) {
             Ok(data) => data,
-            Err(_) => self.decrypt_traditional(&encrypted_data)?,
+            Err(_) => {
+                let temp_wallet: SecureWalletData = bincode::deserialize(&encrypted_data)?;
+                self.decrypt_traditional(&encrypted_data, &temp_wallet.master_key)?
+            }
         };
 
         let wallet_data: SecureWalletData = bincode::deserialize(&decrypted_data)?;
         Ok(wallet_data)
     }
 
-    fn encrypt_traditional(&self, data: &[u8]) -> Result<Vec<u8>> {
-        // Simplified traditional encryption - in production use proper key derivation
+    fn encrypt_traditional(&self, data: &[u8], master_key: &[u8]) -> Result<Vec<u8>> {
+        // Derive a dedicated encryption key from the master key to avoid reuse.
+        let mut enc_key_bytes = [0u8; 32];
+        let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(b"enc-salt"), master_key);
+        hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to derive encryption key: {}", e))?;
+
         use aes_gcm::{
             aead::{Aead, KeyInit},
             Aes256Gcm, Key, Nonce,
         };
         use rand::RngCore;
 
-        let key = Key::<Aes256Gcm>::from_slice(&[0u8; 32]); // In production, derive from user password/HSM
+        let key = Key::<Aes256Gcm>::from_slice(&enc_key_bytes);
         let cipher = Aes256Gcm::new(key);
 
         let mut nonce_bytes = [0u8; 12];
@@ -291,17 +299,23 @@ impl WalletManager {
         Ok(result)
     }
 
-    fn decrypt_traditional(&self, data: &[u8]) -> Result<Vec<u8>> {
+    fn decrypt_traditional(&self, data: &[u8], master_key: &[u8]) -> Result<Vec<u8>> {
         use aes_gcm::{
             aead::{Aead, KeyInit},
             Aes256Gcm, Key, Nonce,
         };
 
+        // Re-derive the same encryption key
+        let mut enc_key_bytes = [0u8; 32];
+        let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(b"enc-salt"), master_key);
+        hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to derive encryption key: {}", e))?;
+
         if data.len() < 12 {
             return Err(anyhow::anyhow!("Invalid encrypted data"));
         }
 
-        let key = Key::<Aes256Gcm>::from_slice(&[0u8; 32]);
+        let key = Key::<Aes256Gcm>::from_slice(&enc_key_bytes);
         let cipher = Aes256Gcm::new(key);
 
         let (nonce_bytes, ciphertext) = data.split_at(12);

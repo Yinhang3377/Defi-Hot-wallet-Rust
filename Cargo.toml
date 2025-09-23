@@ -24,21 +24,12 @@ pbkdf2 = "0.12.2"
 scrypt = "0.11.0"
 ring = "0.17.12"
 zeroize = { version = "1.8.1", features = ["derive"] }
-rsa = "0.10.0-rc.8"
-
-# Quantum-safe cryptography (Kyber) - using alternative since pqcrypto may not be available
-# pqcrypto-kyber = "0.7"
-# pqcrypto-traits = "0.3"
 
 # Secret sharing (Shamir) - Replaced sharks due to RUSTSEC-2024-0398
-vsss-rs = "5.1.0"
+vsss-rs = { version = "5.1.0", features = ["serde"] }
 
 # Blockchain integrations
 ethers = { version = "2.0", features = ["abigen", "rustls", "ws"] }
-# Temporarily disable Solana to avoid version conflicts
-# solana-client = "1.17"
-# solana-sdk = "1.17"
-# solana-program = "1.17"
 
 # BIP standards
 bip39 = "2.0"
@@ -120,10 +111,4 @@ path = "src/main.rs"
 [[bin]]
 name = "wallet-cli"
 path = "src/cli.rs"
-
-[patch.crates-io]
-# 强制使用安全的 ring 版本
-ring = "=0.17.14"
-# （可选）固定 multiexp / protobuf 如需要
-# multiexp = "=0.4.2"
-# protobuf = "=3.7.2"
+# ...existing code...

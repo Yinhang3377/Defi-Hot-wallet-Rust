@@ -77,14 +77,10 @@ function Write-Info { Write-Host ("[INFO]  " + ($args -join ' ')) -ForegroundCol
 function Write-Warn { Write-Host ("[WARN]  " + ($args -join ' ')) -ForegroundColor Yellow }
 function Write-Err  { Write-Host ("[ERROR] " + ($args -join ' ')) -ForegroundColor Red }
 
-function Test-Command($name) {
-  return (Get-Command $name -ErrorAction SilentlyContinue) -ne $null
-}
-
 # 1. Clean
 Write-Info "Cleaning: cargo clean"
-if (Test-Command -name 'cargo') {
-  cargo clean
+if (Get-Command 'cargo' -ErrorAction SilentlyContinue) {
+  & cargo clean
 } else {
   Write-Err "cargo not found in PATH"
   exit 1
@@ -92,7 +88,7 @@ if (Test-Command -name 'cargo') {
 
 # 2. Format check
 Write-Info "Format check: cargo fmt --all -- --check"
-if (Test-Command -name 'cargo' -and (Try { & cargo fmt --version > $null 2>&1; $true } Catch { $false })) {
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-fmt' -ErrorAction SilentlyContinue)) {
   try {
     & cargo fmt --all -- --check
   } catch {
@@ -105,7 +101,7 @@ if (Test-Command -name 'cargo' -and (Try { & cargo fmt --version > $null 2>&1; $
 
 # 3. Static checks
 Write-Info "Static analysis: cargo clippy (deny warnings) if available"
-if (Test-Command -name 'cargo' -and (Try { & cargo clippy --version > $null 2>&1; $true } Catch { $false })) {
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-clippy' -ErrorAction SilentlyContinue)) {
   & cargo clippy --all-targets --all-features -- --deny warnings
 } else {
   Write-Warn "cargo clippy not available. Skipping clippy."
@@ -115,7 +111,7 @@ Write-Info "Type check / build check: cargo check --all-targets --all-features"
 & cargo check --all-targets --all-features
 
 # Optional: cargo-audit
-if (Test-Command -name 'cargo' -and (Try { & cargo audit --version > $null 2>&1; $true } Catch { $false })) {
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-audit' -ErrorAction SilentlyContinue)) {
   Write-Info "Security audit: cargo audit"
   try {
     & cargo audit

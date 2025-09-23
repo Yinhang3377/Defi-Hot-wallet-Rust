@@ -1,22 +1,13 @@
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use sharks::{Share, Sharks};
-use std::convert::TryFrom;
+use vsss_rs::{
+    curve25519::WrappedRistretto, shamir::Shamir, traits::SecretSharing, Error as VsssError,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShamirSecretSharing {
     default_threshold: u8,
     default_total_shares: u8,
-}
-
-impl Default for ShamirSecretSharing {
-    fn default() -> Self {
-        // 默认 2-of-3
-        Self {
-            default_threshold: 2,
-            default_total_shares: 3,
-        }
-    }
 }
 
 impl ShamirSecretSharing {
@@ -25,7 +16,13 @@ impl ShamirSecretSharing {
         Self::default()
     }
 
-    // 可选：自定义默认门限配置
+    /// Creates a new Shamir secret sharing configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `threshold` - The minimum number of shares required to reconstruct the secret.
+    /// * `total_shares` - The total number of shares to generate.
+    ///
     pub fn with_threshold(threshold: u8, total_shares: u8) -> Result<Self> {
         validate_params(threshold, total_shares)?;
         Ok(Self {
@@ -34,7 +31,12 @@ impl ShamirSecretSharing {
         })
     }
 
-    // wallet.rs 调用：create_shares(&master_key, total_shares=3, threshold=2)
+    /// Creates shares from a given secret.
+    ///
+    /// # Arguments
+    /// * `secret` - The secret data to be split.
+    /// * `total_shares` - The total number of shares to create.
+    /// * `threshold` - The minimum number of shares for reconstruction.
     pub fn create_shares(
         &self,
         secret: &[u8],
@@ -46,23 +48,26 @@ impl ShamirSecretSharing {
         }
         validate_params(threshold, total_shares)?;
 
-        let sharks = Sharks(threshold); // sharks 要 u8
-        let dealer = sharks.dealer(secret); // 需要 &[u8]
+        let shamir = Shamir {
+            threshold: threshold as usize,
+            share_count: total_shares as usize,
+        };
+        let shares = shamir
+            .split_secret::<WrappedRistretto>(secret)
+            .map_err(|e| anyhow!("Failed to split secret: {}", e))?;
 
-        // Share -> Vec<u8>
-        let encoded: Vec<Vec<u8>> = dealer
-            .take(total_shares as usize)
-            .map(|s: Share| Vec::<u8>::from(&s)) // 修复：从 &Share 转换
-            .collect();
-        Ok(encoded)
+        // Serialize each share to Vec<u8>
+        shares
+            .into_iter()
+            .map(|s| bincode::serialize(&s).map_err(|e| anyhow!("Failed to serialize share: {}", e)))
+            .collect()
     }
 
-    // 使用默认门限恢复（兼容原测试）
+    /// Reconstructs the secret from a set of shares using the default threshold.
     pub fn reconstruct_secret(&self, shares_bytes: &[Vec<u8>]) -> Result<Vec<u8>> {
         self.reconstruct_with_threshold(shares_bytes, self.default_threshold)
     }
 
-    // 按给定门限恢复
     pub fn reconstruct_with_threshold(
         &self,
         shares_bytes: &[Vec<u8>],
@@ -76,23 +81,22 @@ impl ShamirSecretSharing {
             ));
         }
 
-        // Vec<u8> -> Share
-        let parsed: Vec<Share> = shares_bytes
+        // Deserialize Vec<u8> back to shares
+        let shares: Vec<_> = shares_bytes
             .iter()
-            .map(|b| Share::try_from(b.as_slice()))
-            .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(|e| anyhow!("invalid share bytes: {}", e))?;
+            .map(|bytes| {
+                bincode::deserialize(bytes).map_err(|e| anyhow!("Invalid share data: {}", e))
+            })
+            .collect::<Result<Vec<_>>>()?;
 
-        let sharks = Sharks(threshold);
-        let recovered = sharks
-            .recover(parsed.iter()) // 迭代 &Share
-            .map_err(|e| anyhow!("reconstruction failed: {}", e))?;
+        let shamir = Shamir {
+            threshold: threshold as usize,
+            share_count: shares.len(), // Not used in combine, but for consistency
+        };
 
-        Ok(recovered)
-    }
-
-    pub fn verify_shares(&self, shares_bytes: &[Vec<u8>], expected_secret: &[u8]) -> Result<bool> {
-        Ok(self.reconstruct_secret(shares_bytes)? == expected_secret)
+        shamir
+            .combine_shares::<WrappedRistretto>(&shares)
+            .map_err(|e| anyhow!("Failed to reconstruct secret: {}", e))
     }
 
     pub fn get_threshold(&self) -> u8 {
@@ -100,6 +104,13 @@ impl ShamirSecretSharing {
     }
     pub fn get_total_shares(&self) -> u8 {
         self.default_total_shares
+    }
+}
+
+impl Default for ShamirSecretSharing { 
+    fn default() -> Self {
+        // 合理默认：2-of-3
+        Self { default_threshold: 2, default_total_shares: 3 }
     }
 }
 

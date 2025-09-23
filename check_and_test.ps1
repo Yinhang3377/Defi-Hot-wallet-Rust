@@ -19,7 +19,7 @@ function Test-Command($name) {
 
 # 1. Clean
 Write-Info "Cleaning: cargo clean"
-if (Test-Command -name 'cargo') {
+if (Test-Command 'cargo') {
   & cargo clean
 } else {
   Write-Err "cargo not found in PATH"
@@ -28,12 +28,12 @@ if (Test-Command -name 'cargo') {
 
 # 2. Format check
 Write-Info "Format check: cargo fmt --all -- --check"
-if (Test-Command -name 'cargo' -and (Try { & cargo fmt --version > $null 2>&1; $true } Catch { $false })) {
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-fmt' -ErrorAction SilentlyContinue)) {
   try {
     & cargo fmt --all -- --check
   } catch {
-    Write-Warn "Formatting check failed. Running 'cargo fmt --all' to fix."
-    & cargo fmt --all
+    Write-Err "Formatting check failed. Run 'cargo fmt --all' to fix."
+    exit 1
   }
 } else {
   Write-Warn "cargo fmt (rustfmt) not available. Skipping format check."
@@ -41,8 +41,8 @@ if (Test-Command -name 'cargo' -and (Try { & cargo fmt --version > $null 2>&1; $
 
 # 3. Static checks
 Write-Info "Static analysis: cargo clippy (deny warnings) if available"
-if (Test-Command -name 'cargo' -and (Try { & cargo clippy --version > $null 2>&1; $true } Catch { $false })) {
-  & cargo clippy --all-targets --all-features -- -D warnings
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-clippy' -ErrorAction SilentlyContinue)) {
+  & cargo clippy --all-targets --all-features -- --deny warnings
 } else {
   Write-Warn "cargo clippy not available. Skipping clippy."
 }
@@ -51,7 +51,7 @@ Write-Info "Type check / build check: cargo check --all-targets --all-features"
 & cargo check --all-targets --all-features
 
 # Optional: cargo-audit
-if (Test-Command -name 'cargo' -and (Try { & cargo audit --version > $null 2>&1; $true } Catch { $false })) {
+if ((Get-Command 'cargo' -ErrorAction SilentlyContinue) -and (Get-Command 'cargo-audit' -ErrorAction SilentlyContinue)) {
   Write-Info "Security audit: cargo audit"
   try {
     & cargo audit
