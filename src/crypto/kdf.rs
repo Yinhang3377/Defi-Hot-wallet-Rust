@@ -169,27 +169,12 @@ impl KeyDerivation {
 
 impl Default for KeyDerivation {
     fn default() -> Self {
-        // Default to PBKDF2 with secure parameters
-        Self::pbkdf2(100_000)
+        // Default to Scrypt with secure parameters (OWASP recommendation: N=2^17, r=8, p=1)
+        // N must be a power of 2. 2^17 = 131072.
+        Self::scrypt(131072, 8, 1)
     }
 }
 
-/*
-Note: The Encryptor struct was moved from src/security/encryption.rs to here
-to resolve a circular dependency issue highlighted by the project's architecture.
-This part of the code seems to be a work in progress.
-*/
-pub struct Encryptor;
-impl Encryptor {
-    pub fn new() -> Self {
-        Self
-    }
-}
-impl Default for Encryptor {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;

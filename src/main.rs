@@ -4,7 +4,7 @@
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
 #![allow(clippy::upper_case_acronyms)]
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use clap::{Parser, Subcommand};
 use tracing::{info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -19,6 +19,7 @@ mod storage;
 
 use crate::api::server::WalletServer;
 use crate::core::config::WalletConfig;
+use crate::core::wallet::WalletInfo;
 use crate::core::wallet::WalletManager;
 
 #[derive(Parser)]
@@ -56,9 +57,12 @@ pub enum Commands {
         #[arg(short, long)]
         name: String,
 
-        /// Use quantum-safe encryption
-        #[arg(short, long, default_value = "true")]
+        /// Use quantum-safe encryption (enabled by default)
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         quantum_safe: bool,
+        /// Disable quantum-safe encryption
+        #[arg(long, overrides_with = "quantum_safe", action = clap::ArgAction::SetFalse)]
+        no_quantum_safe: bool,
     },
     /// Show wallet balance
     Balance {
@@ -130,10 +134,12 @@ async fn main() -> Result<()> {
             let server = WalletServer::new(server_host, server_port, config).await?;
             server.start().await?;
         }
-        Commands::Init { name, quantum_safe } => {
+        Commands::Init { name, quantum_safe, .. } => {
             info!("🔧 Initializing new wallet: {}", name);
             let manager = WalletManager::new(&config).await?;
-            manager.create_wallet(&name, quantum_safe).await?;
+            // 优先使用命令行标志，否则回退到配置文件中的默认值
+            let use_quantum = quantum_safe;
+            manager.create_wallet(&name, use_quantum).await?;
             info!("✅ Wallet '{}' created successfully", name);
         }
         Commands::Balance { wallet, network } => {

@@ -75,7 +75,7 @@ impl Default for WalletConfig {
         blockchain_networks.insert(
             "eth".to_string(),
             NetworkConfig {
-                rpc_url: "https://rpc.ankr.com/eth".to_string(),
+                rpc_url: "https://eth.llamarpc.com".to_string(), // 使用免费公共RPC
                 chain_id: Some(1),
                 explorer_url: "https://etherscan.io".to_string(),
                 native_token: "ETH".to_string(),
@@ -85,7 +85,7 @@ impl Default for WalletConfig {
         blockchain_networks.insert(
             "sepolia".to_string(),
             NetworkConfig {
-                rpc_url: "https://sepolia.drpc.org".to_string(), // 修正拼写和使用公共RPC
+                rpc_url: "https://sepolia.drpc.org".to_string(), // 使用免费公共RPC
                 chain_id: Some(11155111),
                 explorer_url: "https://sepolia.etherscan.io".to_string(),
                 native_token: "ETH".to_string(),
@@ -121,7 +121,7 @@ impl Default for WalletConfig {
                 key_path: None,
             },
             security: SecurityConfig {
-                quantum_safe_default: true,
+                quantum_safe_default: false, // 将 true 改为 false
                 multi_sig_threshold: 2,
                 hsm_enabled: false,
                 encryption_algorithm: "Kyber1024".to_string(),

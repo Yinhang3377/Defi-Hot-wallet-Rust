@@ -1,7 +1,8 @@
 use anyhow::Result;
-use sqlx::{sqlite::SqlitePool, Row};
+use sqlx::{sqlite::SqlitePool, Row, types::chrono::NaiveDateTime};
+use sqlx::types::chrono::Utc;
 use tracing::{debug, info, warn};
-
+use chrono::DateTime;
 #[derive(Debug)]
 pub struct WalletStorage {
     pool: SqlitePool,
@@ -137,11 +138,16 @@ impl WalletStorage {
         Ok(())
     }
 
-    pub async fn store_wallet(&self, name: &str, encrypted_data: &[u8]) -> Result<()> {
+    pub async fn store_wallet(
+        &self,
+        name: &str,
+        encrypted_data: &[u8],
+        quantum_safe: bool,
+    ) -> Result<()> {
         debug!("Storing wallet: {}", name);
 
         let wallet_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now();
+        let now = Utc::now().naive_utc();
 
         sqlx::query(
             r#"
@@ -152,7 +158,7 @@ impl WalletStorage {
         .bind(&wallet_id)
         .bind(name)
         .bind(encrypted_data)
-        .bind(true) // Assume quantum safe for now
+        .bind(quantum_safe)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
@@ -173,10 +179,10 @@ impl WalletStorage {
         Ok(())
     }
 
-    pub async fn load_wallet(&self, name: &str) -> Result<Vec<u8>> {
+    pub async fn load_wallet(&self, name: &str) -> Result<(Vec<u8>, bool)> {
         debug!("Loading wallet: {}", name);
 
-        let row = sqlx::query("SELECT id, encrypted_data FROM wallets WHERE name = ?1")
+        let row = sqlx::query("SELECT id, encrypted_data, quantum_safe FROM wallets WHERE name = ?1")
             .bind(name)
             .fetch_optional(&self.pool)
             .await
@@ -186,6 +192,7 @@ impl WalletStorage {
             Some(row) => {
                 let wallet_id: String = row.get("id");
                 let encrypted_data: Vec<u8> = row.get("encrypted_data");
+                let quantum_safe: bool = row.get("quantum_safe");
 
                 // Log the action
                 self.log_action(
@@ -198,7 +205,7 @@ impl WalletStorage {
                 .await?;
 
                 debug!("✅ Wallet loaded: {}", name);
-                Ok(encrypted_data)
+                Ok((encrypted_data, quantum_safe))
             }
             None => Err(anyhow::anyhow!("Wallet not found: {}", name)),
         }
@@ -355,7 +362,7 @@ impl WalletStorage {
         .bind(details)
         .bind(ip_address)
         .bind(user_agent)
-        .bind(chrono::Utc::now())
+        .bind(Utc::now().naive_utc())
         .execute(&self.pool)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to log action: {}", e))?;
@@ -404,8 +411,8 @@ pub struct WalletMetadata {
     pub id: String,
     pub name: String,
     pub quantum_safe: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(Debug, Clone)]
@@ -419,8 +426,8 @@ pub struct TransactionRecord {
     pub amount: String,
     pub fee: String,
     pub status: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub confirmed_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone)]
@@ -431,5 +438,5 @@ pub struct AuditLog {
     pub details: Option<String>,
     pub ip_address: Option<String>,
     pub user_agent: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: DateTime<Utc>,
 }

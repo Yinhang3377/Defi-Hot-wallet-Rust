@@ -230,5 +230,7 @@ jobs:
             dist/**/defi-wallet.exe
             dist/**/wallet-cli
             dist/**/wallet-cli.exe
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ github.token }}

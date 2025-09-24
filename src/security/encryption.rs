@@ -1,9 +1,7 @@
 /// 加密与密钥派生（占位 + AES-256-GCM 加密）
 pub struct Encryptor;
 impl Encryptor {
-    pub fn new() -> Self {
-        Self
-    }
+    pub fn new() -> Self { Self }
     pub fn derive_key(&self, _password: &str) -> Vec<u8> {
         vec![0u8; 32]
     }

@@ -5,6 +5,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 
 // 直接引用库 crate（包名连字符转下划线）
 use defi_hot_wallet::core::{config::WalletConfig, wallet::WalletManager};
+use defi_hot_wallet::storage::WalletMetadata;
 use defi_hot_wallet::{i18n, monitoring};
 
 #[derive(Parser)]
@@ -33,10 +34,19 @@ pub enum Commands {
     Create {
         #[arg(short, long)]
         name: String,
-        #[arg(short, long, default_value = "true")]
+        /// Use quantum-safe encryption (enabled by default)
+        #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         quantum: bool,
+        /// Disable quantum-safe encryption
+        #[arg(long, overrides_with = "quantum", action = clap::ArgAction::SetFalse)]
+        no_quantum: bool,
     },
     List,
+    /// Delete a specific wallet
+    Delete {
+        #[arg(short, long)]
+        name: String,
+    },
     Balance {
         #[arg(short, long)]
         wallet: String,
@@ -114,12 +124,14 @@ async fn real_main() -> Result<()> {
     let manager = WalletManager::new(&config).await?;
 
     match cli.command {
-        Commands::Create { name, quantum } => {
+        Commands::Create { name, quantum, .. } => {
             println!(
                 "🔧 {}...",
                 i18n_manager.get_text(lang, "wallet-create", None)
             );
-            match manager.create_wallet(&name, quantum).await {
+            // 优先使用命令行标志，否则回退到配置文件中的默认值
+            let use_quantum = quantum;
+            match manager.create_wallet(&name, use_quantum).await {
                 Ok(wallet_info) => {
                     println!("✅ {}", i18n_manager.get_text(lang, "wallet-created", None));
                     println!("   ID: {}", wallet_info.id);
@@ -133,7 +145,7 @@ async fn real_main() -> Result<()> {
                         i18n_manager.get_text(lang, "security-quantum-safe", None),
                         wallet_info.quantum_safe
                     );
-                    if quantum {
+                    if use_quantum {
                         println!(
                             "🛡️ {}",
                             i18n_manager.get_text(lang, "msg-quantum-protection", None)
@@ -151,8 +163,48 @@ async fn real_main() -> Result<()> {
             }
         }
         Commands::List => {
-            println!("📋 {}:", i18n_manager.get_text(lang, "nav-wallets", None));
-            println!("   (No wallets found - use 'create' command to add wallets)");
+            println!(
+                "📋 {}",
+                i18n_manager.get_text(lang, "nav-wallets", None)
+            );
+            match manager.list_wallets().await {
+                Ok(wallets) => {
+                    if wallets.is_empty() {
+                        println!("   (No wallets found - use 'create' command to add wallets)");
+                    } else {
+                        // 打印表头
+                        println!(
+                            "{:<20} {:<12} {:<25}",
+                            "Name", "Quantum Safe", "Created At"
+                        );
+                        println!("{:-<60}", ""); // 分隔线
+                        for wallet in wallets {
+                            println!(
+                                "{:<20} {:<12} {:<25}",
+                                wallet.name,
+                                wallet.quantum_safe,
+                                wallet.created_at.format("%Y-%m-%d %H:%M:%S")
+                            );
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to list wallets: {e}");
+                    return Err(e);
+                }
+            }
+        }
+        Commands::Delete { name } => {
+            println!("🗑️ Deleting wallet '{}'...", name);
+            match manager.delete_wallet(&name).await {
+                Ok(_) => {
+                    println!("✅ Wallet '{}' deleted successfully.", name);
+                }
+                Err(e) => {
+                    error!("Failed to delete wallet: {e}");
+                    return Err(e);
+                }
+            }
         }
         Commands::Balance { wallet, network } => {
             println!(

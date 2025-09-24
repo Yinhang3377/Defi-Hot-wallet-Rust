@@ -1,6 +1,6 @@
 use crate::audit::logging::log_operation;
 use crate::core::domain::{Tx, Wallet};
-use crate::crypto::kdf::Encryptor;
+use crate::security::encryption::Encryptor;
 
 pub struct WalletService {
     #[allow(dead_code)]
