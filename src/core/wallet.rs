@@ -13,7 +13,7 @@ use crate::crypto::{
 };
 use crate::storage::{WalletMetadata, WalletStorage};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WalletInfo {
     pub id: Uuid,
     pub name: String,
@@ -21,91 +21,6 @@ pub struct WalletInfo {
     pub quantum_safe: bool,
     pub multi_sig_threshold: u8,
     pub networks: Vec<String>,
-}
-
-// 为 WalletInfo 实现 Serialize，以便在 SecureWalletData 中使用
-impl Serialize for WalletInfo {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        use serde::ser::SerializeStruct;
-        let mut state = serializer.serialize_struct("WalletInfo", 6)?;
-        state.serialize_field("id", &self.id)?;
-        state.serialize_field("name", &self.name)?;
-        state.serialize_field("created_at", &self.created_at)?;
-        state.serialize_field("quantum_safe", &self.quantum_safe)?;
-        state.serialize_field("multi_sig_threshold", &self.multi_sig_threshold)?;
-        state.serialize_field("networks", &self.networks)?;
-        state.end()
-    }
-}
-
-// 为 WalletInfo 添加 Deserialize 实现
-impl<'de> Deserialize<'de> for WalletInfo {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        use serde::de::{self, MapAccess, Visitor};
-        use std::fmt;
-
-        struct WalletInfoVisitor;
-
-        impl<'de> Visitor<'de> for WalletInfoVisitor {
-            type Value = WalletInfo;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("struct WalletInfo")
-            }
-
-            fn visit_map<V>(self, mut map: V) -> Result<WalletInfo, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut id = None;
-                let mut name = None;
-                let mut created_at = None;
-                let mut quantum_safe = None;
-                let mut multi_sig_threshold = None;
-                let mut networks = None;
-
-                while let Some(key) = map.next_key::<String>()? {
-                    match key.as_str() {
-                        "id" => id = Some(map.next_value()?),
-                        "name" => name = Some(map.next_value()?),
-                        "created_at" => created_at = Some(map.next_value()?),
-                        "quantum_safe" => quantum_safe = Some(map.next_value()?),
-                        "multi_sig_threshold" => multi_sig_threshold = Some(map.next_value()?),
-                        "networks" => networks = Some(map.next_value()?),
-                        _ => {
-                            let _ = map.next_value::<de::IgnoredAny>()?;
-                        }
-                    }
-                }
-
-                let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
-                let name = name.ok_or_else(|| de::Error::missing_field("name"))?;
-                let created_at = created_at.ok_or_else(|| de::Error::missing_field("created_at"))?;
-                let quantum_safe =
-                    quantum_safe.ok_or_else(|| de::Error::missing_field("quantum_safe"))?;
-                let multi_sig_threshold = multi_sig_threshold
-                    .ok_or_else(|| de::Error::missing_field("multi_sig_threshold"))?;
-                let networks = networks.ok_or_else(|| de::Error::missing_field("networks"))?;
-
-                Ok(WalletInfo {
-                    id,
-                    name,
-                    created_at,
-                    quantum_safe,
-                    multi_sig_threshold,
-                    networks,
-                })
-            }
-        }
-
-        deserializer.deserialize_struct("WalletInfo", &["id", "name", "created_at", "quantum_safe", "multi_sig_threshold", "networks"], WalletInfoVisitor)
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Zeroize, ZeroizeOnDrop)]
