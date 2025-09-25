@@ -3,6 +3,9 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait BlockchainClient: Send + Sync {
+    /// Creates a boxed clone of the client.
+    fn clone_box(&self) -> Box<dyn BlockchainClient>;
+
     /// Get the balance of an address
     async fn get_balance(&self, address: &str) -> Result<String>;
 

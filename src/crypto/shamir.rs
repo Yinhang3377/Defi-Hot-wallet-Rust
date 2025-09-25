@@ -28,12 +28,14 @@ pub fn split_secret(secret: [u8; 32], threshold: u8, shares: u8) -> Result<Vec<(
         let mut share_value = [0u8; 32];
 
         // 对每个字节独立计算多项式
+        #[allow(clippy::needless_range_loop)]
         for byte_idx in 0..32 {
             // 从常数项开始（秘密值）
             let mut y = coefficients[0][byte_idx];
 
             // 计算多项式 f(x) = a_0 + a_1*x + a_2*x^2 + ... + a_{t-1}*x^{t-1}
             let mut x_pow = id;
+            #[allow(clippy::needless_range_loop)]
             for i in 1..coefficients.len() {
                 // GF(256) 乘法，为简化起见，使用普通乘法（在实际应用中应使用适当的GF(256)乘法）
                 let term = (coefficients[i][byte_idx] as u16 * x_pow as u16) % 256; // 修复：确保结果是 u8 类型
@@ -89,6 +91,7 @@ pub fn combine_secret(parts: &[(u8, [u8; 32])]) -> Result<[u8; 32]> {
 }
 
 // GF(256) 加法就是 XOR
+#[allow(dead_code)]
 fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }

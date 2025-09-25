@@ -7,7 +7,7 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
@@ -15,10 +15,10 @@ use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::{info, warn};
 
 use crate::core::config::WalletConfig;
-use crate::core::WalletManager;
-use crate::monitoring::{
-    get_metrics, get_security_monitor, SecurityEvent, SecurityEventType, SecuritySeverity,
-};
+use crate::core::wallet::WalletManager;
+// Monitoring module removed
+// use crate::monitoring::get_metrics;
+// use crate::monitoring::{get_security_monitor, SecurityEvent, SecurityEventType, SecuritySeverity};
 
 #[derive(Clone)]
 pub struct WalletServer {
@@ -133,13 +133,14 @@ async fn health_check() -> Json<serde_json::Value> {
 }
 
 async fn metrics_handler() -> Result<String, StatusCode> {
-    match get_metrics() {
-        Some(metrics) => match metrics.export_metrics() {
-            Ok(metrics_string) => Ok(metrics_string),
-            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-        },
-        None => Err(StatusCode::SERVICE_UNAVAILABLE),
-    }
+    // match get_metrics() {
+    //     Some(metrics) => match metrics.export_metrics() {
+    //         Ok(metrics_string) => Ok(metrics_string),
+    //         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    //     },
+    //     None => Err(StatusCode::SERVICE_UNAVAILABLE),
+    // }
+    Err(StatusCode::NOT_IMPLEMENTED)
 }
 
 async fn create_wallet(
@@ -155,13 +156,13 @@ async fn create_wallet(
         .await
     {
         Ok(wallet_info) => {
-            // Record metrics
-            if let Some(metrics) = get_metrics() {
-                metrics.record_wallet_created();
-                if quantum_safe {
-                    metrics.record_quantum_encryption();
-                }
-            }
+            // // Record metrics
+            // if let Some(metrics) = get_metrics() {
+            //     metrics.record_wallet_created();
+            //     if quantum_safe {
+            //         metrics.record_quantum_encryption();
+            //     }
+            // }
 
             Ok(Json(WalletResponse {
                 id: wallet_info.id.to_string(),
@@ -197,23 +198,23 @@ async fn delete_wallet(
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
     warn!("🗑️ Deleting wallet: {}", name);
 
-    // Record security event
-    if let Some(monitor) = get_security_monitor() {
-        let event = SecurityEvent {
-            event_type: SecurityEventType::UnauthorizedAccess,
-            description: format!("Wallet deletion requested: {}", name),
-            severity: SecuritySeverity::Medium,
-            timestamp: chrono::Utc::now(),
-            source_ip: None, // In a real implementation, extract from request
-            wallet_id: Some(name.clone()),
-        };
-        monitor.report_security_event(event).await;
-    }
+    // // Record security event
+    // if let Some(monitor) = get_security_monitor() {
+    //     let event = SecurityEvent {
+    //         event_type: SecurityEventType::UnauthorizedAccess,
+    //         description: format!("Wallet deletion requested: {}", name),
+    //         severity: SecuritySeverity::Medium,
+    //         timestamp: chrono::Utc::now(),
+    //         source_ip: None, // In a real implementation, extract from request
+    //         wallet_id: Some(name.clone()),
+    //     };
+    //     monitor.report_security_event(event).await;
+    // }
 
-    // Record metrics
-    if let Some(metrics) = get_metrics() {
-        metrics.record_wallet_deleted();
-    }
+    // // Record metrics
+    // if let Some(metrics) = get_metrics() {
+    //     metrics.record_wallet_deleted();
+    // }
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -230,10 +231,10 @@ async fn get_balance(
 
     match wallet_manager.get_balance(&name, &params.network).await {
         Ok(balance) => {
-            // Record metrics
-            if let Some(metrics) = get_metrics() {
-                metrics.record_wallet_accessed();
-            }
+            // // Record metrics
+            // if let Some(metrics) = get_metrics() {
+            //     metrics.record_wallet_accessed();
+            // }
 
             let symbol = match params.network.as_str() {
                 "eth" | "ethereum" | "sepolia" => "ETH",
@@ -270,27 +271,27 @@ async fn send_transaction(
         name, request.to_address, request.amount, request.network
     );
 
-    // Check for suspicious activity
-    if let Some(monitor) = get_security_monitor() {
-        // Parse amount to check for suspiciously large transactions
-        if let Ok(amount_f64) = request.amount.parse::<f64>() {
-            if amount_f64 > 100.0 {
-                // Arbitrary threshold
-                let event = SecurityEvent {
-                    event_type: SecurityEventType::SuspiciousTransaction,
-                    description: format!(
-                        "Large transaction: {} {} from wallet {}",
-                        request.amount, request.network, name
-                    ),
-                    severity: SecuritySeverity::Medium,
-                    timestamp: chrono::Utc::now(),
-                    source_ip: None,
-                    wallet_id: Some(name.clone()),
-                };
-                monitor.report_security_event(event).await;
-            }
-        }
-    }
+    // // Check for suspicious activity
+    // if let Some(monitor) = get_security_monitor() {
+    //     // Parse amount to check for suspiciously large transactions
+    //     if let Ok(amount_f64) = request.amount.parse::<f64>() {
+    //         if amount_f64 > 100.0 {
+    //             // Arbitrary threshold
+    //             let event = SecurityEvent {
+    //                 event_type: SecurityEventType::SuspiciousTransaction,
+    //                 description: format!(
+    //                     "Large transaction: {} {} from wallet {}",
+    //                     request.amount, request.network, name
+    //                 ),
+    //                 severity: SecuritySeverity::Medium,
+    //                 timestamp: chrono::Utc::now(),
+    //                 source_ip: None,
+    //                 wallet_id: Some(name.clone()),
+    //             };
+    //             monitor.report_security_event(event).await;
+    //         }
+    //     }
+    // }
 
     match wallet_manager
         .send_transaction(
@@ -302,12 +303,12 @@ async fn send_transaction(
         .await
     {
         Ok(tx_hash) => {
-            // Record metrics
-            if let Some(metrics) = get_metrics() {
-                let amount_f64 = request.amount.parse::<f64>().unwrap_or(0.0);
-                let fee = 0.001; // Simplified fee calculation
-                metrics.record_transaction_sent(amount_f64, fee);
-            }
+            // // Record metrics
+            // if let Some(metrics) = get_metrics() {
+            //     let amount_f64 = request.amount.parse::<f64>().unwrap_or(0.0);
+            //     let fee = 0.001; // Simplified fee calculation
+            //     metrics.record_transaction_sent(amount_f64, fee);
+            // }
 
             Ok(Json(TransactionResponse {
                 tx_hash,
@@ -317,10 +318,10 @@ async fn send_transaction(
         Err(e) => {
             warn!("Failed to send transaction from wallet {}: {}", name, e);
 
-            // Record failed transaction
-            if let Some(metrics) = get_metrics() {
-                metrics.record_transaction_failed();
-            }
+            // // Record failed transaction
+            // if let Some(metrics) = get_metrics() {
+            //     metrics.record_transaction_failed();
+            // }
 
             Err((
                 StatusCode::BAD_REQUEST,

@@ -1,9 +1,6 @@
-pub mod config;
-pub mod domain;
-pub mod error;
+﻿pub mod config;
+pub mod errors;
+pub mod key_management;
+pub mod validation;
 pub mod wallet;
-
-pub use config::WalletConfig;
-pub use domain::*;
-pub use error::{Result, WalletError};
-pub use wallet::WalletManager;
+// 删除 pub mod bridge; 这一行

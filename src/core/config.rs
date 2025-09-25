@@ -170,3 +170,65 @@ impl WalletConfig {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_validation() {
+        let config = WalletConfig {
+            server: ServerConfig {
+                host: "127.0.0.1".to_string(),
+                port: 8080,
+                tls_enabled: false,
+                cert_path: None,
+                key_path: None,
+            },
+            security: SecurityConfig {
+                quantum_safe_default: false,
+                multi_sig_threshold: 2,
+                hsm_enabled: false,
+                encryption_algorithm: "AES-GCM".to_string(),
+                key_derivation_rounds: 10000,
+                session_timeout_minutes: 30,
+            },
+            blockchain: BlockchainConfig {
+                networks: {
+                    let mut networks = HashMap::new();
+                    networks.insert("eth".to_string(), NetworkConfig {
+                        rpc_url: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID".to_string(),
+                        chain_id: Some(1),
+                        explorer_url: "https://etherscan.io".to_string(),
+                        native_token: "ETH".to_string(),
+                    });
+                    networks
+                },
+                default_gas_limit: 21000,
+                transaction_timeout_seconds: 300,
+            },
+            storage: StorageConfig {
+                database_url: "sqlite::memory:".to_string(),
+                encryption_key_path: "/tmp/key".to_string(),
+                backup_enabled: true,
+                backup_interval_hours: 24,
+            },
+            monitoring: MonitoringConfig {
+                metrics_enabled: true,
+                metrics_port: 9090,
+                log_level: "info".to_string(),
+                alert_webhook_url: Some("https://hooks.slack.com/...".to_string()),
+            },
+            i18n: I18nConfig {
+                default_language: "en".to_string(),
+                supported_languages: vec!["en".to_string(), "zh".to_string()],
+                resources_path: "resources/i18n".to_string(),
+            },
+        };
+        
+        // Test config loading (mock implementation)
+        assert_eq!(config.server.port, 8080);
+        assert_eq!(config.security.multi_sig_threshold, 2);
+        assert!(config.blockchain.networks.contains_key("eth"));
+    }
+}

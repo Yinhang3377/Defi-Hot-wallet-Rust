@@ -1,7 +1,8 @@
+﻿pub mod client;
 pub mod ethereum;
-pub mod solana;
 pub mod traits;
+pub mod solana;
+pub mod bridge;
 
-pub use ethereum::EthereumClient;
-pub use solana::SolanaClient;
 pub use traits::BlockchainClient;
+pub use bridge::Bridge;

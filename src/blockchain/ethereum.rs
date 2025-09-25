@@ -12,6 +12,7 @@ use tracing::{debug, info, warn};
 
 use super::traits::{BlockchainClient, TransactionStatus};
 
+#[derive(Clone)]
 pub struct EthereumClient {
     provider: Provider<Http>,
     network_name: String,
@@ -130,6 +131,10 @@ impl EthereumClient {
 
 #[async_trait]
 impl BlockchainClient for EthereumClient {
+    fn clone_box(&self) -> Box<dyn BlockchainClient> {
+        Box::new(self.clone())
+    }
+
     async fn get_balance(&self, address: &str) -> Result<String> {
         debug!("Getting ETH balance for address: {}", address);
 

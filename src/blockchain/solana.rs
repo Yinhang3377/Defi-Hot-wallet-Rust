@@ -4,7 +4,7 @@ use tracing::{debug, info};
 
 use super::traits::{BlockchainClient, TransactionStatus};
 
-pub struct SolanaClient {
+#[derive(Clone)] pub struct SolanaClient {
     _rpc_url: String,
     network_name: String,
 }
@@ -43,6 +43,10 @@ impl SolanaClient {
 
 #[async_trait]
 impl BlockchainClient for SolanaClient {
+    fn clone_box(&self) -> Box<dyn BlockchainClient> {
+        Box::new(self.clone())
+    }
+
     async fn get_balance(&self, address: &str) -> Result<String> {
         debug!("Getting SOL balance for address: {}", address);
 

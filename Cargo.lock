@@ -1071,6 +1071,7 @@ dependencies = [
  "hex",
  "hkdf",
  "intl-memoizer",
+ "lazy_static",
  "mockall",
  "once_cell",
  "pbkdf2 0.12.2",
