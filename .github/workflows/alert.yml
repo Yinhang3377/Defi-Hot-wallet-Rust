@@ -1,0 +1,20 @@
+name: Exception Alert & Log Analysis
+
+on:
+  workflow_run:
+    workflows: ["Build", "Test", "Security Audit"]
+    types:
+      - completed
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for errors in logs
+        run: |
+          if grep -i 'error' $GITHUB_WORKSPACE/.github/workflows/*.log; then
+            echo '::error ::Detected error in workflow logs.'
+            exit 1
+          else
+            echo 'No critical errors found.'
+          fi

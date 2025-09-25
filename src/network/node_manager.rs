@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use anyhow::{anyhow, Result};
 use hex;
 use reqwest::Client;
@@ -57,3 +58,8 @@ impl NodeManager {
         }
     }
 }
+=======
+//! 节点管理/自动切换模块
+
+// TODO: 实现节点管理与自动切换
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158

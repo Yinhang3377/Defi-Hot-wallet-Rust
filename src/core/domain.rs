@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 use anyhow::Result;
 use zeroize::Zeroize;
 
@@ -113,3 +114,6 @@ impl Drop for Nonce {
         self.zeroize();
     }
 }
+=======
+// ...existing code from domain.rs...
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158

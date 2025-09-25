@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: CI/CD Pipeline
 
 on:
@@ -234,3 +235,20 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ github.token }}
+=======
+name: (Deprecated) Legacy CI/CD Pipeline
+
+# 此工作流仅为向后兼容保留，主 CI 请看 rust-ci.yml
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  legacy-build:
+    if: false  # 禁用执行，仅保留文件避免引用报错
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Legacy CI is deprecated; see rust-ci.yml"
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158

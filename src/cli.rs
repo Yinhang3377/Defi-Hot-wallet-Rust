@@ -6,7 +6,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 // 直接引用库 crate（包名连字符转下划线）
 use defi_hot_wallet::core::{config::WalletConfig, wallet::WalletManager};
 use defi_hot_wallet::{i18n, monitoring};
-// use defi_hot_wallet::storage::WalletMetadata;
 
 #[derive(Parser)]
 #[command(name = "wallet-cli")]
