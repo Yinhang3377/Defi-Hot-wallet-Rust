@@ -1,0 +1,68 @@
+<<<<<<< HEAD
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Keys and certificates
+*.key
+*.pem
+*.crt
+/keys/
+
+# Backup files
+*.backup
+*.bak
+=======
+## Rust build artifacts
+/target/
+
+## Generated wallet file (should not be committed)
+wallet.json
+
+## Environment configuration (contains secrets, do not commit)
+.env
+
+## Backup & editor files
+*.rs.bk
+*.swp
+*.swo
+*.log
+
+## Platform specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Binaries & debug symbols (normally inside target, but just in case)
+*.exe
+*.pdb
+*.rlib
+*.d
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158

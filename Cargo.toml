@@ -1,0 +1,172 @@
+[package]
+name = "defi-hot-wallet"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yinhang3377"]
+description = "A secure DeFi hot wallet with quantum-safe encryption, multi-sig, and cross-chain features."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Yinhang3377/Defi-Hot-wallet-Rust"
+keywords = ["blockchain", "defi", "wallet", "quantum-safe", "cryptography"]
+categories = ["cryptography", "command-line-utilities", "network-programming"]
+
+[lib]
+name = "defi_hot_wallet"
+path = "src/lib.rs"
+
+[dependencies]
+# --- 核心依赖 ---
+# 异步运行时
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+tokio-util = "0.7"
+# Cryptography
+sha2 = "0.10"
+sha3 = "0.10"
+aes-gcm = "0.10" # For traditional encryption
+curve25519-dalek = "4.0"
+chacha20poly1305 = "0.10.1" # 确保版本兼容性
+hkdf = "0.12.4"
+pbkdf2 = "0.12.2"
+scrypt = "0.11.0"
+shamir = "1.0.2"
+ring = "0.17.8"
+zeroize = { version = "1.8.1", features = ["derive"] }
+argon2 = { version = "0.5.3" }
+base64 = "0.22"
+rand = { version = "0.8", features = ["std"] }
+rand_core = "0.6"
+aead = "0.5"
+# Blockchain integrations
+ethers = { version = "2.0", features = ["abigen", "rustls", "ws"] }
+
+# BIP standards
+bip39 = "2.0"
+bip32 = "0.5"
+coins-bip32 = "0.8"
+coins-bip39 = "0.8"
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+derive_more = "0.99"
+bincode = "1.3"
+# Database
+sqlx = { version = "0.7", default-features = false, features = ["sqlite", "chrono", "runtime-tokio", "macros", "tls-rustls"] }
+
+# Logging and monitoring
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+prometheus = { version = "0.13.4", default-features = false, features = ["process"] }
+protobuf = "3.5.0"
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+# Configuration
+config = { version = "0.14", features = ["toml"] }
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+# UUID generation
+uuid = { version = "1.0", features = ["v4", "serde"] }
+# HTTP client/server
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["limit", "trace"] }
+# Internationalization
+regex = "1.10"
+futures = "0.3"
+fluent = "0.16"
+fluent-bundle = "0.15"
+intl-memoizer = "0.5"
+# Additional dependencies
+async-trait = "0.1"
+hex = "0.4"
+base58 = "0.2.0"
+bs58 = "0.5"
+lazy_static = "1.4"
+toml = "0.8"
+once_cell = "1.19"
+parking_lot = "0.12"
+winapi = { version = "0.3", features = ["memoryapi", "processthreadsapi", "debugapi", "winnt", "minwindef"] }
+log = "0.4"
+
+# Testing
+mockall = "0.12"
+
+# 添加缺失的依赖项
+elliptic-curve = "0.13"  # 用于 elliptic_curve traits
+rstest = "0.18"  # 用于参数化测试
+governor = "0.6"  # 添加此行，用于速率限制
+cookie = "0.18"
+bytes = "1.5"
+
+[features]
+default = ["std"]
+std = []
+alloc = []
+strict_security = [] # 移除 itertools 特性
+sop_patch_tests = [] # added for optional patch tests
+yaml = []
+msgpack = []
+
+[dev-dependencies]
+# 添加测试依赖项以解决红色波浪线
+elliptic-curve-tools = { version = "0.1.2", features = ["alloc", "std"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+criterion = "0.5"
+tempfile = "3.8"
+test-log = "0.2"
+assert_cmd = "2.0"
+predicates = "3.1"
+axum-test = "16.0"
+serial_test = "3.0"
+# 添加 serdes_tests.rs 所需的测试专用依赖项
+k256 = { version = "0.13", features = ["arithmetic", "serde"] }
+p256 = { version = "0.13", features = ["arithmetic", "serde"] }
+p384 = { version = "0.13", features = ["arithmetic", "serde"] }
+curve25519-dalek-ml = { version = "4.2", features = ["group", "group-bits"] }
+blsful = "2.5"
+ed448-goldilocks-plus = "0.16"
+heapless = "0.8"
+postcard = { version = "1.0", features = ["alloc", "use-std"] }
+serde_bare = "0.5"
+serde_cbor = "0.11"
+ciborium = "0.2"
+serde_yaml = "0.9"
+bincode = "1.3.3" # bincode 在 dev-dependencies 中也需要
+mockall = "0.12"
+rand = "0.8"
+proptest = "1.5.0"
+httpmock = "0.7"
+pretty_assertions = "1.4.1"
+test-case = "3.3.1"
+itertools = "0.13" # 添加为常规开发依赖
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.57.0", features = ["Win32_System_Memory", "Win32_Foundation"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = true
+
+[profile.dev]
+debug = true
+
+[[bin]]
+name = "hot_wallet"
+path = "src/main.rs"
+
+[[bin]]
+name = "wallet-cli"
+path = "src/cli.rs"
+
+[[bin]]
+name = "bridge_test"
+path = "src/bin/bridge_test.rs"
+
+# --- 本地依赖补丁 ---
+[patch.crates-io]
+# 使用本地的 elliptic-curve-tools 版本
+elliptic-curve-tools = { path = "patches/elliptic-curve-tools" }

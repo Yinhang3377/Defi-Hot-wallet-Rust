@@ -1,0 +1,30 @@
+name: Build and Upload Docs
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build documentation
+        run: cargo doc --no-deps --workspace
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: target/doc

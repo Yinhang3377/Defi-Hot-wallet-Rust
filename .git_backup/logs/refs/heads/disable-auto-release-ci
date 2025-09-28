@@ -1,0 +1,17 @@
+0000000000000000000000000000000000000000 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758600127 +0800	branch: Created from HEAD
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a 1f9314abae1c5cbde28268403d5cd270bd164abe Your Name <you@example.com> 1758601001 +0800	commit: chore: ignore target/ build artifacts
+1f9314abae1c5cbde28268403d5cd270bd164abe 5107e61453d5cf973397acde15b6d2c707236ea6 Your Name <you@example.com> 1758608859 +0800	commit: chore: resubmit full workspace for sync
+5107e61453d5cf973397acde15b6d2c707236ea6 6f33737367034fcde2c9e8c2d239ca1385d0afd4 Your Name <you@example.com> 1758609807 +0800	commit: chore: add check_and_test.ps1 for Windows
+6f33737367034fcde2c9e8c2d239ca1385d0afd4 8219f321a6440d18ff00cc5a10dfcca71e903103 Your Name <you@example.com> 1758610335 +0800	commit: chore: fix check_and_test.ps1 (overwrite placeholder)
+8219f321a6440d18ff00cc5a10dfcca71e903103 a2c4227f43bf4391aac9e3b530ece1df0f8b5649 Your Name <you@example.com> 1758610710 +0800	commit: chore: add/fix check_and_test.ps1
+a2c4227f43bf4391aac9e3b530ece1df0f8b5649 730badcdfe67e0f1a97119c47d7c16ccc6d6cdbb Your Name <you@example.com> 1758610872 +0800	commit: chore: resubmit full workspace for sync
+730badcdfe67e0f1a97119c47d7c16ccc6d6cdbb 1bbe8c660fa68b6023678f5c9b963705d3bd9994 Your Name <you@example.com> 1758614450 +0800	commit: chore(deps): force ring@0.17.14 via patch; add SECURITY.md and cargo-audit CI
+1bbe8c660fa68b6023678f5c9b963705d3bd9994 7be059f3431194a1be70f088734c004d5d19f135 Your Name <you@example.com> 1758618184 +0800	commit: chore: deps cleanup; ready to run tests
+7be059f3431194a1be70f088734c004d5d19f135 978af158e82a9ccc246cdc93b5e3bcb0b300eb08 Your Name <you@example.com> 1758622498 +0800	commit: ci: move secrets to env and gate steps to silence editor squiggles
+978af158e82a9ccc246cdc93b5e3bcb0b300eb08 d34eace6f27f8593a5d46ca400dcd3d65792ec9d Your Name <you@example.com> 1758623925 +0800	commit: ci: replace corrupted workflow with clean working version
+d34eace6f27f8593a5d46ca400dcd3d65792ec9d 8987588aeb4700261c54403ada4c7eff881c1a58 Your Name <you@example.com> 1758625579 +0800	commit: ci: clean YAML, safe release notes via body_path; remove secret warnings
+8987588aeb4700261c54403ada4c7eff881c1a58 1b1f3073f4b9193cd3fe6a69fd4b9ca8fec72b42 Your Name <you@example.com> 1758626215 +0800	commit: ci: clean validated workflow; deps tidy; scripts fix
+1b1f3073f4b9193cd3fe6a69fd4b9ca8fec72b42 49b93f3a00f77d43406a0c31454683bd8eaa74bc Your Name <you@example.com> 1758688621 +0800	commit: Fix serialization conflict in SecureWalletData
+49b93f3a00f77d43406a0c31454683bd8eaa74bc 52cc9e32785f8335fd6d9deac423de5bf8bf918d Your Name <you@example.com> 1758689994 +0800	commit: Fix WalletInfo serialization, solve transaction processing issues
+52cc9e32785f8335fd6d9deac423de5bf8bf918d a88ff0b0784c0a3e52f18cd1f4528e864a9bc313 Your Name <you@example.com> 1758759647 +0800	commit: feat: Initial commit - DeFi Hot Wallet with quantum-safe encryption
+a88ff0b0784c0a3e52f18cd1f4528e864a9bc313 fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758763607 +0800	commit (merge): feat: Initial commit - DeFi Hot Wallet with quantum-safe encryption

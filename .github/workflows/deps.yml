@@ -1,0 +1,28 @@
+name: Dependency Check & Upgrade
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+      - name: Check outdated dependencies
+        run: cargo outdated || true
+      - name: Try auto-upgrade dependencies
+        run: cargo upgrade || true

@@ -1,0 +1,508 @@
+// src/core/config.rs
+//! 配置管理模块
+//! 提供配置文件的加载、保存、验证和管理功能
+
+use crate::tools::error::WalletError;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+
+/// 应用程序配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    /// 应用程序基本信息
+    pub app: AppConfig,
+    /// 区块链网络配置
+    pub blockchain: BlockchainConfig,
+    /// 安全配置
+    pub security: SecurityConfig,
+    /// 存储配置
+    pub storage: StorageConfig,
+    /// 监控配置
+    pub monitoring: MonitoringConfig,
+    /// 国际化配置
+    pub i18n: I18nConfig,
+}
+
+/// 应用程序基本配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppConfig {
+    /// 应用程序名称
+    pub name: String,
+    /// 版本
+    pub version: String,
+    /// 环境
+    pub environment: String,
+    /// 调试模式
+    pub debug: bool,
+    /// 日志级别
+    pub log_level: String,
+}
+
+/// 区块链网络配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BlockchainConfig {
+    /// 默认网络
+    pub default_network: String,
+    /// 网络配置列表
+    pub networks: HashMap<String, NetworkConfig>,
+}
+
+/// 网络配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NetworkConfig {
+    /// 网络名称
+    pub name: String,
+    /// RPC URL
+    pub rpc_url: String,
+    /// 链ID
+    pub chain_id: u64,
+    /// 货币符号
+    pub symbol: String,
+    /// 区块浏览器URL
+    pub explorer_url: Option<String>,
+    /// 确认块数
+    pub confirmations: u64,
+}
+
+/// 安全配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityConfig {
+    /// 加密算法
+    pub encryption_algorithm: String,
+    /// 密钥派生函数
+    pub kdf_algorithm: String,
+    /// 密码最小长度
+    pub min_password_length: usize,
+    /// 会话超时时间（秒）
+    pub session_timeout: u64,
+    /// 最大登录尝试次数
+    pub max_login_attempts: u32,
+    /// 锁定时间（秒）
+    pub lockout_duration: u64,
+    /// 启用双因素认证
+    pub enable_2fa: bool,
+    /// 合规检查
+    pub compliance: ComplianceConfig,
+}
+
+/// 合规配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ComplianceConfig {
+    /// 启用合规检查
+    pub enabled: bool,
+    /// 受限国家列表
+    pub restricted_countries: Vec<String>,
+    /// 受限地址列表
+    pub sanctioned_addresses: Vec<String>,
+    /// 交易限额
+    pub transaction_limits: HashMap<String, f64>,
+    /// KYC要求
+    pub require_kyc: bool,
+}
+
+/// 存储配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageConfig {
+    /// 数据库类型
+    pub database_type: String,
+    /// 数据库URL
+    pub database_url: String,
+    /// 连接池大小
+    pub connection_pool_size: u32,
+    /// 缓存大小
+    pub cache_size: usize,
+    /// 备份间隔（秒）
+    pub backup_interval: u64,
+    /// 保留备份数量
+    pub backup_retention: u32,
+}
+
+/// 监控配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MonitoringConfig {
+    /// 启用监控
+    pub enabled: bool,
+    /// 指标收集间隔（秒）
+    pub metrics_interval: u64,
+    /// 健康检查间隔（秒）
+    pub health_check_interval: u64,
+    /// 警报阈值
+    pub alert_thresholds: HashMap<String, f64>,
+    /// 日志轮转大小（MB）
+    pub log_rotation_size: u64,
+    /// 保留日志天数
+    pub log_retention_days: u32,
+}
+
+/// 国际化配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct I18nConfig {
+    /// 默认语言
+    pub default_language: String,
+    /// 支持的语言列表
+    pub supported_languages: Vec<String>,
+    /// 翻译文件路径
+    pub translation_path: String,
+    /// 时区
+    pub timezone: String,
+}
+
+/// 配置管理器
+pub struct ConfigManager {
+    config: Config,
+    config_path: String,
+}
+
+impl ConfigManager {
+    /// 创建新的配置管理器
+    pub fn new(config_path: impl Into<String>) -> Self {
+        Self { config: Config::default(), config_path: config_path.into() }
+    }
+
+    /// 加载配置
+    pub fn load(&mut self) -> Result<(), WalletError> {
+        if !Path::new(&self.config_path).exists() {
+            // 如果配置文件不存在，创建默认配置
+            self.config = Config::default();
+            self.save()?;
+            return Ok(());
+        }
+
+        let content = fs::read_to_string(&self.config_path).map_err(|e| WalletError::IoError(e))?;
+
+        self.config = serde_json::from_str(&content)
+            .map_err(|e| WalletError::SerializationError(e.to_string()))?;
+
+        Ok(())
+    }
+
+    /// 保存配置
+    pub fn save(&self) -> Result<(), WalletError> {
+        let content = serde_json::to_string_pretty(&self.config)
+            .map_err(|e| WalletError::SerializationError(e.to_string()))?;
+
+        // 确保目录存在
+        if let Some(parent) = Path::new(&self.config_path).parent() {
+            fs::create_dir_all(parent).map_err(|e| WalletError::IoError(e))?;
+        }
+
+        fs::write(&self.config_path, content).map_err(|e| WalletError::IoError(e))?;
+
+        Ok(())
+    }
+
+    /// 获取配置
+    pub fn get_config(&self) -> &Config {
+        &self.config
+    }
+
+    /// 获取可变配置
+    pub fn get_config_mut(&mut self) -> &mut Config {
+        &mut self.config
+    }
+
+    /// 设置配置
+    pub fn set_config(&mut self, config: Config) {
+        self.config = config;
+    }
+
+    /// 验证配置
+    pub fn validate(&self) -> Result<(), WalletError> {
+        self.config.validate()
+    }
+
+    /// 重置为默认配置
+    pub fn reset_to_default(&mut self) {
+        self.config = Config::default();
+    }
+
+    /// 获取配置路径
+    pub fn config_path(&self) -> &str {
+        &self.config_path
+    }
+}
+
+impl Config {
+    /// 创建默认配置
+    pub fn default() -> Self {
+        let mut networks = HashMap::new();
+
+        // Ethereum Mainnet
+        networks.insert(
+            "ethereum_mainnet".to_string(),
+            NetworkConfig {
+                name: "Ethereum Mainnet".to_string(),
+                rpc_url: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID".to_string(),
+                chain_id: 1,
+                symbol: "ETH".to_string(),
+                explorer_url: Some("https://etherscan.io".to_string()),
+                confirmations: 12,
+            },
+        );
+
+        // Solana Mainnet
+        networks.insert(
+            "solana_mainnet".to_string(),
+            NetworkConfig {
+                name: "Solana Mainnet".to_string(),
+                rpc_url: "https://api.mainnet-beta.solana.com".to_string(),
+                chain_id: 101,
+                symbol: "SOL".to_string(),
+                explorer_url: Some("https://solscan.io".to_string()),
+                confirmations: 32,
+            },
+        );
+
+        Self {
+            app: AppConfig {
+                name: "DeFi Hot Wallet".to_string(),
+                version: env!("CARGO_PKG_VERSION").to_string(),
+                environment: "development".to_string(),
+                debug: false,
+                log_level: "info".to_string(),
+            },
+            blockchain: BlockchainConfig {
+                default_network: "ethereum_mainnet".to_string(),
+                networks,
+            },
+            security: SecurityConfig {
+                encryption_algorithm: "AES-256-GCM".to_string(),
+                kdf_algorithm: "PBKDF2".to_string(),
+                min_password_length: 8,
+                session_timeout: 3600, // 1 hour
+                max_login_attempts: 5,
+                lockout_duration: 900, // 15 minutes
+                enable_2fa: true,
+                compliance: ComplianceConfig {
+                    enabled: true,
+                    restricted_countries: vec!["US".to_string(), "CN".to_string()],
+                    sanctioned_addresses: vec![],
+                    transaction_limits: {
+                        let mut limits = HashMap::new();
+                        limits.insert("daily".to_string(), 10000.0);
+                        limits.insert("monthly".to_string(), 50000.0);
+                        limits
+                    },
+                    require_kyc: false,
+                },
+            },
+            storage: StorageConfig {
+                database_type: "SQLite".to_string(),
+                database_url: "wallet.db".to_string(),
+                connection_pool_size: 10,
+                cache_size: 1000,
+                backup_interval: 86400, // 1 day
+                backup_retention: 30,
+            },
+            monitoring: MonitoringConfig {
+                enabled: true,
+                metrics_interval: 60,
+                health_check_interval: 300,
+                alert_thresholds: {
+                    let mut thresholds = HashMap::new();
+                    thresholds.insert("cpu_usage".to_string(), 80.0);
+                    thresholds.insert("memory_usage".to_string(), 90.0);
+                    thresholds
+                },
+                log_rotation_size: 100, // 100 MB
+                log_retention_days: 30,
+            },
+            i18n: I18nConfig {
+                default_language: "en".to_string(),
+                supported_languages: vec!["en".to_string(), "zh".to_string(), "es".to_string()],
+                translation_path: "translations".to_string(),
+                timezone: "UTC".to_string(),
+            },
+        }
+    }
+
+    /// 验证配置
+    pub fn validate(&self) -> Result<(), WalletError> {
+        // 验证应用程序配置
+        if self.app.name.is_empty() {
+            return Err(WalletError::InvalidInput("App name cannot be empty".to_string()));
+        }
+
+        if self.app.version.is_empty() {
+            return Err(WalletError::InvalidInput("App version cannot be empty".to_string()));
+        }
+
+        // 验证区块链配置
+        if self.blockchain.networks.is_empty() {
+            return Err(WalletError::InvalidInput(
+                "At least one network must be configured".to_string(),
+            ));
+        }
+
+        if !self.blockchain.networks.contains_key(&self.blockchain.default_network) {
+            return Err(WalletError::InvalidInput(
+                "Default network not found in networks".to_string(),
+            ));
+        }
+
+        // 验证安全配置
+        if self.security.min_password_length < 8 {
+            return Err(WalletError::InvalidInput(
+                "Minimum password length must be at least 8".to_string(),
+            ));
+        }
+
+        // 验证存储配置
+        if self.storage.database_url.is_empty() {
+            return Err(WalletError::InvalidInput("Database URL cannot be empty".to_string()));
+        }
+
+        // 验证监控配置
+        if self.monitoring.enabled {
+            if self.monitoring.metrics_interval == 0 {
+                return Err(WalletError::InvalidInput(
+                    "Metrics interval cannot be zero".to_string(),
+                ));
+            }
+        }
+
+        // 验证国际化配置
+        if self.i18n.supported_languages.is_empty() {
+            return Err(WalletError::InvalidInput(
+                "At least one supported language must be specified".to_string(),
+            ));
+        }
+
+        if !self.i18n.supported_languages.contains(&self.i18n.default_language) {
+            return Err(WalletError::InvalidInput(
+                "Default language must be in supported languages".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// 获取网络配置
+    pub fn get_network(&self, network_name: &str) -> Option<&NetworkConfig> {
+        self.blockchain.networks.get(network_name)
+    }
+
+    /// 获取默认网络配置
+    pub fn get_default_network(&self) -> &NetworkConfig {
+        self.blockchain
+            .networks
+            .get(&self.blockchain.default_network)
+            .expect("Default network should exist")
+    }
+
+    /// 检查地址是否受限
+    pub fn is_address_restricted(&self, address: &str) -> bool {
+        if !self.security.compliance.enabled {
+            return false;
+        }
+
+        self.security
+            .compliance
+            .sanctioned_addresses
+            .iter()
+            .any(|restricted| restricted.eq_ignore_ascii_case(address))
+    }
+
+    /// 检查国家是否受限
+    pub fn is_country_restricted(&self, country: &str) -> bool {
+        if !self.security.compliance.enabled {
+            return false;
+        }
+
+        self.security
+            .compliance
+            .restricted_countries
+            .iter()
+            .any(|restricted| restricted.eq_ignore_ascii_case(country))
+    }
+
+    /// 获取交易限额
+    pub fn get_transaction_limit(&self, period: &str) -> Option<f64> {
+        if !self.security.compliance.enabled {
+            return None;
+        }
+
+        self.security.compliance.transaction_limits.get(period).copied()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_config_validation() {
+        let config = Config::default();
+        assert!(config.validate().is_ok());
+
+        // Test invalid config
+        let mut invalid_config = config.clone();
+        invalid_config.app.name = "".to_string();
+        assert!(invalid_config.validate().is_err());
+    }
+
+    #[test]
+    fn test_config_loading_and_saving() {
+        let temp_dir = tempdir().unwrap();
+        let config_path = temp_dir.path().join("test_config.json");
+
+        // Create and save config
+        let manager = ConfigManager::new(config_path.to_str().unwrap());
+        manager.save().unwrap();
+
+        // Load config
+        let mut new_manager = ConfigManager::new(config_path.to_str().unwrap());
+        new_manager.load().unwrap();
+
+        // Verify configs are equal
+        assert_eq!(manager.get_config().app.name, new_manager.get_config().app.name);
+        assert_eq!(manager.get_config().app.version, new_manager.get_config().app.version);
+    }
+
+    #[test]
+    fn test_network_config() {
+        let config = Config::default();
+
+        let eth_network = config.get_network("ethereum_mainnet").unwrap();
+        assert_eq!(eth_network.chain_id, 1);
+        assert_eq!(eth_network.symbol, "ETH");
+
+        let default_network = config.get_default_network();
+        assert_eq!(default_network.name, "Ethereum Mainnet");
+    }
+
+    #[test]
+    fn test_compliance_checks() {
+        let config = Config::default();
+
+        // Test restricted address
+        assert!(!config.is_address_restricted("0x1234567890abcdef"));
+
+        // Test restricted countries - US and CN are restricted by default
+        assert!(config.is_country_restricted("US"));
+        assert!(config.is_country_restricted("CN"));
+        assert!(!config.is_country_restricted("JP")); // Japan is not restricted
+
+        // Test transaction limits
+        assert_eq!(config.get_transaction_limit("daily"), Some(10000.0));
+        assert_eq!(config.get_transaction_limit("monthly"), Some(50000.0));
+        assert_eq!(config.get_transaction_limit("nonexistent"), None);
+    }
+
+    #[test]
+    fn test_config_modification() {
+        let mut config = Config::default();
+
+        // Modify config
+        config.app.debug = true;
+        config.security.min_password_length = 12;
+
+        // Validate modified config
+        assert!(config.validate().is_ok());
+        assert_eq!(config.app.debug, true);
+        assert_eq!(config.security.min_password_length, 12);
+    }
+}

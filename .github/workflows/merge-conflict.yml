@@ -1,0 +1,23 @@
+name: Merge Conflict Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  conflict-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main || {
+            echo '::error ::Merge conflict detected with main branch.'
+            exit 1
+          }

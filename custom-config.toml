@@ -1,0 +1,2 @@
+[security]
+quantum_safe_default = false

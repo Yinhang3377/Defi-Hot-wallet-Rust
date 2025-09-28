@@ -1,0 +1,18 @@
+0000000000000000000000000000000000000000 1ee19ed27ec9be4f33268f487b3da9530f92922e Your Name <you@example.com> 1758257588 +0800	commit (initial): init: first commit
+1ee19ed27ec9be4f33268f487b3da9530f92922e 72d78f3ebbc7606af44a7c8e96180b01b547e536 Your Name <you@example.com> 1758261074 +0800	commit: chore: 临时禁用本地 husky 钩子，推送代码
+72d78f3ebbc7606af44a7c8e96180b01b547e536 000b34efdd52b32d29a07b2c6ec0b5be330f968d Your Name <you@example.com> 1758267551 +0800	commit: Update documentation for HR review
+000b34efdd52b32d29a07b2c6ec0b5be330f968d 8c4f7b4116a451c6e6f77409da6b33c970974177 Your Name <you@example.com> 1758267687 +0800	commit: Add documentation files for HR review
+8c4f7b4116a451c6e6f77409da6b33c970974177 696066bcce1abdc348ab1f6e4900aede0d8d6ccd Your Name <you@example.com> 1758268586 +0800	commit: Add CI/CD configuration with system dependencies
+696066bcce1abdc348ab1f6e4900aede0d8d6ccd ab9a07a63a963d4b496c4961be713c9ea51e70b1 Your Name <you@example.com> 1758270323 +0800	commit: Fix code formatting issues
+ab9a07a63a963d4b496c4961be713c9ea51e70b1 6c34b097d1ea2187b12de6e74e0b1c1ccb273559 Your Name <you@example.com> 1758271837 +0800	commit: Fix CI/CD issues
+6c34b097d1ea2187b12de6e74e0b1c1ccb273559 4b5f06078352e6261050a97947559e7e03ae50d2 Your Name <you@example.com> 1758272078 +0800	commit: Fix code formatting issues
+4b5f06078352e6261050a97947559e7e03ae50d2 b8b71977278c6bcc3bcde734db645227200df864 Your Name <you@example.com> 1758277231 +0800	commit: v0.1-mvp: 全链路绿灯 覆盖90%+ CI/Docker就位
+b8b71977278c6bcc3bcde734db645227200df864 b8b71977278c6bcc3bcde734db645227200df864 Your Name <you@example.com> 1758277391 +0800	Branch: renamed refs/heads/master to refs/heads/main
+b8b71977278c6bcc3bcde734db645227200df864 dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc Your Name <you@example.com> 1758295983 +0800	rebase (finish): refs/heads/main onto 0c333202a7fabeaa0e5999ca8810c71687db4cce
+dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc d80daad99129020ddf059518c402a9d80059aed6 Your Name <you@example.com> 1758296066 +0800	commit: chore: regenerate Cargo.lock
+d80daad99129020ddf059518c402a9d80059aed6 31fdeb24ec371e5fd3977894ac809bb60d07f4ea Your Name <you@example.com> 1758296644 +0800	commit: feat(security): simplify memlock implementation and fix portability
+31fdeb24ec371e5fd3977894ac809bb60d07f4ea 7399d631d3598eaf9f5cd847b430f1c38b7feba8 Your Name <you@example.com> 1758296652 +0800	commit (amend): feat(security): simplify memlock implementation and fix portability
+7399d631d3598eaf9f5cd847b430f1c38b7feba8 e87bb36dbbb751fd786520b893dafca672eca271 Your Name <you@example.com> 1758297277 +0800	commit: chore: finalize memlock refactor & clippy clean
+e87bb36dbbb751fd786520b893dafca672eca271 4a4c9b0d91d8a8782205e5860fffdccf26be4507 Your Name <you@example.com> 1758297445 +0800	commit: chore(security): clippy clean (io::Error::other + unused_mut fix)
+4a4c9b0d91d8a8782205e5860fffdccf26be4507 77d7be09b06ecb679b4ea01a667b98436328f422 Your Name <you@example.com> 1758298564 +0800	commit: chore(ci): unify workflows to main + matrix & caching
+77d7be09b06ecb679b4ea01a667b98436328f422 be35db3d094cb6edd3c63585f33fdcb299a57158 Your Name <you@example.com> 1758379027 +0800	merge ci-check-verification: Merge made by the 'ort' strategy.

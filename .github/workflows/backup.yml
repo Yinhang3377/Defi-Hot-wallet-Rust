@@ -1,0 +1,26 @@
+name: Wallet Data Backup
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+<<<<<<< HEAD
+=======
+        with:
+          fetch-depth: 0
+>>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
+      - name: Archive wallet data
+        run: |
+          mkdir -p backup
+          tar czf backup/wallet-backup-$(date +%F).tar.gz data/ || true
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wallet-backup
+          path: backup/

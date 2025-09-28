@@ -1,0 +1,11 @@
+[package]
+name = "defi-hot-wallet"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+elliptic-curve = "0.10"
+rstest = "0.11"
+
+[dev-dependencies]
+proptest = "1.0"

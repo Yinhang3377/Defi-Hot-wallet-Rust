@@ -1,0 +1,223 @@
+//! API 功能测试：测试所有 API 端点的正常功能
+//! 覆盖：钱包管理、交易、历史、备份、多签名、桥接、指标、健康检查
+//! 使用认证头，确保通过 API key 检查
+
+use axum::http::StatusCode;
+use axum_test::TestServer;
+use defi_hot_wallet::api::server::WalletServer;
+use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
+use serde_json::json;
+use std::collections::HashMap;
+use tokio;
+
+fn create_test_config() -> WalletConfig {
+    WalletConfig {
+        storage: StorageConfig {
+            database_url: "sqlite::memory:".to_string(), // 修复：移除 //
+            max_connections: Some(1),
+            connection_timeout_seconds: Some(30),
+        },
+        blockchain: BlockchainConfig {
+            networks: HashMap::new(),
+            default_network: Some("eth".to_string()),
+        },
+        quantum_safe: false,
+        multi_sig_threshold: 2,
+    }
+}
+
+async fn create_test_server() -> TestServer {
+    let config = create_test_config();
+    let api_key = Some("test_api_key".to_string());
+    let server = WalletServer::new("127.0.0.1".to_string(), 0, config, api_key).await.unwrap();
+    TestServer::new(server.create_router().await).unwrap()
+}
+
+async fn create_test_wallet(server: &TestServer, name: &str) {
+    let payload = json!({
+        "name": name,
+        "quantum_safe": false
+    });
+    let response = server
+        .post("/api/wallets")
+        .json(&payload)
+        .add_header("Authorization", "test_api_key")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+}
+
+#[tokio::test]
+async fn test_health_check() {
+    let server = create_test_server().await;
+    let response = server.get("/api/health").await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert_eq!(body["status"], "ok");
+    assert!(body["version"].is_string()); // 补丁：检查版本
+    assert!(body["timestamp"].is_string()); // 补丁：检查时间戳
+}
+
+#[tokio::test]
+async fn test_create_wallet() {
+    let server = create_test_server().await;
+    let payload = json!({
+        "name": "test_wallet",
+        "quantum_safe": true
+    });
+    let response = server
+        .post("/api/wallets")
+        .json(&payload)
+        .add_header("Authorization", "test_api_key") // 修复：添加认证头
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert_eq!(body["name"], "test_wallet");
+    assert_eq!(body["quantum_safe"], true);
+    assert!(body["id"].is_string());
+}
+
+#[tokio::test]
+async fn test_list_wallets() {
+    let server = create_test_server().await;
+    let response = server.get("/api/wallets").add_header("Authorization", "test_api_key").await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: Vec<serde_json::Value> = response.json();
+    assert!(body.is_empty()); // 初始为空
+}
+
+#[tokio::test]
+async fn test_delete_wallet() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let response =
+        server.delete("/api/wallets/test_wallet").add_header("Authorization", "test_api_key").await;
+    assert_eq!(response.status_code(), StatusCode::NO_CONTENT);
+}
+
+#[tokio::test]
+async fn test_get_balance() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let response = server
+        .get("/api/wallets/test_wallet/balance?network=eth")
+        .add_header("Authorization", "test_api_key")
+        .await;
+    // 因为测试服务器没有配置区块链客户端，所以会返回 500 错误
+    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR); // 预期错误，因为没有客户端
+}
+
+#[tokio::test]
+async fn test_send_transaction() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let payload = json!({
+        "to_address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "amount": "0.1",
+        "network": "eth"
+    });
+    let response = server
+        .post("/api/wallets/test_wallet/send")
+        .json(&payload)
+        .add_header("Authorization", "test_api_key")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_get_transaction_history() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let response = server
+        .get("/api/wallets/test_wallet/history")
+        .add_header("Authorization", "test_api_key")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert!(body["transactions"].is_array());
+}
+
+#[tokio::test]
+async fn test_backup_wallet() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let response = server
+        .get("/api/wallets/test_wallet/backup")
+        .add_header("Authorization", "test_api_key")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert!(body["seed_phrase"].is_string());
+}
+
+#[tokio::test]
+async fn test_restore_wallet() {
+    let server = create_test_server().await;
+    let payload = json!({
+        "name": "restored_wallet",
+        "seed_phrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+    });
+    let response = server
+        .post("/api/wallets/restore")
+        .json(&payload)
+        .add_header("Authorization", "test_api_key")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert_eq!(body["name"], "restored_wallet");
+}
+
+#[tokio::test]
+async fn test_send_multi_sig_transaction() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let payload = json!({
+        "to_address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "amount": "0.1",
+        "network": "eth",
+        "signatures": ["sig1", "sig2"]
+    });
+    let response = server
+        .post("/api/wallets/test_wallet/send_multi_sig")
+        .json(&payload)
+        .add_header("Authorization", "test_api_key")
+        .await;
+    // Server now returns 200 OK with a tx_hash in the body for multi-sig send
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert!(body["tx_hash"].is_string());
+}
+
+#[tokio::test]
+async fn test_bridge_assets() {
+    let server = create_test_server().await;
+    create_test_wallet(&server, "test_wallet").await;
+    let payload = json!({
+        "from_wallet": "test_wallet",
+        "from_chain": "eth",
+        "to_chain": "solana",
+        "token": "USDC",
+        "amount": "10.0"
+    });
+    let response =
+        server.post("/api/bridge").json(&payload).add_header("Authorization", "test_api_key").await;
+    // Server now returns 200 OK with a bridge_tx_id in the body for bridge requests
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body: serde_json::Value = response.json();
+    assert!(body["bridge_tx_id"].is_string());
+}
+
+#[tokio::test]
+async fn test_metrics() {
+    let server = create_test_server().await;
+    let response = server.get("/api/metrics").await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+    let body = response.text();
+    assert!(body.contains("# HELP"));
+}
+
+#[tokio::test]
+async fn test_invalid_endpoint() {
+    let server = create_test_server().await;
+    let response = server.get("/invalid-endpoint").await;
+    assert_eq!(response.status_code(), StatusCode::NOT_FOUND);
+}

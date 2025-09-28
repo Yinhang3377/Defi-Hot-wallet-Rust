@@ -1,0 +1,18 @@
+# pack-refs with: peeled fully-peeled sorted 
+fdcd086aface7269e23d37aed9557cf7a213970e refs/heads/50-percent-test-coverage
+96a761af0628714e0f3aa25f12dffa0b69227271 refs/heads/backup_before_reset
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a refs/heads/disable-auto-release
+fdcd086aface7269e23d37aed9557cf7a213970e refs/heads/disable-auto-release-ci
+4f7f5cd935c1367b981cca15beb020f6ae78bb89 refs/heads/local_test_backup
+be35db3d094cb6edd3c63585f33fdcb299a57158 refs/heads/main
+b3d7f405ca818990ee873cf7239f1a8efbf105f1 refs/heads/restore-after-merge
+fdcd086aface7269e23d37aed9557cf7a213970e refs/remotes/origin/50-percent-test-coverage
+be4f497b3fefc42d616845999b0813e51a968c04 refs/remotes/origin/dependabot/cargo/serde-1.0.226
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a refs/remotes/origin/disable-auto-release
+fdcd086aface7269e23d37aed9557cf7a213970e refs/remotes/origin/disable-auto-release-ci
+4f7f5cd935c1367b981cca15beb020f6ae78bb89 refs/remotes/origin/local_test_backup
+be35db3d094cb6edd3c63585f33fdcb299a57158 refs/remotes/origin/main
+c9d88f754e414db0c047a6d947ca9da99f4efdf7 refs/stash
+b2b144b15f48be5626cb5e88329345a847972dfb refs/tags/local_backup_2025-09-22
+^4f7f5cd935c1367b981cca15beb020f6ae78bb89
+b8b71977278c6bcc3bcde734db645227200df864 refs/tags/ready-for-demo

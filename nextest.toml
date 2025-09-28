@@ -1,0 +1,7 @@
+[profile.default]
+fail-fast = false
+
+[profile.e2e]
+# 跑包含 #[ignore] 的验收测试
+run-ignored = "all"
+fail-fast = false

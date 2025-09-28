@@ -1,0 +1,33 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+	hooksPath = .husky
+	editor = notepad
+[remote "origin"]
+	url = git@github.com:Yinhang3377/Defi-Hot-wallet-Rust.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+[user]
+	name = Your Name
+	email = you@example.com
+[branch "restore-after-merge"]
+	remote = origin
+	merge = refs/heads/restore-after-merge
+[branch "disable-auto-release"]
+	vscode-merge-base = origin/restore-after-merge
+	remote = origin
+	merge = refs/heads/disable-auto-release
+[branch "disable-auto-release-ci"]
+	remote = origin
+	vscode-merge-base = origin/disable-auto-release
+	merge = refs/heads/disable-auto-release-ci
+[branch "50-percent-test-coverage"]
+	vscode-merge-base = origin/disable-auto-release-ci
+	remote = origin
+	merge = refs/heads/50-percent-test-coverage

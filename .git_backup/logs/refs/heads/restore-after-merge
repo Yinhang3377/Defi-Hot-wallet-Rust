@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 1848e76f6eef03ba7a0d04fc2eb8873e80afa00f Your Name <you@example.com> 1758379682 +0800	branch: Created from HEAD
+1848e76f6eef03ba7a0d04fc2eb8873e80afa00f aabb39728235a1c7ad4dfc7bd3ee7b99d7929efa Your Name <you@example.com> 1758414924 +0800	commit: chore(docs): add docs skeleton files
+aabb39728235a1c7ad4dfc7bd3ee7b99d7929efa 4f7f5cd935c1367b981cca15beb020f6ae78bb89 Your Name <you@example.com> 1758548091 +0800	commit: WIP: local changes before VM test
+4f7f5cd935c1367b981cca15beb020f6ae78bb89 b3d7f405ca818990ee873cf7239f1a8efbf105f1 Your Name <you@example.com> 1758550626 +0800	commit: WIP: local changes before VM test

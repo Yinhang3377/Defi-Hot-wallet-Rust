@@ -1,0 +1,112 @@
+0000000000000000000000000000000000000000 1ee19ed27ec9be4f33268f487b3da9530f92922e Your Name <you@example.com> 1758257588 +0800	commit (initial): init: first commit
+1ee19ed27ec9be4f33268f487b3da9530f92922e 72d78f3ebbc7606af44a7c8e96180b01b547e536 Your Name <you@example.com> 1758261074 +0800	commit: chore: 临时禁用本地 husky 钩子，推送代码
+72d78f3ebbc7606af44a7c8e96180b01b547e536 000b34efdd52b32d29a07b2c6ec0b5be330f968d Your Name <you@example.com> 1758267551 +0800	commit: Update documentation for HR review
+000b34efdd52b32d29a07b2c6ec0b5be330f968d 8c4f7b4116a451c6e6f77409da6b33c970974177 Your Name <you@example.com> 1758267687 +0800	commit: Add documentation files for HR review
+8c4f7b4116a451c6e6f77409da6b33c970974177 696066bcce1abdc348ab1f6e4900aede0d8d6ccd Your Name <you@example.com> 1758268586 +0800	commit: Add CI/CD configuration with system dependencies
+696066bcce1abdc348ab1f6e4900aede0d8d6ccd ab9a07a63a963d4b496c4961be713c9ea51e70b1 Your Name <you@example.com> 1758270323 +0800	commit: Fix code formatting issues
+ab9a07a63a963d4b496c4961be713c9ea51e70b1 6c34b097d1ea2187b12de6e74e0b1c1ccb273559 Your Name <you@example.com> 1758271837 +0800	commit: Fix CI/CD issues
+6c34b097d1ea2187b12de6e74e0b1c1ccb273559 4b5f06078352e6261050a97947559e7e03ae50d2 Your Name <you@example.com> 1758272078 +0800	commit: Fix code formatting issues
+4b5f06078352e6261050a97947559e7e03ae50d2 b8b71977278c6bcc3bcde734db645227200df864 Your Name <you@example.com> 1758277231 +0800	commit: v0.1-mvp: 全链路绿灯 覆盖90%+ CI/Docker就位
+b8b71977278c6bcc3bcde734db645227200df864 0000000000000000000000000000000000000000 Your Name <you@example.com> 1758277391 +0800	Branch: renamed refs/heads/master to refs/heads/main
+0000000000000000000000000000000000000000 b8b71977278c6bcc3bcde734db645227200df864 Your Name <you@example.com> 1758277391 +0800	Branch: renamed refs/heads/master to refs/heads/main
+b8b71977278c6bcc3bcde734db645227200df864 0c333202a7fabeaa0e5999ca8810c71687db4cce Your Name <you@example.com> 1758277417 +0800	pull origin main --rebase (start): checkout 0c333202a7fabeaa0e5999ca8810c71687db4cce
+0c333202a7fabeaa0e5999ca8810c71687db4cce 3577849efec68c42e2117de4b8547dc364f40431 Your Name <you@example.com> 1758282186 +0800	commit: fix: aes-gcm errors and env setup
+3577849efec68c42e2117de4b8547dc364f40431 af58b2c6f7c93bbecdb15a27518a1ff0f997f588 Your Name <you@example.com> 1758285419 +0800	commit: feat(security): Argon2 key derivation, AES-GCM AAD fix, tests, add .gitignore
+af58b2c6f7c93bbecdb15a27518a1ff0f997f588 ba7681952aa2cac0a55a95030f5b816f4a844702 Your Name <you@example.com> 1758288075 +0800	rebase (continue): chore: 临时禁用本地 husky 钩子，推送代码
+ba7681952aa2cac0a55a95030f5b816f4a844702 9f99f4b1554a8fd2e64561c6e92d66281a64c305 Your Name <you@example.com> 1758288075 +0800	rebase (pick): Update documentation for HR review
+9f99f4b1554a8fd2e64561c6e92d66281a64c305 bb34d4e6b5bfebfe634b8ed5ff8aea2ae3d586ae Your Name <you@example.com> 1758288075 +0800	rebase (pick): Add documentation files for HR review
+bb34d4e6b5bfebfe634b8ed5ff8aea2ae3d586ae dcdc4b0337606ca0ad1db3c7bc3d65b37bc7ef0e Your Name <you@example.com> 1758288075 +0800	rebase (pick): Add CI/CD configuration with system dependencies
+dcdc4b0337606ca0ad1db3c7bc3d65b37bc7ef0e afd2f7679c5b4ce991305a7192afa956ef9cc33e Your Name <you@example.com> 1758291836 +0800	rebase (continue): Fix code formatting issues
+afd2f7679c5b4ce991305a7192afa956ef9cc33e 84a901aace32c82bf45a1d352e7c7df7bcbca92e Your Name <you@example.com> 1758295301 +0800	rebase (continue): Fix CI/CD issues
+84a901aace32c82bf45a1d352e7c7df7bcbca92e dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc Your Name <you@example.com> 1758295918 +0800	rebase (continue): Fix code formatting issues ?
+dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc Your Name <you@example.com> 1758295983 +0800	rebase (finish): returning to refs/heads/main
+dde3a308c130d14e6e06d5dbd7e926f3e7cc56bc d80daad99129020ddf059518c402a9d80059aed6 Your Name <you@example.com> 1758296066 +0800	commit: chore: regenerate Cargo.lock
+d80daad99129020ddf059518c402a9d80059aed6 31fdeb24ec371e5fd3977894ac809bb60d07f4ea Your Name <you@example.com> 1758296644 +0800	commit: feat(security): simplify memlock implementation and fix portability
+31fdeb24ec371e5fd3977894ac809bb60d07f4ea 7399d631d3598eaf9f5cd847b430f1c38b7feba8 Your Name <you@example.com> 1758296652 +0800	commit (amend): feat(security): simplify memlock implementation and fix portability
+7399d631d3598eaf9f5cd847b430f1c38b7feba8 e87bb36dbbb751fd786520b893dafca672eca271 Your Name <you@example.com> 1758297277 +0800	commit: chore: finalize memlock refactor & clippy clean
+e87bb36dbbb751fd786520b893dafca672eca271 4a4c9b0d91d8a8782205e5860fffdccf26be4507 Your Name <you@example.com> 1758297445 +0800	commit: chore(security): clippy clean (io::Error::other + unused_mut fix)
+4a4c9b0d91d8a8782205e5860fffdccf26be4507 77d7be09b06ecb679b4ea01a667b98436328f422 Your Name <you@example.com> 1758298564 +0800	commit: chore(ci): unify workflows to main + matrix & caching
+77d7be09b06ecb679b4ea01a667b98436328f422 77d7be09b06ecb679b4ea01a667b98436328f422 Your Name <you@example.com> 1758299012 +0800	checkout: moving from main to ci-check-verification
+77d7be09b06ecb679b4ea01a667b98436328f422 fc6929341fa385847b832b19af570e4db077485b Your Name <you@example.com> 1758299012 +0800	commit: chore: trigger CI for branch protection sync
+fc6929341fa385847b832b19af570e4db077485b af26fffc51305c756e56222d5331e401d191bf8c Your Name <you@example.com> 1758299277 +0800	commit: fix(ci): remove redundant imports and adjust super-linter config
+af26fffc51305c756e56222d5331e401d191bf8c c7c1880ed159d257d6d6223cd7e2c41e612b5bce Your Name <you@example.com> 1758299423 +0800	commit: fix(memlock): make windows dependency target-specific to avoid linux build errors
+c7c1880ed159d257d6d6223cd7e2c41e612b5bce 6de9c0b0f398c67d599c54a1ba8c30a01a8a7431 Your Name <you@example.com> 1758299530 +0800	commit: refactor(main): remove redundant imports and unused SecretKey
+6de9c0b0f398c67d599c54a1ba8c30a01a8a7431 2f4f5c931f31df07f7fbe6c8657d4bd6ca8b7cb6 Your Name <you@example.com> 1758299809 +0800	commit: test(cli): add create command integration test with strong key
+2f4f5c931f31df07f7fbe6c8657d4bd6ca8b7cb6 58c225c520d98db08f74e14d5aff70332e46cbd3 Your Name <you@example.com> 1758335733 +0800	commit: style: format code to pass rustfmt
+58c225c520d98db08f74e14d5aff70332e46cbd3 a3a69a14dd259fc0edd8e7d4c4cb869ef21d0cbc Your Name <you@example.com> 1758337466 +0800	commit: fix: unify windows crate, clippy & test all pass [auto]
+a3a69a14dd259fc0edd8e7d4c4cb869ef21d0cbc 73b3cd9c52bb0926cf8200dd60ada4f94719cd6c Your Name <you@example.com> 1758337900 +0800	commit: ci: enable Rust CI for all branches and PRs [auto]
+73b3cd9c52bb0926cf8200dd60ada4f94719cd6c c8a6772d9add742a8de6d144ca1c45df7860b431 Your Name <you@example.com> 1758338371 +0800	commit: style: cargo fmt [auto]
+c8a6772d9add742a8de6d144ca1c45df7860b431 80976d9c17e3be20cf965f090642a0a24162bcc6 Your Name <you@example.com> 1758339529 +0800	commit: style: apply rustfmt to all files for CI compliance
+80976d9c17e3be20cf965f090642a0a24162bcc6 87b8eb5a07fd09307e8ecd00ac6e78b9dc01cc51 Your Name <you@example.com> 1758340961 +0800	commit: ci: fix super-linter fetch-depth for full history (CI fatal GITHUB_SHA)
+87b8eb5a07fd09307e8ecd00ac6e78b9dc01cc51 b3a655c06861f4aae91a7f00b4a0665a98c7ce9f Your Name <you@example.com> 1758341037 +0800	commit: fix: remove redundant imports, fix OsRng trait bound and hex/env_logger usage (CI)
+b3a655c06861f4aae91a7f00b4a0665a98c7ce9f f399144476c6f196c689101187618040c158dde4 Your Name <you@example.com> 1758341099 +0800	commit: test: improve error handling in encryption tests (expect instead of unwrap, better CI output)
+f399144476c6f196c689101187618040c158dde4 76b5da31d6c787736654b115b1411d0944537038 Your Name <you@example.com> 1758341223 +0800	commit: test: replace unwrap with expect in encryption tests for robust CI error reporting
+76b5da31d6c787736654b115b1411d0944537038 ec8f915ff9606085afca4e8da4c18c5d55f11a05 Your Name <you@example.com> 1758341519 +0800	commit: style: cargo fmt (encryption, main, tests)
+ec8f915ff9606085afca4e8da4c18c5d55f11a05 e1d7e1d2d91979242975cd48e19dfb57f537314c Your Name <you@example.com> 1758341745 +0800	commit: chore: enforce LF endings via .gitattributes to avoid CI line-ending diffs
+e1d7e1d2d91979242975cd48e19dfb57f537314c 3f707353afd2c2c5025d9141faa36f15662bcc7b Your Name <you@example.com> 1758341779 +0800	commit: ci: set fetch-depth 0 in rust-ci to ensure full history for SHA references
+3f707353afd2c2c5025d9141faa36f15662bcc7b 744928f9bcbee45a6e5bbd674d273215da884573 Your Name <you@example.com> 1758342545 +0800	commit: chore(deps): upgrade rand 0.9, thiserror 2.0, secp256k1 0.31, windows 0.62 and fix deprecated APIs
+744928f9bcbee45a6e5bbd674d273215da884573 67931ebc307ef954643825b33054e484dbf8199f Your Name <you@example.com> 1758342694 +0800	commit (amend): fix: resolve all lints and formatting
+67931ebc307ef954643825b33054e484dbf8199f 4a9a72246887d480d4c5ec2782745e7e1b815b72 Your Name <you@example.com> 1758347065 +0800	commit: ci: disable standalone rustfmt/clippy workflows to avoid duplicate checks (use rust-ci.yml)
+4a9a72246887d480d4c5ec2782745e7e1b815b72 1bd1843719c0525ecb92b2c4d4627d101e936521 Your Name <you@example.com> 1758348786 +0800	commit: fix(ci): gate windows dep + conditional clippy
+1bd1843719c0525ecb92b2c4d4627d101e936521 5844bb6227e7696656a9ae53652481c7103fb20b Your Name <you@example.com> 1758349568 +0800	commit: ci: run memlock jobs on Windows only to avoid windows-future on Linux
+5844bb6227e7696656a9ae53652481c7103fb20b 5844bb6227e7696656a9ae53652481c7103fb20b Your Name <you@example.com> 1758350295 +0800	checkout: moving from ci-check-verification to ci-check-verification
+5844bb6227e7696656a9ae53652481c7103fb20b 26f2259cd3f5eebd0c592ce2d1d6debd5f5196f6 Your Name <you@example.com> 1758350465 +0800	commit: ci: ensure checkout uses full history; gate clippy on runner/os+feature to avoid windows deps on ubuntu
+26f2259cd3f5eebd0c592ce2d1d6debd5f5196f6 68cf2412425b860e47f5301ca619ae3bfc02e02b Your Name <you@example.com> 1758354791 +0800	commit: ci: use step-level if for cross-shell compatibility
+68cf2412425b860e47f5301ca619ae3bfc02e02b a896514ecdc15d634adca8803dfc1cc80cb222b3 Your Name <you@example.com> 1758354910 +0800	commit: ci: force bash shell on run steps and fix if expressions
+a896514ecdc15d634adca8803dfc1cc80cb222b3 a896514ecdc15d634adca8803dfc1cc80cb222b3 plant <plant@localhost.(none)> 1758373864 +0800	branch: Reset to HEAD
+a896514ecdc15d634adca8803dfc1cc80cb222b3 a896514ecdc15d634adca8803dfc1cc80cb222b3 plant <plant@localhost.(none)> 1758373864 +0800	checkout: moving from ci-check-verification to ci-check-verification
+a896514ecdc15d634adca8803dfc1cc80cb222b3 a896514ecdc15d634adca8803dfc1cc80cb222b3 Your Name <you@example.com> 1758373988 +0800	checkout: moving from ci-check-verification to ci-check-verification
+a896514ecdc15d634adca8803dfc1cc80cb222b3 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758373988 +0800	commit: ci: precheck passed
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758375118 +0800	checkout: moving from ci-check-verification to fix/workflow-set-output
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758375136 +0800	branch: Reset to HEAD
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758375136 +0800	checkout: moving from fix/workflow-set-output to fix/workflow-set-output
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758375464 +0800	branch: Reset to HEAD
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 ba1970df19a8ca46c6f79763a9845e96dcc056e8 Your Name <you@example.com> 1758375464 +0800	checkout: moving from fix/workflow-set-output to fix/workflow-set-output
+ba1970df19a8ca46c6f79763a9845e96dcc056e8 77d7be09b06ecb679b4ea01a667b98436328f422 Your Name <you@example.com> 1758379011 +0800	checkout: moving from fix/workflow-set-output to main
+77d7be09b06ecb679b4ea01a667b98436328f422 be35db3d094cb6edd3c63585f33fdcb299a57158 Your Name <you@example.com> 1758379027 +0800	merge ci-check-verification: Merge made by the 'ort' strategy.
+be35db3d094cb6edd3c63585f33fdcb299a57158 1848e76f6eef03ba7a0d04fc2eb8873e80afa00f Your Name <you@example.com> 1758379512 +0800	checkout: moving from main to pr-1
+1848e76f6eef03ba7a0d04fc2eb8873e80afa00f 1848e76f6eef03ba7a0d04fc2eb8873e80afa00f Your Name <you@example.com> 1758379682 +0800	checkout: moving from pr-1 to restore-after-merge
+1848e76f6eef03ba7a0d04fc2eb8873e80afa00f 1848e76f6eef03ba7a0d04fc2eb8873e80afa00f Your Name <you@example.com> 1758380482 +0800	reset: moving to 1848e76f6eef03ba7a0d04fc2eb8873e80afa00f
+1848e76f6eef03ba7a0d04fc2eb8873e80afa00f aabb39728235a1c7ad4dfc7bd3ee7b99d7929efa Your Name <you@example.com> 1758414924 +0800	commit: chore(docs): add docs skeleton files
+aabb39728235a1c7ad4dfc7bd3ee7b99d7929efa 4f7f5cd935c1367b981cca15beb020f6ae78bb89 Your Name <you@example.com> 1758548091 +0800	commit: WIP: local changes before VM test
+4f7f5cd935c1367b981cca15beb020f6ae78bb89 b3d7f405ca818990ee873cf7239f1a8efbf105f1 Your Name <you@example.com> 1758550626 +0800	commit: WIP: local changes before VM test
+b3d7f405ca818990ee873cf7239f1a8efbf105f1 b3d7f405ca818990ee873cf7239f1a8efbf105f1 Your Name <you@example.com> 1758556278 +0800	checkout: moving from restore-after-merge to disable-auto-release
+b3d7f405ca818990ee873cf7239f1a8efbf105f1 96a761af0628714e0f3aa25f12dffa0b69227271 Your Name <you@example.com> 1758556278 +0800	commit: ci: add manual trigger to release workflow
+96a761af0628714e0f3aa25f12dffa0b69227271 96a761af0628714e0f3aa25f12dffa0b69227271 Your Name <you@example.com> 1758559800 +0800	reset: moving to HEAD
+96a761af0628714e0f3aa25f12dffa0b69227271 96a761af0628714e0f3aa25f12dffa0b69227271 Your Name <you@example.com> 1758559801 +0800	checkout: moving from disable-auto-release to disable-auto-release
+96a761af0628714e0f3aa25f12dffa0b69227271 96a761af0628714e0f3aa25f12dffa0b69227271 Your Name <you@example.com> 1758559801 +0800	reset: moving to origin/disable-auto-release
+96a761af0628714e0f3aa25f12dffa0b69227271 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758599700 +0800	commit: ci: add full CI/CD pipeline
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758600127 +0800	checkout: moving from disable-auto-release to disable-auto-release-ci
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758600792 +0800	branch: Reset to HEAD
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758600792 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+3a2061bc96884bcc3fb4b17e51fc540d7c0c220a 1f9314abae1c5cbde28268403d5cd270bd164abe Your Name <you@example.com> 1758601001 +0800	commit: chore: ignore target/ build artifacts
+1f9314abae1c5cbde28268403d5cd270bd164abe 1f9314abae1c5cbde28268403d5cd270bd164abe Your Name <you@example.com> 1758608859 +0800	branch: Reset to origin/disable-auto-release-ci
+1f9314abae1c5cbde28268403d5cd270bd164abe 1f9314abae1c5cbde28268403d5cd270bd164abe Your Name <you@example.com> 1758608859 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+1f9314abae1c5cbde28268403d5cd270bd164abe 5107e61453d5cf973397acde15b6d2c707236ea6 Your Name <you@example.com> 1758608859 +0800	commit: chore: resubmit full workspace for sync
+5107e61453d5cf973397acde15b6d2c707236ea6 6f33737367034fcde2c9e8c2d239ca1385d0afd4 Your Name <you@example.com> 1758609807 +0800	commit: chore: add check_and_test.ps1 for Windows
+6f33737367034fcde2c9e8c2d239ca1385d0afd4 8219f321a6440d18ff00cc5a10dfcca71e903103 Your Name <you@example.com> 1758610335 +0800	commit: chore: fix check_and_test.ps1 (overwrite placeholder)
+8219f321a6440d18ff00cc5a10dfcca71e903103 a2c4227f43bf4391aac9e3b530ece1df0f8b5649 Your Name <you@example.com> 1758610710 +0800	commit: chore: add/fix check_and_test.ps1
+a2c4227f43bf4391aac9e3b530ece1df0f8b5649 a2c4227f43bf4391aac9e3b530ece1df0f8b5649 Your Name <you@example.com> 1758610872 +0800	branch: Reset to origin/disable-auto-release-ci
+a2c4227f43bf4391aac9e3b530ece1df0f8b5649 a2c4227f43bf4391aac9e3b530ece1df0f8b5649 Your Name <you@example.com> 1758610872 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+a2c4227f43bf4391aac9e3b530ece1df0f8b5649 730badcdfe67e0f1a97119c47d7c16ccc6d6cdbb Your Name <you@example.com> 1758610872 +0800	commit: chore: resubmit full workspace for sync
+730badcdfe67e0f1a97119c47d7c16ccc6d6cdbb 1bbe8c660fa68b6023678f5c9b963705d3bd9994 Your Name <you@example.com> 1758614450 +0800	commit: chore(deps): force ring@0.17.14 via patch; add SECURITY.md and cargo-audit CI
+1bbe8c660fa68b6023678f5c9b963705d3bd9994 7be059f3431194a1be70f088734c004d5d19f135 Your Name <you@example.com> 1758618184 +0800	commit: chore: deps cleanup; ready to run tests
+7be059f3431194a1be70f088734c004d5d19f135 978af158e82a9ccc246cdc93b5e3bcb0b300eb08 Your Name <you@example.com> 1758622498 +0800	commit: ci: move secrets to env and gate steps to silence editor squiggles
+978af158e82a9ccc246cdc93b5e3bcb0b300eb08 d34eace6f27f8593a5d46ca400dcd3d65792ec9d Your Name <you@example.com> 1758623925 +0800	commit: ci: replace corrupted workflow with clean working version
+d34eace6f27f8593a5d46ca400dcd3d65792ec9d 8987588aeb4700261c54403ada4c7eff881c1a58 Your Name <you@example.com> 1758625579 +0800	commit: ci: clean YAML, safe release notes via body_path; remove secret warnings
+8987588aeb4700261c54403ada4c7eff881c1a58 1b1f3073f4b9193cd3fe6a69fd4b9ca8fec72b42 Your Name <you@example.com> 1758626215 +0800	commit: ci: clean validated workflow; deps tidy; scripts fix
+1b1f3073f4b9193cd3fe6a69fd4b9ca8fec72b42 49b93f3a00f77d43406a0c31454683bd8eaa74bc Your Name <you@example.com> 1758688621 +0800	commit: Fix serialization conflict in SecureWalletData
+49b93f3a00f77d43406a0c31454683bd8eaa74bc 49b93f3a00f77d43406a0c31454683bd8eaa74bc Your Name <you@example.com> 1758688871 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+49b93f3a00f77d43406a0c31454683bd8eaa74bc 49b93f3a00f77d43406a0c31454683bd8eaa74bc Your Name <you@example.com> 1758689328 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+49b93f3a00f77d43406a0c31454683bd8eaa74bc 52cc9e32785f8335fd6d9deac423de5bf8bf918d Your Name <you@example.com> 1758689994 +0800	commit: Fix WalletInfo serialization, solve transaction processing issues
+52cc9e32785f8335fd6d9deac423de5bf8bf918d 52cc9e32785f8335fd6d9deac423de5bf8bf918d Your Name <you@example.com> 1758759642 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+52cc9e32785f8335fd6d9deac423de5bf8bf918d a88ff0b0784c0a3e52f18cd1f4528e864a9bc313 Your Name <you@example.com> 1758759647 +0800	commit: feat: Initial commit - DeFi Hot Wallet with quantum-safe encryption
+a88ff0b0784c0a3e52f18cd1f4528e864a9bc313 fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758763607 +0800	commit (merge): feat: Initial commit - DeFi Hot Wallet with quantum-safe encryption
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758942880 +0800	branch: Reset to origin/disable-auto-release-ci
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758942880 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758942884 +0800	branch: Reset to origin/disable-auto-release-ci
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758942884 +0800	checkout: moving from disable-auto-release-ci to disable-auto-release-ci
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758943917 +0800	checkout: moving from disable-auto-release-ci to 50-percent-test-coverage
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758956349 +0800	checkout: moving from 50-percent-test-coverage to 50-percent-test-coverage
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1758956589 +0800	checkout: moving from 50-percent-test-coverage to 50-percent-test-coverage
+fdcd086aface7269e23d37aed9557cf7a213970e fdcd086aface7269e23d37aed9557cf7a213970e Your Name <you@example.com> 1759073864 +0800	checkout: moving from 50-percent-test-coverage to Realistic-test-pass-rate-of-over-80%

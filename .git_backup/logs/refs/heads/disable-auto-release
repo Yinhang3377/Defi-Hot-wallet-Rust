@@ -1,0 +1,3 @@
+0000000000000000000000000000000000000000 b3d7f405ca818990ee873cf7239f1a8efbf105f1 Your Name <you@example.com> 1758556278 +0800	branch: Created from HEAD
+b3d7f405ca818990ee873cf7239f1a8efbf105f1 96a761af0628714e0f3aa25f12dffa0b69227271 Your Name <you@example.com> 1758556278 +0800	commit: ci: add manual trigger to release workflow
+96a761af0628714e0f3aa25f12dffa0b69227271 3a2061bc96884bcc3fb4b17e51fc540d7c0c220a Your Name <you@example.com> 1758599700 +0800	commit: ci: add full CI/CD pipeline
