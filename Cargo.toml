@@ -29,7 +29,7 @@ log = "0.4.22"
 env_logger = "0.11.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0" # 添加缺失的依赖
-zeroize = "1.8.1" # 保持最新
+zeroize = "1.8.2" # 保持最新
 rand = { version = "0.9", features = ["std"] } # 升级至 0.9，启用 std 支持
 hex = "0.4.3"
 clap = { version = "4.5", features = ["derive"] }
