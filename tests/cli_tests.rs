@@ -1,6 +1,6 @@
-use std::process::Command;
 use clap::Parser;
 use defi_hot_wallet::cli::{Cli, Commands};
+use std::process::Command;
 
 #[test]
 fn test_cli_help_command() {
@@ -24,7 +24,7 @@ fn test_cli_create_wallet() {
 
     // Note: This might fail if database is not set up, but we check for the command structure
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("🔒") || output.status.success() || !output.status.success());
+    assert!(stdout.contains("馃敀") || output.status.success() || !output.status.success());
     // Allow for setup issues
 }
 
@@ -36,7 +36,7 @@ fn test_cli_list_wallets() {
         .expect("Failed to execute command");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("📋") || output.status.success()); // Allow for empty list
+    assert!(stdout.contains("馃搵") || output.status.success()); // Allow for empty list
 }
 
 #[test]
@@ -96,7 +96,8 @@ fn test_cli_parse_info() {
 #[test]
 fn test_cli_parse_transfer() {
     // Unit test for Transfer command parsing
-    let args = vec!["hot_wallet", "transfer", "--name", "test_wallet", "--to", "0x123", "--amount", "1.0"];
+    let args =
+        vec!["hot_wallet", "transfer", "--name", "test_wallet", "--to", "0x123", "--amount", "1.0"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Transfer { name, to, amount } => {
@@ -124,7 +125,20 @@ fn test_cli_parse_balance() {
 #[test]
 fn test_cli_parse_bridge() {
     // Unit test for Bridge command parsing
-    let args = vec!["hot_wallet", "bridge", "--name", "test_wallet", "--from-chain", "ethereum", "--to-chain", "solana", "--token", "ETH", "--amount", "1.0"];
+    let args = vec![
+        "hot_wallet",
+        "bridge",
+        "--name",
+        "test_wallet",
+        "--from-chain",
+        "ethereum",
+        "--to-chain",
+        "solana",
+        "--token",
+        "ETH",
+        "--amount",
+        "1.0",
+    ];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Bridge { name, from_chain, to_chain, token, amount } => {

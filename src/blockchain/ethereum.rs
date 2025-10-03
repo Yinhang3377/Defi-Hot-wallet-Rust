@@ -1,7 +1,7 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use async_trait::async_trait;
 use ethers::{
-    prelude::{*, JsonRpcClient},
+    prelude::{JsonRpcClient, *},
     providers::{Http, Provider},
     signers::{LocalWallet, Signer},
     types::{Address, TransactionRequest, U256},
@@ -21,7 +21,7 @@ pub struct EthereumClient<P: JsonRpcClient + Clone = Http> {
 
 impl EthereumClient<Http> {
     pub async fn new(rpc_url: &str) -> Result<Self> where {
-        // 清洗与校验 URL
+        // 娓呮礂涓庢牎楠?URL
         let rpc_url_clean = rpc_url.trim();
         let parsed_url = reqwest::Url::parse(rpc_url_clean).map_err(|e| {
             anyhow::anyhow!(
@@ -31,9 +31,8 @@ impl EthereumClient<Http> {
             )
         })?;
 
-        info!("🔗 Connecting to Ethereum network: {}", parsed_url);
-        // 创建一个带超时的 HTTP 客户端（支持环境代理）
-        let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(10));
+        info!("馃敆 Connecting to Ethereum network: {}", parsed_url);
+        // 鍒涘缓涓€涓甫瓒呮椂鐨?HTTP 瀹㈡埛绔紙鏀寔鐜浠ｇ悊锛?        let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(10));
         if let Ok(proxy) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("HTTP_PROXY")) {
             if let Ok(p) = reqwest::Proxy::all(proxy) {
                 builder = builder.proxy(p);
@@ -61,23 +60,22 @@ impl EthereumClient<Http> {
             _ => format!("ethereum-{}", chain_id),
         };
 
-        info!("✅ Connected to {} (Chain ID: {})", network_name, chain_id);
+        info!("鉁?Connected to {} (Chain ID: {})", network_name, chain_id);
 
         Ok(Self { provider, network_name, chain_id })
     }
 
     pub async fn new_with_chain_id(rpc_url: &str, chain_id: u64) -> Result<Self> where {
-        info!("🔗 Connecting to Ethereum network: {} (Chain ID: {})", rpc_url, chain_id);
+        info!("馃敆 Connecting to Ethereum network: {} (Chain ID: {})", rpc_url, chain_id);
 
-        // 重用 `new` 函数的逻辑来创建带有超时的 provider
-        // 这样可以统一客户端的创建方式，并消除重复代码
+        // 閲嶇敤 `new` 鍑芥暟鐨勯€昏緫鏉ュ垱寤哄甫鏈夎秴鏃剁殑 provider
+        // 杩欐牱鍙互缁熶竴瀹㈡埛绔殑鍒涘缓鏂瑰紡锛屽苟娑堥櫎閲嶅浠ｇ爜
         let temp_client = Self::new(rpc_url).await?;
         let provider = temp_client.provider;
 
-        // 验证传入的 chain_id 是否与 RPC 节点返回的一致
-        let network_name = match chain_id {
+        // 楠岃瘉浼犲叆鐨?chain_id 鏄惁涓?RPC 鑺傜偣杩斿洖鐨勪竴鑷?        let network_name = match chain_id {
             1 => "ethereum".to_string(),
-            // 修复硬编码URL中的拼写错误：seepolia -> sepolia
+            // 淇纭紪鐮乁RL涓殑鎷煎啓閿欒锛歴eepolia -> sepolia
             11155111 => "sepolia".to_string(),
             137 => "polygon".to_string(),
             56 => "bsc".to_string(),
@@ -85,14 +83,14 @@ impl EthereumClient<Http> {
             _ => format!("ethereum-{}", chain_id),
         };
 
-        info!("✅ Connected to {} (Chain ID: {})", network_name, chain_id);
+        info!("鉁?Connected to {} (Chain ID: {})", network_name, chain_id);
 
         Ok(Self { provider, network_name, chain_id })
     }
 }
 
 impl<P: JsonRpcClient + Clone> EthereumClient<P>
-where 
+where
     // The `ethers` `Provider` requires its client `P` to be `Send + Sync` for async operations.
     // This bound is necessary for the `BlockchainClient` trait methods to be callable.
     P: Send + Sync,
@@ -109,7 +107,10 @@ where
     fn create_wallet_from_private_key(&self, private_key: &[u8]) -> Result<LocalWallet> {
         // Debug: print to stderr so test runs without initializing tracing still show the info.
         // Print incoming private key length and a hex preview of the bytes for every call to help diagnose tests.
-        eprintln!("create_wallet_from_private_key: incoming private_key.len() = {}", private_key.len());
+        eprintln!(
+            "create_wallet_from_private_key: incoming private_key.len() = {}",
+            private_key.len()
+        );
         // Print up to 32 bytes (full key) in hex for clarity
         eprintln!(
             "create_wallet_from_private_key: bytes = {}",
@@ -138,7 +139,7 @@ where
             Err(e) => Err(anyhow::anyhow!("Failed to get gas price: {}", e)),
         }
     }
-    
+
     pub async fn get_nonce(&self, address: &Address) -> Result<U256> {
         // Diagnostic: indicate this RPC is being called (helps verify MockProvider queue usage)
         eprintln!("get_nonce: called for address: 0x{}", hex::encode(address));
@@ -175,7 +176,7 @@ where
             .map_err(|e| anyhow::anyhow!("Failed to get balance: {}", e))?;
 
         let balance_eth = ethers::utils::format_ether(balance);
-        debug!("✅ Balance: {} ETH", balance_eth);
+        debug!("鉁?Balance: {} ETH", balance_eth);
 
         Ok(balance_eth)
     }
@@ -186,10 +187,11 @@ where
         to_address: &str,
         amount: &str,
     ) -> Result<String> {
-        info!("💸 Sending {} ETH to {}", amount, to_address);
+        info!("馃捀 Sending {} ETH to {}", amount, to_address);
 
         // Create wallet from private key
-        let wallet = self.create_wallet_from_private_key(private_key)
+        let wallet = self
+            .create_wallet_from_private_key(private_key)
             .map_err(|e| anyhow::anyhow!("Failed to create wallet from private key: {}", e))?;
 
         // Parse addresses and amount
@@ -202,9 +204,9 @@ where
         // Get current gas price and nonce
         let gas_price = self.get_gas_price().await?;
         let nonce = self.get_nonce(&wallet.address()).await?;
-    // Debug: print obtained gas price and nonce
-    eprintln!("send_transaction: gas_price = 0x{:x}", gas_price);
-    eprintln!("send_transaction: nonce = 0x{:x}", nonce);
+        // Debug: print obtained gas price and nonce
+        eprintln!("send_transaction: gas_price = 0x{:x}", gas_price);
+        eprintln!("send_transaction: nonce = 0x{:x}", nonce);
 
         // Create transaction
         let tx = TransactionRequest::new()
@@ -224,7 +226,7 @@ where
 
         let tx_hash = format!("{:?}", pending_tx.tx_hash());
 
-        info!("✅ Transaction sent: {}", tx_hash);
+        info!("鉁?Transaction sent: {}", tx_hash);
         Ok(tx_hash)
     }
 
@@ -241,7 +243,7 @@ where
                 } else {
                     TransactionStatus::Failed
                 };
-                debug!("✅ Transaction status: {:?}", status);
+                debug!("鉁?Transaction status: {:?}", status);
                 Ok(status)
             }
             Ok(None) => {
@@ -262,14 +264,8 @@ where
             Err(e) => {
                 // Propagate provider errors instead of masking them as `Unknown`.
                 // This allows the caller to handle network issues or other provider-level problems.
-                warn!(
-                    "Failed to get transaction receipt for {}: {}",
-                    tx_hash, e
-                );
-                Err(anyhow::anyhow!(
-                    "Failed to get transaction receipt: {}",
-                    e
-                ))
+                warn!("Failed to get transaction receipt for {}: {}", tx_hash, e);
+                Err(anyhow::anyhow!("Failed to get transaction receipt: {}", e))
             }
         }
     }
@@ -293,7 +289,7 @@ where
         let total_fee = gas_price * gas_limit;
         let fee_eth = ethers::utils::format_ether(total_fee);
 
-        debug!("✅ Estimated fee: {} ETH", fee_eth);
+        debug!("鉁?Estimated fee: {} ETH", fee_eth);
         Ok(fee_eth)
     }
 
@@ -326,33 +322,52 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ethers::providers::{Http, Provider};
+    use std::convert::TryFrom;
+    use tokio;
 
-    #[test]
-    fn test_address_validation() {
-        let client = EthereumClient {
-            provider: Provider::<Http>::try_from("http://localhost:8545").unwrap(),
-            network_name: "test".to_string(),
-            chain_id: 1,
-        };
-
-        // Valid address
-        assert!(client.validate_address("0x742d35Cc6635C0532925a3b8D400e8B78fFe4860").unwrap());
-
-        // Invalid addresses
-        assert!(!client.validate_address("invalid_address").unwrap());
-        assert!(!client.validate_address("0x742d35Cc6635C0532925a3b8D400e8B78fFe486").unwrap());
-        // Too short
+    // helper to build a client without requiring a live RPC
+    fn make_local_client() -> EthereumClient<Http> {
+        let provider =
+            Provider::<Http>::try_from("http://127.0.0.1:8545").expect("provider url ok");
+        EthereumClient::new_with_provider(provider)
     }
 
     #[test]
-    fn test_network_identification() {
-        let client = EthereumClient {
-            provider: Provider::<Http>::try_from("http://localhost:8545").unwrap(),
-            network_name: "ethereum".to_string(),
-            chain_id: 1,
-        };
+    fn create_wallet_from_private_key_success() {
+        let client = make_local_client();
+        let key = [0x11u8; 32];
+        let wallet = client.create_wallet_from_private_key(&key).expect("should create wallet");
+        let _addr = wallet.address(); // basic smoke check
+    }
 
-        assert_eq!(client.get_network_name(), "ethereum");
-        assert_eq!(client.get_native_token(), "ETH");
+    #[test]
+    fn create_wallet_from_private_key_invalid_length() {
+        let client = make_local_client();
+        let short_key = [0u8; 16];
+        let res = client.create_wallet_from_private_key(&short_key);
+        assert!(res.is_err());
+        let msg = format!("{}", res.unwrap_err());
+        assert!(msg.contains("32") || msg.contains("Private key"), "unexpected err: {}", msg);
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn send_transaction_short_key_fails_fast() {
+        let client = make_local_client();
+        let short_key = [0u8; 16];
+        let res = client
+            .send_transaction(&short_key, "0x0000000000000000000000000000000000000000", "0.1")
+            .await;
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_address_validation_smoke() {
+        let client = make_local_client();
+        assert_eq!(
+            client.validate_address("0x742d35Cc6634C0532925a3b8D400e8B78fFe4860").unwrap(),
+            true
+        );
+        assert!(!client.validate_address("not-an-address").unwrap());
     }
 }

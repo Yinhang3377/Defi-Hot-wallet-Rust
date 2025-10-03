@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+﻿use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -11,61 +11,57 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// 创建新钱包
-    Create {
-        /// 钱包名称
+    /// 鍒涘缓鏂伴挶鍖?    Create {
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 输出文件路径
+        /// 杈撳嚭鏂囦欢璺緞
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
-    /// 显示钱包信息
+    /// 鏄剧ず閽卞寘淇℃伅
     Info {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
     },
-    /// 转账
+    /// 杞处
     Transfer {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 接收地址
+        /// 鎺ユ敹鍦板潃
         #[arg(short, long)]
         to: String,
-        /// 金额
+        /// 閲戦
         #[arg(short, long)]
         amount: String,
     },
-    /// 查询余额
+    /// 鏌ヨ浣欓
     Balance {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
     },
-    /// 桥接转账
+    /// 妗ユ帴杞处
     Bridge {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 源链
+        /// 婧愰摼
         #[arg(long)]
         from_chain: String,
-        /// 目标链
-        #[arg(long)]
+        /// 鐩爣閾?        #[arg(long)]
         to_chain: String,
-        /// 代币
+        /// 浠ｅ竵
         #[arg(short, long)]
         token: String,
-        /// 金额
+        /// 閲戦
         #[arg(short, long)]
         amount: String,
     },
-    /// 列出所有钱包
-    List,
-    /// 生成助记词
-    GenerateMnemonic,
+    /// 鍒楀嚭鎵€鏈夐挶鍖?    List,
+    /// 鐢熸垚鍔╄璇?    GenerateMnemonic,
 }
 
 #[allow(dead_code)]
@@ -75,37 +71,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Commands::Create { name, output } => {
-            println!("🔒 创建钱包: {}", name);
+            println!("馃敀 鍒涘缓閽卞寘: {}", name);
             if let Some(path) = output {
-                println!("输出到: {}", path.display());
+                println!("杈撳嚭鍒? {}", path.display());
             }
-            // TODO: 实现钱包创建逻辑
+            // TODO: 瀹炵幇閽卞寘鍒涘缓閫昏緫
         }
         Commands::Info { name } => {
-            println!("📋 显示钱包信息: {}", name);
-            // TODO: 实现钱包信息显示逻辑
+            println!("馃搵 鏄剧ず閽卞寘淇℃伅: {}", name);
+            // TODO: 瀹炵幇閽卞寘淇℃伅鏄剧ず閫昏緫
         }
         Commands::Transfer { name, to, amount } => {
-            println!("💸 转账: {} -> {} 金额: {}", name, to, amount);
-            // TODO: 实现转账逻辑
+            println!("馃捀 杞处: {} -> {} 閲戦: {}", name, to, amount);
+            // TODO: 瀹炵幇杞处閫昏緫
         }
         Commands::Balance { name } => {
-            println!("💰 查询余额: {}", name);
-            // TODO: 实现余额查询逻辑
+            println!("馃挵 鏌ヨ浣欓: {}", name);
+            // TODO: 瀹炵幇浣欓鏌ヨ閫昏緫
         }
         Commands::Bridge { name, from_chain, to_chain, token, amount } => {
-            println!("🌉 桥接转账: {} 从 {} 到 {} 代币: {} 金额: {}", name, from_chain, to_chain, token, amount);
-            // TODO: 实现桥接逻辑
+            println!(
+                "馃寜 妗ユ帴杞处: {} 浠?{} 鍒?{} 浠ｅ竵: {} 閲戦: {}",
+                name, from_chain, to_chain, token, amount
+            );
+            // TODO: 瀹炵幇妗ユ帴閫昏緫
         }
         Commands::List => {
-            println!("📋 列出所有钱包");
-            // TODO: 实现列出逻辑
+            println!("馃搵 鍒楀嚭鎵€鏈夐挶鍖?);
+            // TODO: 瀹炵幇鍒楀嚭閫昏緫
         }
         Commands::GenerateMnemonic => {
-            // 生成 24 字助记词（模拟）
+            // 鐢熸垚 24 瀛楀姪璁拌瘝锛堟ā鎷燂級
             let mnemonic =
-                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"; // 示例 12 字，实际应生成 24 字
-            println!("{}", mnemonic);
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"; // 绀轰緥 12 瀛楋紝瀹為檯搴旂敓鎴?24 瀛?            println!("{}", mnemonic);
         }
     }
 

@@ -1,4 +1,4 @@
-//! tests/blockchain_ethereum_tests.rs
+﻿//! tests/blockchain_ethereum_tests.rs
 //!
 //! Tests for Ethereum blockchain client functionality.
 //! This file aims for 100% code coverage by testing all methods, branches, and edge cases.

@@ -3,7 +3,7 @@ use defi_hot_wallet::core::WalletManager;
 use std::collections::HashMap;
 use tokio;
 
-/// 创建测试配置，使用内存数据库
+/// 鍒涘缓娴嬭瘯閰嶇疆锛屼娇鐢ㄥ唴瀛樻暟鎹簱
 fn create_test_config() -> WalletConfig {
     WalletConfig {
         storage: StorageConfig {

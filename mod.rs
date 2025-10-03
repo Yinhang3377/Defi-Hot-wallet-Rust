@@ -1,4 +1,4 @@
-//! Minimum Viable Product implementation for the wallet
+﻿//! Minimum Viable Product implementation for the wallet
 //! This module provides simplified APIs for basic wallet functionality
 
 use anyhow::Result;
@@ -9,13 +9,13 @@ use uuid::Uuid;
 /// Creates a new wallet with basic functionality
 pub fn create_wallet(_name: &str, _password: &str) -> Result<String> {
     let wallet_id = Uuid::new_v4().to_string();
-    // 简化实现
+    // 绠€鍖栧疄鐜?
     Ok(wallet_id)
 }
 
 /// Query balance for a wallet
 pub fn query_balance(_wallet_id: &str, _network: &str) -> Result<f64> {
-    // 简化实现
+    // 绠€鍖栧疄鐜?
     Ok(100.0)
 }
 

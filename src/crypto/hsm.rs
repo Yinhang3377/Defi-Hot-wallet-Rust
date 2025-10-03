@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
@@ -30,7 +30,7 @@ pub struct HSMManager {
 
 impl HSMManager {
     pub async fn new() -> Result<Self> {
-        info!("🔒 Initializing HSM Manager");
+        info!("馃敀 Initializing HSM Manager");
 
         let config = HSMConfig {
             enabled: false, // Disabled by default for demo
@@ -48,7 +48,7 @@ impl HSMManager {
     }
 
     pub async fn initialize(&mut self, config: HSMConfig) -> Result<()> {
-        info!("🔧 Initializing HSM with config");
+        info!("馃敡 Initializing HSM with config");
 
         self.config = config;
 
@@ -59,10 +59,10 @@ impl HSMManager {
             // 3. Initialize secure memory pools
             // 4. Set up memory isolation
 
-            info!("🔐 HSM device connection established");
-            info!("🛡️ Memory isolation enabled: {}", self.config.isolation_enabled);
+            info!("馃攼 HSM device connection established");
+            info!("馃洝锔?Memory isolation enabled: {}", self.config.isolation_enabled);
         } else {
-            info!("⚠️ HSM disabled - using software-based secure memory simulation");
+            info!("鈿狅笍 HSM disabled - using software-based secure memory simulation");
         }
 
         self.initialized = true;
@@ -82,15 +82,14 @@ impl HSMManager {
         drop(next_id);
 
         let region = SecureMemoryRegion {
-            data: vec![0u8; size], // 修复：按 size 预分配
-            id,
+            data: vec![0u8; size], // 淇锛氭寜 size 棰勫垎閰?            id,
             allocated_at: chrono::Utc::now(),
         };
 
         let mut regions = self.secure_regions.lock().await;
         regions.insert(id, region);
 
-        debug!("✅ Allocated secure memory region with ID: {}", id);
+        debug!("鉁?Allocated secure memory region with ID: {}", id);
         Ok(id)
     }
 
@@ -103,9 +102,8 @@ impl HSMManager {
             .ok_or_else(|| anyhow::anyhow!("Secure memory region not found: {}", region_id))?;
 
         let n = data.len().min(region.data.len());
-        region.data[..n].copy_from_slice(&data[..n]); // 修复：按最小长度拷贝
-
-        debug!("✅ Data written to secure memory region {}", region_id);
+        region.data[..n].copy_from_slice(&data[..n]); // 淇锛氭寜鏈€灏忛暱搴︽嫹璐?
+        debug!("鉁?Data written to secure memory region {}", region_id);
         Ok(())
     }
 
@@ -117,7 +115,7 @@ impl HSMManager {
             .get(&region_id)
             .ok_or_else(|| anyhow::anyhow!("Secure memory region not found: {}", region_id))?;
 
-        Ok(region.data.clone()) // 修复：返回已分配缓冲
+        Ok(region.data.clone()) // 淇锛氳繑鍥炲凡鍒嗛厤缂撳啿
     }
 
     pub async fn free_secure_memory(&self, region_id: u64) -> Result<()> {
@@ -131,12 +129,12 @@ impl HSMManager {
         // Zeroize the memory before dropping
         region.zeroize();
 
-        debug!("✅ Freed secure memory region {}", region_id);
+        debug!("鉁?Freed secure memory region {}", region_id);
         Ok(())
     }
 
     pub async fn secure_key_generation(&self, key_type: &str, key_size: usize) -> Result<u64> {
-        info!("🔑 Generating secure key: {} (size: {} bytes)", key_type, key_size);
+        info!("馃攽 Generating secure key: {} (size: {} bytes)", key_type, key_size);
 
         if !self.initialized {
             return Err(anyhow::anyhow!("HSM not initialized"));
@@ -149,12 +147,12 @@ impl HSMManager {
         self.write_secure_memory(region_id, &buf).await?;
         buf.zeroize();
 
-        info!("✅ Secure key generated with ID: {}", region_id);
+        info!("鉁?Secure key generated with ID: {}", region_id);
         Ok(region_id)
     }
 
     pub async fn secure_sign(&self, key_region_id: u64, message: &[u8]) -> Result<Vec<u8>> {
-        debug!("🖊️ Signing message with secure key {}", key_region_id);
+        debug!("馃枈锔?Signing message with secure key {}", key_region_id);
 
         if !self.initialized {
             return Err(anyhow::anyhow!("HSM not initialized"));
@@ -171,7 +169,7 @@ impl HSMManager {
         hasher.update(message);
         let signature = hasher.finalize().to_vec();
 
-        debug!("✅ Message signed with secure key");
+        debug!("鉁?Message signed with secure key");
         Ok(signature)
     }
 
@@ -206,7 +204,7 @@ pub struct HSMMemoryStats {
 
 impl Drop for HSMManager {
     fn drop(&mut self) {
-        warn!("🧹 HSM Manager dropping - secure memory will be cleared");
+        warn!("馃Ч HSM Manager dropping - secure memory will be cleared");
         // Note: In async drop, we can't easily await the cleanup
         // In production, implement proper async cleanup
     }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use hkdf::Hkdf;
 use pbkdf2::pbkdf2_hmac;
 use scrypt::Params;
@@ -18,7 +18,7 @@ pub struct KeyDerivation {
 
 impl KeyDerivation {
     pub fn new(algorithm: KDFAlgorithm) -> Self {
-        info!("🔑 Initializing Key Derivation with algorithm: {:?}", algorithm);
+        info!("馃攽 Initializing Key Derivation with algorithm: {:?}", algorithm);
         Self { algorithm }
     }
 
@@ -60,7 +60,7 @@ impl KeyDerivation {
         let mut key = vec![0u8; key_length];
         pbkdf2_hmac::<Sha256>(password, salt, iterations, &mut key);
 
-        debug!("✅ PBKDF2 key derived successfully");
+        debug!("鉁?PBKDF2 key derived successfully");
         Ok(key)
     }
 
@@ -82,7 +82,7 @@ impl KeyDerivation {
         scrypt::scrypt(password, salt, &params, &mut key)
             .map_err(|e| anyhow::anyhow!("Scrypt derivation failed: {}", e))?;
 
-        debug!("✅ Scrypt key derived successfully");
+        debug!("鉁?Scrypt key derived successfully");
         Ok(key)
     }
 
@@ -100,7 +100,7 @@ impl KeyDerivation {
         hk.expand(b"defi-wallet-key", &mut key)
             .map_err(|e| anyhow::anyhow!("HKDF expansion failed: {}", e))?;
 
-        debug!("✅ HKDF key derived successfully");
+        debug!("鉁?HKDF key derived successfully");
         Ok(key)
     }
 
@@ -129,7 +129,7 @@ impl KeyDerivation {
         // Clear the combined input
         combined_input.zeroize();
 
-        debug!("✅ Key derived from mnemonic successfully");
+        debug!("鉁?Key derived from mnemonic successfully");
         Ok(key)
     }
 
@@ -148,7 +148,7 @@ impl KeyDerivation {
 
         let child_key = self.derive_key(&input, chain_code, key_length)?;
 
-        debug!("✅ Child key derived successfully");
+        debug!("鉁?Child key derived successfully");
         Ok(child_key)
     }
 
@@ -159,7 +159,7 @@ impl KeyDerivation {
         let strong_kdf = KeyDerivation::pbkdf2(100_000);
         let strengthened = strong_kdf.derive_key(weak_key, salt, 32)?;
 
-        debug!("✅ Key strengthened successfully");
+        debug!("鉁?Key strengthened successfully");
         Ok(strengthened)
     }
 }

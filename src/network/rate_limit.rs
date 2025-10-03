@@ -1,4 +1,4 @@
-//! src/network/rate_limit.rs
+﻿//! src/network/rate_limit.rs
 //!
 //! Provides rate limiting functionality for network requests.
 
@@ -11,7 +11,13 @@ use std::time::Duration;
 #[derive(Clone)]
 pub struct RateLimiter {
     // Using an Arc to allow the limiter to be shared across threads.
-    limiter: Arc<GovernorRateLimiter<governor::state::NotKeyed, governor::state::InMemoryState, governor::clock::DefaultClock>>,
+    limiter: Arc<
+        GovernorRateLimiter<
+            governor::state::NotKeyed,
+            governor::state::InMemoryState,
+            governor::clock::DefaultClock,
+        >,
+    >,
 }
 
 impl RateLimiter {
@@ -21,7 +27,8 @@ impl RateLimiter {
     /// * `requests` - The number of requests allowed per time period.
     /// * `period` - The time period for the requests.
     pub fn new(requests: u32, period: Duration) -> Self {
-        let quota = Quota::with_period(period).unwrap().allow_burst(NonZeroU32::new(requests).unwrap());
+        let quota =
+            Quota::with_period(period).unwrap().allow_burst(NonZeroU32::new(requests).unwrap());
         Self { limiter: Arc::new(GovernorRateLimiter::direct(quota)) }
     }
 

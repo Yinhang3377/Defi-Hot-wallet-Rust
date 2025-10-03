@@ -1,77 +1,30 @@
-/*
-    Copyright Michael Lodder. All Rights Reserved.
-    SPDX-License-Identifier: Apache-2.0
-*/
-//! Extra Rust Crypto elliptic-curve adaptors, functions, and macros
-//!
-//! There are some methods that can be applied to many different elliptic curves
-//! fields and groups.
-//!
-//! This crate provides multi-exponentiation functions
-//! and serialization for different types of scalars and groups.
-//! Serialization doesn't use any allocations and is no_std compliant.
-//!
-//! In addition with the `alloc` or `std` feature, it can
-//! handle serializing Vec as well.
-//!
-//! To permit serializing a [`PrimeField`]
-//!
-//! ```
-//! use elliptic_curve_tools::prime_field;
-//! use elliptic_curve::PrimeField;
-//! use serde::{Deserialize, Serialize};
-//!
-//! #[derive(Serialize, Deserialize)]
-//! pub struct PrimeFieldWrapper<F: PrimeField>( #[serde(with = "prime_field")] F);
-//! ```
-//!
-//! To permit serializing a [`Group`]
-//!
-//! ```
-//! use elliptic_curve_tools::group;
-//! use elliptic_curve::{Group, group::GroupEncoding};
-//! use serde::{Deserialize, Serialize};
-//!
-//! #[derive(Serialize, Deserialize)]
-//! pub struct GroupWrapper<G: Group + GroupEncoding>( #[serde(with = "group")] G);
-//! ```
-//!
-//! Other collections can also be serialized like
-//! - Fixed sized arrays like [[`PrimeField`]; 32] or [[`Group + GroupEncoding`]; 32]
-//! -
-//!
-#![deny(
-    clippy::unwrap_used,
-    clippy::panic,
-    clippy::panic_in_result_fn,
-    missing_docs,
-    unused_import_braces,
-    unused_qualifications,
-    unused_parens,
-    unused_lifetimes,
-    unconditional_recursion,
-    unused_extern_crates,
-    trivial_casts,
-    trivial_numeric_casts
-)]
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-
-/// Serialization and deserialization utilities for elliptic curve types.
-pub mod serdes;
-mod sum_of_products;
+use elliptic_curve::{ff::PrimeFieldBits, Group};
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;
 
-#[cfg(feature = "std")]
-#[cfg_attr(feature = "std", macro_use)]
-extern crate std;
-
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 use alloc::{boxed::Box, string::String, vec::Vec};
-#[cfg(feature = "std")]
-use std::{boxed::Box, string::String, vec::Vec};
 
-pub use serdes::*;
-pub use sum_of_products::*;
+// 娣诲姞 sum_of_products 妯″潡
+pub mod sum_of_products;
+
+// 娣诲姞瀵?serdes 妯″潡鐨勫鍑猴紙鏀惧湪鍚堥€備綅缃級
+pub mod serdes;
+
+/// 瀵逛换鎰忓疄鐜?Group 鐨勭被鍨嬶紝鎻愪緵鈥滄爣閲?鐐瑰鈥濈殑涔樺姞姹傚拰
+pub trait SumOfProducts: Group {
+    /// 璁＄畻 pairs 涓?(scalar_i * point_i) 鐨勫拰
+    fn sum_of_products(pairs: &[(Self::Scalar, Self)]) -> Self;
+}
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl<G> SumOfProducts for G
+where
+    G: Group + zeroize::DefaultIsZeroes,
+    G::Scalar: zeroize::DefaultIsZeroes + PrimeFieldBits,
+{
+    fn sum_of_products(pairs: &[(Self::Scalar, Self)]) -> Self {
+        sum_of_products::sum_of_products_impl(pairs)
+    }
+}

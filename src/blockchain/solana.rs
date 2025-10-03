@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use async_trait::async_trait;
 use tracing::{debug, info};
 
@@ -12,7 +12,7 @@ pub struct SolanaClient {
 
 impl SolanaClient {
     pub async fn new(rpc_url: &str) -> Result<Self> {
-        info!("🔗 Connecting to Solana network: {}", rpc_url);
+        info!("馃敆 Connecting to Solana network: {}", rpc_url);
 
         // Determine network name from RPC URL
         let network_name = if rpc_url.contains("mainnet") {
@@ -25,12 +25,12 @@ impl SolanaClient {
             "solana-custom".to_string()
         };
 
-        info!("✅ Connected to {} (simulated)", network_name);
+        info!("鉁?Connected to {} (simulated)", network_name);
 
         Ok(Self { _rpc_url: rpc_url.to_string(), network_name })
     }
 
-    // 简单静态校验：Base58 且 32 字节
+    // 绠€鍗曢潤鎬佹牎楠岋細Base58 涓?32 瀛楄妭
     pub fn validate_solana_address(addr: &str) -> bool {
         match bs58::decode(addr).into_vec() {
             Ok(bytes) => bytes.len() == 32,
@@ -55,7 +55,7 @@ impl BlockchainClient for SolanaClient {
         // Simulated balance - in a real implementation, this would call the Solana RPC
         let balance_sol = "1.234567890";
 
-        debug!("✅ Balance: {} SOL (simulated)", balance_sol);
+        debug!("鉁?Balance: {} SOL (simulated)", balance_sol);
         Ok(balance_sol.to_string())
     }
 
@@ -65,7 +65,7 @@ impl BlockchainClient for SolanaClient {
         to_address: &str,
         amount: &str,
     ) -> Result<String> {
-        info!("💸 Sending {} SOL to {} (simulated)", amount, to_address);
+        info!("馃捀 Sending {} SOL to {} (simulated)", amount, to_address);
 
         if private_key.len() != 32 {
             return Err(anyhow::anyhow!("Private key must be 32 bytes for Solana"));
@@ -82,7 +82,7 @@ impl BlockchainClient for SolanaClient {
         // Simulated transaction hash
         let tx_hash = format!("simulated_solana_tx_{}", chrono::Utc::now().timestamp());
 
-        info!("✅ Transaction sent (simulated): {}", tx_hash);
+        info!("鉁?Transaction sent (simulated): {}", tx_hash);
         Ok(tx_hash)
     }
 
@@ -103,7 +103,7 @@ impl BlockchainClient for SolanaClient {
         // Solana typically has very low fees (around 0.000005 SOL)
         let fee_sol = "0.000005000";
 
-        debug!("✅ Estimated fee: {} SOL (simulated)", fee_sol);
+        debug!("鉁?Estimated fee: {} SOL (simulated)", fee_sol);
         Ok(fee_sol.to_string())
     }
 

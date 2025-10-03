@@ -1,2 +1,2 @@
-pub fn init_infra() { /* stub */
+﻿pub fn init_infra() { /* stub */
 }

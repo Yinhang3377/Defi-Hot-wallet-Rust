@@ -25,7 +25,7 @@ mod tests {
 
     #[test]
     fn test_send_transaction_empty_wallet() {
-        let result = send_transaction("", Some(100)); // 修复：添加 Some
+        let result = send_transaction("", Some(100)); // 淇锛氭坊鍔?Some
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid wallet name");
     }
@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_send_transaction_invalid_wallet() {
-        let result = send_transaction("!@#$%^&*()", Some(100)); // 修复：添加 Some
+        let result = send_transaction("!@#$%^&*()", Some(100)); // 淇锛氭坊鍔?Some
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid wallet name");
     }

@@ -1,14 +1,13 @@
-use lazy_static::lazy_static;
+﻿use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-// 使用 lazy_static 进行线程安全的单次初始化
+// 浣跨敤 lazy_static 杩涜绾跨▼瀹夊叏鐨勫崟娆″垵濮嬪寲
 lazy_static! {
     static ref TX_STATUS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
-// 辅助函数，用于获取全局的状态存储
-fn status_store() -> &'static Mutex<HashMap<String, String>> {
+// 杈呭姪鍑芥暟锛岀敤浜庤幏鍙栧叏灞€鐨勭姸鎬佸瓨鍌?fn status_store() -> &'static Mutex<HashMap<String, String>> {
     &TX_STATUS
 }
 
@@ -40,7 +39,7 @@ pub fn bridge_assets_amount(amount: Option<&str>) -> Result<f64, String> {
 }
 
 pub fn generate_log(msg: &str) -> String {
-    // 真实实现可接入 tracing/log
+    // 鐪熷疄瀹炵幇鍙帴鍏?tracing/log
     format!("LOG: {msg}")
 }
 
@@ -101,32 +100,31 @@ pub fn is_signature_valid(_sig: &[u8], _public_key: &str) -> bool {
 
 pub fn send_transaction(wallet: &str, amount: Option<u64>) -> Result<String, String> {
     if amount.is_none() || amount.unwrap() == 0 {
-        // 验证金额
+        // 楠岃瘉閲戦
         return Err("Invalid amount".to_string());
     }
     if wallet.is_empty() || wallet.chars().any(|c| !c.is_alphanumeric() && c != '_') {
-        // 验证钱包名称
+        // 楠岃瘉閽卞寘鍚嶇О
         return Err("Invalid wallet name".to_string());
     }
-    // 生成一个模拟的交易哈希
+    // 鐢熸垚涓€涓ā鎷熺殑浜ゆ槗鍝堝笇
     let hash = format!("0xhash_{}", wallet);
-    // 获取状态存储的锁，并插入新交易的状态为 "sent"
+    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵彃鍏ユ柊浜ゆ槗鐨勭姸鎬佷负 "sent"
     let mut map = status_store().lock().unwrap();
     map.insert(hash.clone(), "sent".into());
     Ok(hash)
 }
 
 pub fn confirm_transaction(id_or_hash: String) -> Result<bool, String> {
-    // 获取状态存储的锁，并更新交易状态为 "confirmed"
+    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵洿鏂颁氦鏄撶姸鎬佷负 "confirmed"
     let mut map = status_store().lock().unwrap();
     map.insert(id_or_hash, "confirmed".into());
     Ok(true)
 }
 
 pub fn get_transaction_status(id_or_hash: String) -> String {
-    // 获取状态存储的锁，并查询交易状态
-    let map = status_store().lock().unwrap();
-    map.get(&id_or_hash).cloned().unwrap_or_else(|| "pending".into()) // 如果找不到，则返回 "pending"
+    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵煡璇氦鏄撶姸鎬?    let map = status_store().lock().unwrap();
+    map.get(&id_or_hash).cloned().unwrap_or_else(|| "pending".into()) // 濡傛灉鎵句笉鍒帮紝鍒欒繑鍥?"pending"
 }
 
 pub fn calculate_bridge_fee(amount: Option<&str>) -> Result<f64, String> {

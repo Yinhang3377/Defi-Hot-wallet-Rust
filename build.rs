@@ -1,4 +1,4 @@
 fn main() {
-    // 确保库和二进制程序的链接正确
+    // 纭繚搴撳拰浜岃繘鍒剁▼搴忕殑閾炬帴姝ｇ‘
     println!("cargo:rerun-if-changed=src/lib.rs");
 }

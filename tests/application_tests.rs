@@ -2,8 +2,8 @@
 //!
 //! Tests for the application service layer in `src/application/application.rs`.
 
-use defi_hot_wallet::application::application::WalletService;
 use defi_hot_wallet::core::domain::Wallet;
+use defi_hot_wallet::service::WalletService;
 
 #[test]
 fn test_service_initialization() {

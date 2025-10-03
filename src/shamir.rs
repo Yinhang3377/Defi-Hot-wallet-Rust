@@ -1,6 +1,6 @@
-use std::num::NonZeroU8;
+﻿use std::num::NonZeroU8;
 
-/// Shamir 秘密分享相关的错误类型
+/// Shamir 绉樺瘑鍒嗕韩鐩稿叧鐨勯敊璇被鍨?
 #[derive(Debug, thiserror::Error)]
 pub enum ShamirError {
     #[error("Invalid parameters: {0}")]
@@ -11,15 +11,15 @@ pub enum ShamirError {
     CombineFailed(String),
 }
 
-/// 将秘密分割成多个份额。
+/// 灏嗙瀵嗗垎鍓叉垚澶氫釜浠介銆?
 ///
 /// # Arguments
-/// * `secret` - 要分割的秘密数据。
-/// * `threshold` - 恢复秘密所需的最小份额数 (k)。
-/// * `total_shares` - 要生成的总份额数 (n)。
+/// * `secret` - 瑕佸垎鍓茬殑绉樺瘑鏁版嵁銆?
+/// * `threshold` - 鎭㈠绉樺瘑鎵€闇€鐨勬渶灏忎唤棰濇暟 (k)銆?
+/// * `total_shares` - 瑕佺敓鎴愮殑鎬讳唤棰濇暟 (n)銆?
 ///
 /// # Returns
-/// 一个包含 `total_shares` 个份额的向量。
+/// 涓€涓寘鍚?`total_shares` 涓唤棰濈殑鍚戦噺銆?
 pub fn split_secret(
     secret: &[u8],
     threshold: u8,
@@ -40,19 +40,19 @@ pub fn split_secret(
         .map_err(|e| ShamirError::SplitFailed(e.to_string()))
 }
 
-/// 从一组份额中恢复秘密。
+/// 浠庝竴缁勪唤棰濅腑鎭㈠绉樺瘑銆?
 ///
 /// # Arguments
-/// * `shares` - 用于恢复秘密的份额切片。
+/// * `shares` - 鐢ㄤ簬鎭㈠绉樺瘑鐨勪唤棰濆垏鐗囥€?
 ///
 /// # Returns
-/// 恢复的秘密数据。
+/// 鎭㈠鐨勭瀵嗘暟鎹€?
 pub fn combine_shares(shares: &[Vec<u8>]) -> Result<Vec<u8>, ShamirError> {
     if shares.is_empty() {
         return Err(ShamirError::InvalidParameters("Shares cannot be empty".to_string()));
     }
 
-    // 检查份额 ID 是否唯一且非零
+    // 妫€鏌ヤ唤棰?ID 鏄惁鍞竴涓旈潪闆?
     let mut ids = std::collections::HashSet::new();
     for share in shares {
         if share.is_empty() {
@@ -78,7 +78,7 @@ mod tests {
         let secret = b"test secret data";
         let shares = split_secret(secret, 3, 5).unwrap();
         assert_eq!(shares.len(), 5);
-        // 使用不同的 3 个份额组合
+        // 浣跨敤涓嶅悓鐨?3 涓唤棰濈粍鍚?
         let recovered = combine_shares(&[shares[0].clone(), shares[2].clone(), shares[4].clone()]).unwrap();
         assert_eq!(recovered, secret);
     }

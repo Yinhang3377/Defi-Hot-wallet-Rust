@@ -1,4 +1,4 @@
-use thiserror::Error;
+﻿use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, WalletError>;
 

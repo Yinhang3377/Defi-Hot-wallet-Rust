@@ -1,34 +1,35 @@
-// src/api/handlers/bridge.rs
+// tests/bridge.rs - helper that mirrors a bridge handler behavior for tests
 use axum::{extract::State, http::StatusCode, response::Json};
-use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::sync::Arc;
 use tracing::{info, warn};
 
-use defi_hot_wallet::api::server::ErrorResponse;
+use defi_hot_wallet::api::types::{BridgeAssetsRequest, ErrorResponse};
 use defi_hot_wallet::core::wallet_manager::WalletManager;
-
-#[derive(Debug, Deserialize)]
-pub struct BridgeRequest {
-    pub from_wallet: String,
-    pub from_chain: String,
-    pub to_chain: String,
-    pub token: String,
-    pub amount: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct BridgeResponse {
-    pub bridge_tx_id: String,
-}
 
 pub async fn bridge_assets(
     State(wallet_manager): State<Arc<WalletManager>>,
-    Json(request): Json<BridgeRequest>,
-) -> Result<Json<BridgeResponse>, (StatusCode, Json<ErrorResponse>)> {
-    info!(
-        "🌉 API call to bridge assets for wallet '{}': {} {} from {} to {}",
-        request.from_wallet, request.amount, request.token, request.from_chain, request.to_chain
-    );
+    Json(request): Json<BridgeAssetsRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
+    // If the wallet does not exist in the state, return a 404 error.
+    // This is crucial for testing the 'wallet_not_found' scenario.
+    if !wallet_manager
+        .list_wallets()
+        .await
+        .unwrap_or_default()
+        .iter()
+        .any(|w| w.name == request.from_wallet)
+    {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
+                error: "Wallet not found".to_string(),
+                code: "WALLET_NOT_FOUND".to_string(),
+            }),
+        ));
+    }
+
+    info!("Test bridge called: {} -> {}", request.from_chain, request.to_chain);
 
     match wallet_manager
         .bridge_assets(
@@ -40,9 +41,9 @@ pub async fn bridge_assets(
         )
         .await
     {
-        Ok(bridge_tx_id) => Ok(Json(BridgeResponse { bridge_tx_id })),
+        Ok(bridge_tx_id) => Ok(Json(json!({ "bridge_tx_id": bridge_tx_id }))),
         Err(e) => {
-            warn!("Failed to bridge assets: {}", e);
+            warn!("bridge failed: {}", e);
             Err((
                 StatusCode::BAD_REQUEST,
                 Json(ErrorResponse { error: e.to_string(), code: "BRIDGE_FAILED".to_string() }),

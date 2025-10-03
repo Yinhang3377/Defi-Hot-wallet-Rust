@@ -1,26 +1,26 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use zeroize::Zeroize;
 
-/// 领域模型
+/// 棰嗗煙妯″瀷
 
-#[derive(Serialize, Deserialize)] // 添加 Serialize derive
+#[derive(Serialize, Deserialize)] // 娣诲姞 Serialize derive
 pub struct Wallet {
     pub id: String,
-    // 添加其他字段
+    // 娣诲姞鍏朵粬瀛楁
 }
 
 impl Wallet {
     pub fn from_mnemonic(_mnemonic: &str) -> Result<Self> {
-        // 实现
+        // 瀹炵幇
         Ok(Wallet { id: "test".to_string() })
     }
 }
 
-#[derive(Serialize, Deserialize)] // 添加 Serialize derive
+#[derive(Serialize, Deserialize)] // 娣诲姞 Serialize derive
 pub struct Tx {
-    // 添加字段
+    // 娣诲姞瀛楁
     pub to: String,
     pub amount: u64,
 }
@@ -137,7 +137,7 @@ mod tests {
         let tx = Tx::new(&wallet, "0x123", 100);
         let serialized = tx.serialize();
         assert!(!serialized.is_empty());
-        // 验证可以反序列化
+        // 楠岃瘉鍙互鍙嶅簭鍒楀寲
         let deserialized: Tx = serde_json::from_slice(&serialized).unwrap();
         assert_eq!(deserialized.to, tx.to);
         assert_eq!(deserialized.amount, tx.amount);

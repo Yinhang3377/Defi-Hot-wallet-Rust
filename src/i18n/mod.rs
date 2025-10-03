@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use fluent::{FluentBundle, FluentResource};
 use fluent_bundle::FluentArgs;
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ pub struct I18nManager {
 
 impl I18nManager {
     pub fn new(default_language: String) -> Self {
-        info!("🌍 Initializing internationalization manager (default: {})", default_language);
+        info!("馃實 Initializing internationalization manager (default: {})", default_language);
 
         Self { bundles: HashMap::new(), default_language }
     }
@@ -27,7 +27,7 @@ impl I18nManager {
         let mut bundle = FluentBundle::new(vec![language
             .parse()
             .map_err(|e| anyhow::anyhow!("Invalid language code: {}", e))?]);
-        bundle.set_use_isolating(false); // 修复：关闭 Unicode 隔离包装
+        bundle.set_use_isolating(false); // 淇锛氬叧闂?Unicode 闅旂鍖呰
 
         bundle
             .add_resource(resource)
@@ -35,7 +35,7 @@ impl I18nManager {
 
         self.bundles.insert(language.to_string(), bundle);
 
-        info!("✅ Loaded language: {}", language);
+        info!("鉁?Loaded language: {}", language);
         Ok(())
     }
 
@@ -115,23 +115,22 @@ greeting = Hello, { $name }!
 "#;
 
         let zh_content = r#"
-hello = 你好，世界！
-greeting = 你好，{ $name }！
-"#;
+hello = 浣犲ソ锛屼笘鐣岋紒
+greeting = 浣犲ソ锛寋 $name }锛?"#;
 
         manager.load_language("en", en_content).unwrap();
         manager.load_language("zh", zh_content).unwrap();
 
         // Test simple message
         assert_eq!(manager.get_text("en", "hello", None), "Hello, World!");
-        assert_eq!(manager.get_text("zh", "hello", None), "你好，世界！");
+        assert_eq!(manager.get_text("zh", "hello", None), "浣犲ソ锛屼笘鐣岋紒");
 
         // Test message with arguments
         let mut args = FluentArgs::new();
         args.set("name", "Alice");
 
         assert_eq!(manager.get_text("en", "greeting", Some(&args)), "Hello, Alice!");
-        assert_eq!(manager.get_text("zh", "greeting", Some(&args)), "你好，Alice！");
+        assert_eq!(manager.get_text("zh", "greeting", Some(&args)), "浣犲ソ锛孉lice锛?);
 
         // Test fallback to default language
         assert_eq!(manager.get_text("fr", "hello", None), "Hello, World!");

@@ -1,4 +1,4 @@
-const proptest = require('proptest');
+﻿const proptest = require('proptest');
 
 proptest! {
     #[test]

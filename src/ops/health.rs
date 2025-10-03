@@ -1,4 +1,4 @@
-//! src/ops/health.rs
+﻿//! src/ops/health.rs
 //!
 //! Provides health check functionality for the wallet service.
 
@@ -9,7 +9,7 @@ pub struct HealthCheck;
 impl HealthCheck {
     /// Creates a new HealthCheck instance.
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     /// Checks if the system is healthy.

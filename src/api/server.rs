@@ -1,17 +1,19 @@
-use axum::{
+﻿use axum::{
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::Json,
     routing::{delete, get, post},
     Router,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::TraceLayer;
 
+use crate::api::handlers;
+use crate::api::types::*;
 use crate::core::config::WalletConfig;
 use crate::core::errors::WalletError;
 use crate::core::wallet_manager::WalletManager;
@@ -50,9 +52,8 @@ impl WalletServer {
             .route("/api/metrics", get(metrics))
             .layer(
                 ServiceBuilder::new()
-                    .layer(RequestBodyLimitLayer::new(1024 * 1024)) // 1MB 请求体限制（速率限制）
-                    .layer(TraceLayer::new_for_http()),
-            ) // 日志
+                    .layer(RequestBodyLimitLayer::new(1024 * 1024)) // 1MB 璇锋眰浣撻檺鍒讹紙閫熺巼闄愬埗锛?                    .layer(TraceLayer::new_for_http()),
+            ) // 鏃ュ織
             .with_state(state)
     }
 
@@ -78,89 +79,10 @@ async fn authenticate(headers: &HeaderMap, api_key: &Option<String>) -> Result<(
     Ok(())
 }
 
-#[derive(Deserialize)]
-pub struct CreateWalletRequest {
-    pub name: String,
-    pub quantum_safe: bool,
-}
+// shared request/response types are in crate::api::types
 
-#[derive(Serialize)]
-pub struct WalletResponse {
-    pub id: String,
-    pub name: String,
-    pub quantum_safe: bool,
-}
-
-#[derive(Deserialize)]
-pub struct SendTransactionRequest {
-    pub to_address: String,
-    pub amount: String,
-    pub network: String,
-}
-
-#[derive(Serialize)]
-pub struct TransactionResponse {
-    pub tx_hash: String,
-    pub status: String,
-}
-
-#[derive(Deserialize, Serialize)]
-pub struct BridgeAssetsRequest {
-    pub from_wallet: String,
-    pub from_chain: String,
-    pub to_chain: String,
-    pub token: String,
-    pub amount: String,
-}
-
-#[derive(Serialize)]
-pub struct BridgeResponse {
-    pub bridge_tx_id: String,
-}
-
-#[derive(Serialize)]
-pub struct BalanceResponse {
-    pub balance: String,
-    pub network: String,
-    pub symbol: String,
-}
-
-#[derive(Serialize)]
-pub struct TransactionHistoryResponse {
-    pub transactions: Vec<String>,
-}
-
-#[derive(Serialize)]
-pub struct BackupResponse {
-    pub seed_phrase: String,
-}
-
-#[derive(Deserialize)]
-pub struct RestoreWalletRequest {
-    pub name: String,
-    pub seed_phrase: String,
-}
-
-#[derive(Deserialize)]
-pub struct MultiSigTransactionRequest {
-    pub to_address: String,
-    pub amount: String,
-    pub network: String,
-    pub signatures: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: String,
-    pub code: String,
-}
-
-async fn health_check() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "status": "ok",
-        "version": env!("CARGO_PKG_VERSION"),  // 补丁：添加版本
-        "timestamp": chrono::Utc::now().to_rfc3339()  // 补丁：添加时间戳
-    }))
+async fn health_check() -> axum::response::Json<serde_json::Value> {
+    handlers::health_check().await
 }
 
 async fn create_wallet(
@@ -661,86 +583,10 @@ async fn bridge_assets(
         )
     })?;
 
-    if payload.from_wallet.is_empty()
-        || payload.from_chain.is_empty()
-        || payload.to_chain.is_empty()
-        || payload.token.is_empty()
-        || payload.amount.is_empty()
-    {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: "Invalid parameters".to_string(),
-                code: "BRIDGE_FAILED".to_string(),
-            }),
-        ));
-    }
-
-    if payload.amount.parse::<f64>().unwrap_or(-1.0) <= 0.0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: "Invalid amount".to_string(),
-                code: "BRIDGE_FAILED".to_string(),
-            }),
-        ));
-    }
-
-    if payload.from_chain != "eth" && payload.from_chain != "solana" {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            Json(ErrorResponse {
-                error: "Unsupported chain".to_string(),
-                code: "BRIDGE_FAILED".to_string(),
-            }),
-        ));
-    }
-
-    match state.wallet_manager.list_wallets().await {
-        Ok(wallets) => {
-            if !wallets.iter().any(|w| w.name == payload.from_wallet) {
-                return Err((
-                    StatusCode::NOT_FOUND,
-                    Json(ErrorResponse {
-                        error: "Wallet not found".to_string(),
-                        code: "BRIDGE_FAILED".to_string(),
-                    }),
-                ));
-            }
-        }
-        Err(_) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse {
-                    error: "Failed to check wallet".to_string(),
-                    code: "BRIDGE_FAILED".to_string(),
-                }),
-            ))
-        }
-    }
-
-    match state
-        .wallet_manager
-        .bridge_assets(
-            &payload.from_wallet,
-            &payload.from_chain,
-            &payload.to_chain,
-            &payload.token,
-            &payload.amount,
-        )
-        .await
-    {
-        Ok(bridge_tx_id) => Ok(Json(BridgeResponse { bridge_tx_id })),
-        Err(_) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Failed to bridge assets".to_string(),
-                code: "BRIDGE_FAILED".to_string(),
-            }),
-        )),
-    }
+    // Delegate to handlers.rs for the actual business logic; pass the WalletManager state
+    handlers::bridge_assets(State(state.wallet_manager.clone()), Json(payload)).await
 }
 
 async fn metrics() -> String {
-    "# HELP defi_hot_wallet_requests_total Total number of requests\n# TYPE defi_hot_wallet_requests_total counter\ndefi_hot_wallet_requests_total 0\n".to_string()
+    handlers::metrics_handler().await
 }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use prometheus::{Counter, Encoder, Gauge, Histogram, HistogramOpts, Registry, TextEncoder};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -37,7 +37,7 @@ pub struct WalletMetrics {
 
 impl WalletMetrics {
     pub fn new() -> Result<Self> {
-        info!("📊 Initializing wallet metrics");
+        info!("馃搳 Initializing wallet metrics");
 
         let registry = Registry::new();
 
@@ -114,7 +114,7 @@ impl WalletMetrics {
         registry.register(Box::new(blockchain_errors.clone()))?;
         registry.register(Box::new(network_latency.clone()))?;
 
-        info!("✅ Wallet metrics initialized");
+        info!("鉁?Wallet metrics initialized");
 
         Ok(Self {
             registry,
@@ -148,7 +148,7 @@ impl WalletMetrics {
 
     pub fn record_wallet_created(&self) {
         self.wallets_created.inc();
-        info!("📊 Recorded wallet creation");
+        info!("馃搳 Recorded wallet creation");
     }
 
     pub fn record_wallet_accessed(&self) {
@@ -157,26 +157,26 @@ impl WalletMetrics {
 
     pub fn record_wallet_deleted(&self) {
         self.wallets_deleted.inc();
-        warn!("📊 Recorded wallet deletion");
+        warn!("馃搳 Recorded wallet deletion");
     }
 
     pub fn record_transaction_sent(&self, value: f64, fee: f64) {
         self.transactions_sent.inc();
         self.transaction_value.observe(value);
         self.transaction_fees.observe(fee);
-        info!("📊 Recorded successful transaction: value={}, fee={}", value, fee);
+        info!("馃搳 Recorded successful transaction: value={}, fee={}", value, fee);
     }
 
     pub fn record_transaction_failed(&self) {
         self.transactions_failed.inc();
-        error!("📊 Recorded failed transaction");
+        error!("馃搳 Recorded failed transaction");
     }
 
     pub fn record_login_attempt(&self, success: bool) {
         self.login_attempts.inc();
         if !success {
             self.failed_logins.inc();
-            warn!("📊 Recorded failed login attempt");
+            warn!("馃搳 Recorded failed login attempt");
         }
     }
 
@@ -206,7 +206,7 @@ impl WalletMetrics {
 
         if !success {
             self.blockchain_errors.inc();
-            warn!("📊 Recorded blockchain API error");
+            warn!("馃搳 Recorded blockchain API error");
         }
     }
 }
@@ -247,7 +247,7 @@ pub enum SecuritySeverity {
 
 impl SecurityMonitor {
     pub fn new(metrics: Arc<WalletMetrics>) -> Self {
-        info!("🛡️ Initializing security monitor");
+        info!("馃洝锔?Initializing security monitor");
 
         Self { metrics, suspicious_activity: Arc::new(Mutex::new(Vec::new())) }
     }
@@ -261,7 +261,7 @@ impl SecurityMonitor {
         };
 
         warn!(
-            "🚨 Security Event [{}]: {} - {}",
+            "馃毃 Security Event [{}]: {} - {}",
             severity_str,
             format!("{:?}", event.event_type),
             event.description
@@ -303,7 +303,7 @@ impl SecurityMonitor {
 
         if failed_logins >= 5 {
             warn!(
-                "🚨 Detected suspicious activity: {} failed logins from IP {}",
+                "馃毃 Detected suspicious activity: {} failed logins from IP {}",
                 failed_logins, ip
             );
             return true;
@@ -321,7 +321,7 @@ impl SecurityMonitor {
                 .count();
 
             if suspicious_txs >= 3 {
-                warn!("🚨 Detected suspicious transaction activity for wallet {}", wallet_id);
+                warn!("馃毃 Detected suspicious transaction activity for wallet {}", wallet_id);
                 return true;
             }
         }
@@ -330,7 +330,7 @@ impl SecurityMonitor {
     }
 
     async fn send_critical_alert(&self, event: &SecurityEvent) {
-        error!("🚨 CRITICAL SECURITY ALERT: {:?} - {}", event.event_type, event.description);
+        error!("馃毃 CRITICAL SECURITY ALERT: {:?} - {}", event.event_type, event.description);
 
         // In a real implementation, this would:
         // - Send webhook notifications
@@ -359,7 +359,7 @@ pub async fn init_metrics() -> Result<()> {
         .set(security_monitor)
         .map_err(|_| anyhow::anyhow!("Security monitor already initialized"))?;
 
-    info!("✅ Monitoring system initialized");
+    info!("鉁?Monitoring system initialized");
     Ok(())
 }
 

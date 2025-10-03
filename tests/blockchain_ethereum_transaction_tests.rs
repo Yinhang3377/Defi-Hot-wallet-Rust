@@ -8,16 +8,15 @@ use defi_hot_wallet::blockchain::traits::{BlockchainClient, TransactionStatus};
 use ethers::prelude::*;
 use ethers::providers::{MockProvider, MockResponse, Provider};
 use ethers::types::U256;
-use std::str::FromStr;
 use serde_json::json;
+use std::str::FromStr;
 
 // Helper function to create a mock provider with a provider
 fn create_mock_client() -> (EthereumClient<MockProvider>, MockProvider) {
-    let mock_provider = MockProvider::new();
-    // Move the original mock into the Provider and keep a clone to push responses from the test.
-    let push_handle = mock_provider.clone();
-    let provider = Provider::new(mock_provider);
-    (EthereumClient::new_with_provider(provider), push_handle)
+    let mock = MockProvider::new();
+    let handle = mock.clone();
+    let provider = Provider::new(mock);
+    (EthereumClient::new_with_provider(provider), handle)
 }
 
 #[tokio::test]
@@ -28,23 +27,19 @@ async fn test_ethereum_client_new_invalid_url() {
 }
 
 #[tokio::test]
-async fn test_ethereum_client_new_valid_url() {
-    // Test creating client with valid URL (mock, assumes no real connection)
-    let result = EthereumClient::new("http://localhost:8545").await;
-    // In mock environment, it might succeed or fail; adjust based on implementation
-    // For coverage, just call it
-    let _ = result;
-}
-
-#[tokio::test]
 async fn test_send_transaction_normal() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // push in reverse because MockProvider is LIFO: last pushed is returned first
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash)))); // send_transaction
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42))))); // nonce
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64))))); // gas_price
+    // 3. 妯℃嫙 eth_sendRawTransaction 鍝嶅簲
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    // 2. 妯℃嫙 eth_getTransactionCount (nonce) 鍝嶅簲
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    // 1. 妯℃嫙 eth_gasPrice 鍝嶅簲
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
 
     let private_key = [1u8; 32]; // A non-zero private key
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
@@ -57,21 +52,15 @@ async fn test_send_transaction_normal() {
 #[tokio::test]
 async fn test_send_transaction_zero_amount() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
-    let gas_json = json!(format!("0x{:x}", U256::from(10_000_000_000u64))); // Lower gas price
-    let nonce_json = json!(format!("0x{:x}", U256::from(42)));
-    let tx_json = json!(format!("{:?}", tx_hash));
-
-    // Debug: print what's being pushed to the mock provider to ensure correct order/shape
-    eprintln!("TEST PUSH gas_json = {}", gas_json);
-    eprintln!("TEST PUSH nonce_json = {}", nonce_json);
-    eprintln!("TEST PUSH tx_json = {}", tx_json);
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // push in reverse because MockProvider is LIFO
-    mock_provider.push_response(MockResponse::Value(tx_json));
-    mock_provider.push_response(MockResponse::Value(nonce_json));
-    mock_provider.push_response(MockResponse::Value(gas_json)); // Lower gas price
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
+
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.0"; // Zero amount
@@ -83,16 +72,18 @@ async fn test_send_transaction_zero_amount() {
 #[tokio::test]
 async fn test_send_transaction_max_amount() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
 
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    let amount = "1000000000000000000000"; // 1000 ETH
+    let amount = "1000.0"; // 1000 ETH
 
     let result_tx_hash = client.send_transaction(&private_key, to_address, amount).await.unwrap();
     assert_eq!(result_tx_hash, format!("{:?}", tx_hash));
@@ -101,15 +92,18 @@ async fn test_send_transaction_max_amount() {
 #[tokio::test]
 async fn test_send_transaction_duplicate_tx() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash.clone()))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    // Add extra responses for the second call
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(43))))); // Increment nonce for second call
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
+    // Mock responses for the second call (LIFO)
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(43))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
+    // Mock responses for the first call (LIFO)
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
 
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
@@ -172,15 +166,16 @@ async fn test_send_transaction_empty_private_key() {
 #[tokio::test]
 async fn test_send_transaction_same_address() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [1u8; 32];
-    let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"; // Same as from (derived from private key)
+    let to_address = "0x14791697260E4c9A71f18484C9f997B308e59325"; // Address for private_key [1u8; 32]
     let amount = "0.01";
 
     // This might succeed or fail depending on implementation; for coverage, call it
@@ -192,12 +187,13 @@ async fn test_send_transaction_same_address() {
 #[tokio::test]
 async fn test_send_transaction_large_amount() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "1000000.0"; // Large amount
@@ -233,13 +229,14 @@ async fn test_send_transaction_empty_amount() {
 #[tokio::test]
 async fn test_send_transaction_with_custom_gas() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(30_000_000_000u64))))); // Higher gas price
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(30_000_000_000u64)))); // Higher gas price
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.01";
@@ -263,13 +260,14 @@ async fn test_send_transaction_with_empty_to_address() {
 #[tokio::test]
 async fn test_send_transaction_with_max_private_key() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     // Use a valid private key
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
@@ -282,13 +280,14 @@ async fn test_send_transaction_with_max_private_key() {
 #[tokio::test]
 async fn test_send_transaction_with_various_amounts() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.001"; // Small amount
@@ -300,12 +299,13 @@ async fn test_send_transaction_with_various_amounts() {
 #[tokio::test]
 async fn test_send_transaction_with_various_private_keys() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [2u8; 32]; // Different private key
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.01";
@@ -317,12 +317,13 @@ async fn test_send_transaction_with_various_private_keys() {
 #[tokio::test]
 async fn test_send_transaction_with_various_gas_prices() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.01";
@@ -334,12 +335,13 @@ async fn test_send_transaction_with_various_gas_prices() {
 #[tokio::test]
 async fn test_send_transaction_with_various_to_addresses() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
     let private_key = [1u8; 32];
     let to_address = "0x1234567890123456789012345678901234567890"; // Different address
     let amount = "0.01";
@@ -351,13 +353,14 @@ async fn test_send_transaction_with_various_to_addresses() {
 #[tokio::test]
 async fn test_send_transaction_with_various_combinations() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(43))))); // Different nonce
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(25_000_000_000u64))))); // Different gas price
-    
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(43)))); // Different nonce
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(25_000_000_000u64)))); // Different gas price
     let private_key = [3u8; 32]; // Different key
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.02"; // Different amount
@@ -374,7 +377,9 @@ async fn test_send_transaction_with_various_edge_cases() {
     // A key of all zeros is considered invalid by the `ethers` library.
     let invalid_private_key = [0u8; 32];
 
-    let result = client.send_transaction(&invalid_private_key, "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", "0.1").await;
+    let result = client
+        .send_transaction(&invalid_private_key, "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", "0.1")
+        .await;
     assert!(result.is_err()); // Check that the error is handled correctly
     assert!(result.unwrap_err().to_string().contains("Invalid private key"));
 }
@@ -382,13 +387,14 @@ async fn test_send_transaction_with_various_edge_cases() {
 #[tokio::test]
 async fn test_send_transaction_with_various_scenarios() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(100))))); // High nonce
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(50_000_000_000u64))))); // High gas price
-
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(100)))); // High nonce
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(50_000_000_000u64)))); // High gas price
     let private_key = [100u8; 32]; // Arbitrary key
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "1.0";
@@ -400,12 +406,14 @@ async fn test_send_transaction_with_various_scenarios() {
 #[tokio::test]
 async fn test_send_transaction_with_various_inputs() {
     let (client, mock_provider) = create_mock_client();
-    let tx_hash = H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef").unwrap();
+    let tx_hash =
+        H256::from_str("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+            .unwrap();
 
     // LIFO: push tx then nonce then gas
-    mock_provider.push_response(MockResponse::Value(json!(format!("{:?}", tx_hash))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(42)))));
-    mock_provider.push_response(MockResponse::Value(json!(format!("0x{:x}", U256::from(20_000_000_000u64)))));
+    mock_provider.push_response(MockResponse::Value(json!(tx_hash)));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(42))));
+    mock_provider.push_response(MockResponse::Value(json!(U256::from(20_000_000_000u64))));
 
     let private_key = [1u8; 32];
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
@@ -469,7 +477,7 @@ async fn test_get_transaction_status_pending() {
     });
     // For LIFO: push tx_json then null so get_transaction_receipt() (called first) returns null and get_transaction() returns tx_json
     mock_provider.push_response(MockResponse::Value(tx_json));
-    mock_provider.push_response(MockResponse::Value(json!(null)));  // receipt
+    mock_provider.push_response(MockResponse::Value(json!(null))); // receipt
 
     let tx_hash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
     let status = client.get_transaction_status(tx_hash).await.unwrap();
@@ -511,8 +519,8 @@ async fn test_get_transaction_status_unknown() {
 
     // Not found: both receipt and transaction are None
     // LIFO: push transaction then receipt null
-    mock_provider.push_response(MockResponse::Value(json!(null)));  // transaction
-    mock_provider.push_response(MockResponse::Value(json!(null)));  // receipt
+    mock_provider.push_response(MockResponse::Value(json!(null))); // transaction
+    mock_provider.push_response(MockResponse::Value(json!(null))); // receipt
 
     let provider = Provider::new(mock_provider);
     let client = EthereumClient::new_with_provider(provider);

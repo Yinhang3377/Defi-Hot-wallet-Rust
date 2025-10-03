@@ -32,7 +32,9 @@ FROM alpine:latest
 RUN apk add --no-cache \
     ca-certificates \
     sqlite \
-    openssl
+    openssl \
+    python3 \
+    py3-pip
 
 # Create non-root user
 RUN addgroup -g 1001 -S defi && \
@@ -48,6 +50,8 @@ COPY --from=builder --chown=defi:defi /app/target/release/wallet-cli /usr/local/
 
 # Copy configuration and resources
 COPY --from=builder --chown=defi:defi /app/resources ./resources
+# Copy a simple mock RPC server (used in place of full node dependencies)
+COPY --from=builder --chown=defi:defi /app/tools/mock_rpc.py /app/tools/mock_rpc.py
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/keys /app/logs && \
@@ -72,5 +76,5 @@ ENV WALLET_PORT=8080
 # Volume for persistent data
 VOLUME ["/app/data", "/app/keys", "/app/logs"]
 
-# Default command
-CMD ["defi-wallet", "server", "--host", "0.0.0.0", "--port", "8080"]
+# Default command: start a lightweight mock RPC server in background and then the app
+CMD ["/bin/sh", "-c", "python3 /app/tools/mock_rpc.py & exec /usr/local/bin/defi-wallet server --host 0.0.0.0 --port 8080"]

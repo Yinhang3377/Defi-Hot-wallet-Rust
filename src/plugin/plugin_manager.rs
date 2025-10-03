@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+﻿<<<<<<< HEAD
 use crate::plugin::plugin::Plugin;
 
 #[derive(Default)]

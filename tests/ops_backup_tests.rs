@@ -1,16 +1,12 @@
-use defi_hot_wallet::ops::backup::*;
+﻿use defi_hot_wallet::ops::backup::*;
 
 #[test]
 fn test_backup_create() {
     let backup = Backup::new("wallet_name");
-    assert_eq!(backup.wallet_name, "wallet_name");  // 覆盖 new 方法和字段访问
-}
+    assert_eq!(backup.wallet_name, "wallet_name"); // 瑕嗙洊 new 鏂规硶鍜屽瓧娈佃闂?}
 
-/// 测试 `perform_backup` 占位函数。
-/// 这个测试验证了占位函数当前总是返回成功 (`Ok(())`)，
-/// 确保了即使在模拟实现下，其行为也是可预测的。
-#[test]
+/// 娴嬭瘯 `perform_backup` 鍗犱綅鍑芥暟銆?/// 杩欎釜娴嬭瘯楠岃瘉浜嗗崰浣嶅嚱鏁板綋鍓嶆€绘槸杩斿洖鎴愬姛 (`Ok(())`)锛?/// 纭繚浜嗗嵆浣垮湪妯℃嫙瀹炵幇涓嬶紝鍏惰涓轰篃鏄彲棰勬祴鐨勩€?#[test]
 fn test_perform_backup_function() {
     let backup = Backup::new("any_wallet_name");
-    assert_eq!(perform_backup(&backup), Ok(())); // 覆盖 perform_backup 函数
+    assert_eq!(perform_backup(&backup), Ok(())); // 瑕嗙洊 perform_backup 鍑芥暟
 }

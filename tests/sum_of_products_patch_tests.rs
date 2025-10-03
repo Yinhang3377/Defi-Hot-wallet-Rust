@@ -3,11 +3,12 @@
 
 #![cfg(feature = "sop_patch_tests")]
 
-use elliptic_curve_tools::SumOfProducts;
+use elliptic_curve_tools::sum_of_products_impl_relaxed;
 use k256::{ProjectivePoint, Scalar};
 
 #[test]
 fn sop_compiles() {
     let pairs: Vec<(Scalar, ProjectivePoint)> = vec![];
-    let _ = ProjectivePoint::sum_of_products(&pairs);
+    // 调用 patch crate 中放宽约束的 helper 函数
+    let _ = sum_of_products_impl_relaxed(&pairs);
 }

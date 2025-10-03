@@ -1,7 +1,5 @@
-//! 安全测试：专门测试 server.rs 中的 API 实现和补丁
-//! 重点：输入验证、安全性、错误处理、防止注入、认证等
-//! 覆盖所有 API 功能：钱包管理、交易、历史、备份、多签名、桥接、指标
-
+﻿//! 瀹夊叏娴嬭瘯锛氫笓闂ㄦ祴璇?server.rs 涓殑 API 瀹炵幇鍜岃ˉ涓?//! 閲嶇偣锛氳緭鍏ラ獙璇併€佸畨鍏ㄦ€с€侀敊璇鐞嗐€侀槻姝㈡敞鍏ャ€佽璇佺瓑
+//! 瑕嗙洊鎵€鏈?API 鍔熻兘锛氶挶鍖呯鐞嗐€佷氦鏄撱€佸巻鍙层€佸浠姐€佸绛惧悕銆佹ˉ鎺ャ€佹寚鏍?
 use axum::http::StatusCode;
 use axum_test::TestServer;
 use defi_hot_wallet::api::server::WalletServer;
@@ -12,12 +10,10 @@ use tokio;
 use uuid::Uuid;
 
 fn create_test_config() -> (WalletConfig, String) {
-    // 使用内存数据库
-    let db_file = format!("memory_{}", Uuid::new_v4());
+    // 浣跨敤鍐呭瓨鏁版嵁搴?    let db_file = format!("memory_{}", Uuid::new_v4());
     let config = WalletConfig {
         storage: StorageConfig {
-            database_url: "sqlite::memory:".to_string(), // 使用内存数据库
-            max_connections: Some(1),
+            database_url: "sqlite::memory:".to_string(), // 浣跨敤鍐呭瓨鏁版嵁搴?            max_connections: Some(1),
             connection_timeout_seconds: Some(30),
         },
         blockchain: BlockchainConfig {
@@ -27,8 +23,7 @@ fn create_test_config() -> (WalletConfig, String) {
         quantum_safe: false,
         multi_sig_threshold: 2,
     };
-    (config, db_file) // 仍然返回 db_file 用于兼容性
-}
+    (config, db_file) // 浠嶇劧杩斿洖 db_file 鐢ㄤ簬鍏煎鎬?}
 
 async fn create_test_server() -> TestServer {
     let (config, _) = create_test_config();
@@ -75,15 +70,14 @@ async fn test_create_wallet_valid() {
     let body: serde_json::Value = response.json();
     assert!(body["id"].is_string());
     assert_eq!(body["name"], "test_wallet");
-    assert_eq!(body["quantum_safe"], true);
+    assert!(body["quantum_safe"]);
 }
 
 #[tokio::test]
 async fn test_create_wallet_invalid_name() {
     let server = create_test_server().await;
     let payload = json!({
-        "name": "",  // 空名称
-        "quantum_safe": false
+        "name": "",  // 绌哄悕绉?        "quantum_safe": false
     });
     let response = server
         .post("/api/wallets")
@@ -100,7 +94,7 @@ async fn test_create_wallet_invalid_name() {
 async fn test_create_wallet_sql_injection_attempt() {
     let server = create_test_server().await;
     let payload = json!({
-        "name": "'; DROP TABLE wallets; --",  // SQL 注入尝试
+        "name": "'; DROP TABLE wallets; --",  // SQL 娉ㄥ叆灏濊瘯
         "quantum_safe": false
     });
     let response = server
@@ -108,7 +102,7 @@ async fn test_create_wallet_sql_injection_attempt() {
         .json(&payload)
         .add_header("Authorization", "test_api_key")
         .await;
-    // 假设实现有防护，拒绝特殊字符
+    // 鍋囪瀹炵幇鏈夐槻鎶わ紝鎷掔粷鐗规畩瀛楃
     assert_eq!(response.status_code(), StatusCode::BAD_REQUEST);
 }
 
@@ -119,7 +113,7 @@ async fn test_create_wallet_unauthorized() {
         "name": "test_wallet",
         "quantum_safe": false
     });
-    let response = server.post("/api/wallets").json(&payload).await; // 无认证头
+    let response = server.post("/api/wallets").json(&payload).await; // 鏃犺璇佸ご
     assert_eq!(response.status_code(), StatusCode::UNAUTHORIZED);
 }
 
@@ -129,14 +123,13 @@ async fn test_list_wallets() {
     let response = server.get("/api/wallets").add_header("Authorization", "test_api_key").await;
     assert_eq!(response.status_code(), StatusCode::OK);
     let body: Vec<serde_json::Value> = response.json();
-    // 目前返回空列表
-    assert!(body.is_empty());
+    // 鐩墠杩斿洖绌哄垪琛?    assert!(body.is_empty());
 }
 
 #[tokio::test]
 async fn test_list_wallets_unauthorized() {
     let server = create_test_server().await;
-    let response = server.get("/api/wallets").await; // 无认证头
+    let response = server.get("/api/wallets").await; // 鏃犺璇佸ご
     assert_eq!(response.status_code(), StatusCode::UNAUTHORIZED);
 }
 
@@ -156,8 +149,7 @@ async fn test_delete_wallet_path_traversal() {
         .delete("/api/wallets/../../../etc/passwd")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 404（钱包不存在）
-    assert_eq!(response.status_code(), StatusCode::NOT_FOUND);
+    // 璋冩暣鏈熸湜涓?404锛堥挶鍖呬笉瀛樺湪锛?    assert_eq!(response.status_code(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -176,8 +168,7 @@ async fn test_get_balance_valid() {
         .get("/api/wallets/test_wallet/balance?network=eth")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 500（实现不完整）
-    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+    // 璋冩暣鏈熸湜涓?500锛堝疄鐜颁笉瀹屾暣锛?    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
@@ -188,7 +179,7 @@ async fn test_get_balance_invalid_network() {
         .get("/api/wallets/test_wallet/balance?network=invalid")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 500
+    // 璋冩暣鏈熸湜涓?500
     assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
@@ -226,7 +217,7 @@ async fn test_send_transaction_valid() {
         .json(&payload)
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 500
+    // 璋冩暣鏈熸湜涓?500
     assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
@@ -263,7 +254,7 @@ async fn test_send_transaction_large_amount() {
         .json(&payload)
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 500
+    // 璋冩暣鏈熸湜涓?500
     assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
@@ -308,8 +299,7 @@ async fn test_get_transaction_history() {
         .get("/api/wallets/test_wallet/history")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 200（stub 成功）
-    assert_eq!(response.status_code(), StatusCode::OK);
+    // 璋冩暣鏈熸湜涓?200锛坰tub 鎴愬姛锛?    assert_eq!(response.status_code(), StatusCode::OK);
 }
 
 #[tokio::test]
@@ -330,7 +320,7 @@ async fn test_backup_wallet() {
         .get("/api/wallets/test_wallet/backup")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 200
+    // 璋冩暣鏈熸湜涓?200
     assert_eq!(response.status_code(), StatusCode::OK);
 }
 
@@ -356,7 +346,7 @@ async fn test_restore_wallet() {
         .json(&payload)
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 200
+    // 璋冩暣鏈熸湜涓?200
     assert_eq!(response.status_code(), StatusCode::OK);
 }
 
@@ -368,14 +358,13 @@ async fn test_send_multi_sig_transaction_valid() {
         "to_address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
         "amount": "0.1",
         "network": "eth",
-        "signatures": ["sig1", "sig2"]  // 至少 2 个签名
-    });
+        "signatures": ["sig1", "sig2"]  // 鑷冲皯 2 涓鍚?    });
     let response = server
         .post("/api/wallets/test_wallet/send_multi_sig")
         .json(&payload)
         .add_header("Authorization", "test_api_key")
         .await;
-    // 调整期望为 200
+    // 璋冩暣鏈熸湜涓?200
     assert_eq!(response.status_code(), StatusCode::OK);
 }
 
@@ -387,7 +376,7 @@ async fn test_send_multi_sig_transaction_insufficient_signatures() {
         "to_address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
         "amount": "0.1",
         "network": "eth",
-        "signatures": ["sig1"]  // 少于阈值 2
+        "signatures": ["sig1"]  // 灏戜簬闃堝€?2
     });
     let response = server
         .post("/api/wallets/test_wallet/send_multi_sig")
@@ -474,6 +463,6 @@ async fn test_input_sanitization() {
 async fn test_unauthorized_access_simulation() {
     let server = create_test_server().await;
     create_test_wallet(&server, "admin_wallet").await;
-    let response = server.delete("/api/wallets/admin_wallet").await; // 无认证头
+    let response = server.delete("/api/wallets/admin_wallet").await; // 鏃犺璇佸ご
     assert_eq!(response.status_code(), StatusCode::UNAUTHORIZED);
 }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ pub struct MultiSignature {
 
 impl MultiSignature {
     pub fn new() -> Self {
-        info!("🔐 Initializing Multi-Signature manager");
+        info!("馃攼 Initializing Multi-Signature manager");
         Self { pending_transactions: HashMap::new() }
     }
 
@@ -45,7 +45,7 @@ impl MultiSignature {
             return Err(anyhow::anyhow!("At least one signer is required"));
         }
 
-        info!("✅ Created {}-of-{} multi-signature configuration", threshold, signers.len());
+        info!("鉁?Created {}-of-{} multi-signature configuration", threshold, signers.len());
 
         Ok(MultiSigConfig { threshold, total_signers: signers.len() as u8, signers })
     }
@@ -74,7 +74,7 @@ impl MultiSignature {
 
         self.pending_transactions.insert(id.clone(), transaction);
 
-        info!("📝 Proposed multi-sig transaction: {}", id);
+        info!("馃摑 Proposed multi-sig transaction: {}", id);
         Ok(())
     }
 
@@ -101,12 +101,12 @@ impl MultiSignature {
 
         if is_complete {
             info!(
-                "✅ Multi-sig transaction {} is ready for execution ({}/{} signatures)",
+                "鉁?Multi-sig transaction {} is ready for execution ({}/{} signatures)",
                 tx_id, signatures_count, transaction.threshold
             );
         } else {
             info!(
-                "📝 Multi-sig transaction {} signed by {} ({}/{} signatures)",
+                "馃摑 Multi-sig transaction {} signed by {} ({}/{} signatures)",
                 tx_id, signer, signatures_count, transaction.threshold
             );
         }
@@ -132,7 +132,7 @@ impl MultiSignature {
             ));
         }
 
-        info!("🚀 Executing multi-sig transaction: {}", tx_id);
+        info!("馃殌 Executing multi-sig transaction: {}", tx_id);
         Ok(transaction)
     }
 
@@ -149,7 +149,7 @@ impl MultiSignature {
             .remove(tx_id)
             .ok_or_else(|| anyhow::anyhow!("Transaction not found: {}", tx_id))?;
 
-        warn!("❌ Cancelled multi-sig transaction: {}", tx_id);
+        warn!("鉂?Cancelled multi-sig transaction: {}", tx_id);
         Ok(())
     }
 

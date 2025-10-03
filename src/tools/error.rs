@@ -1,13 +1,12 @@
-// src/tools/error.rs
-//! 错误类型定义
-//! 为整个项目提供统一的错误处理
-
+﻿// src/tools/error.rs
+//! 閿欒绫诲瀷瀹氫箟
+//! 涓烘暣涓」鐩彁渚涚粺涓€鐨勯敊璇鐞?
 use thiserror::Error;
 
-/// 项目统一的Result类型
+/// 椤圭洰缁熶竴鐨凴esult绫诲瀷
 pub type Result<T> = std::result::Result<T, WalletError>;
 
-/// 钱包错误类型
+/// 閽卞寘閿欒绫诲瀷
 #[derive(Debug, Error)]
 pub enum WalletError {
     #[error("IO error: {0}")]
@@ -129,12 +128,12 @@ pub enum WalletError {
 }
 
 impl WalletError {
-    /// 创建一个新的通用错误
+    /// 鍒涘缓涓€涓柊鐨勯€氱敤閿欒
     pub fn new(message: impl Into<String>) -> Self {
         Self::GenericError(message.into())
     }
 
-    /// 检查是否为严重错误
+    /// 妫€鏌ユ槸鍚︿负涓ラ噸閿欒
     pub fn is_critical(&self) -> bool {
         matches!(
             self,
@@ -145,8 +144,7 @@ impl WalletError {
         )
     }
 
-    /// 检查是否为可重试错误
-    pub fn is_retryable(&self) -> bool {
+    /// 妫€鏌ユ槸鍚︿负鍙噸璇曢敊璇?    pub fn is_retryable(&self) -> bool {
         matches!(
             self,
             WalletError::NetworkError(_)
@@ -155,7 +153,7 @@ impl WalletError {
         )
     }
 
-    /// 获取错误代码
+    /// 鑾峰彇閿欒浠ｇ爜
     pub fn error_code(&self) -> &'static str {
         match self {
             WalletError::IoError(_) => "IO_ERROR",

@@ -232,6 +232,25 @@ cargo tarpaulin --out Html
 - ✅ **API接口**: 85%+
 - ✅ **总体覆盖**: 80%+
 
+## 运行测试覆盖率
+
+由于 Windows 原生环境下的测试覆盖率工具兼容性问题，推荐使用以下方式运行测试覆盖率：
+
+### 在 WSL 中运行
+1. 打开 WSL 终端
+2. 导航到项目目录：`cd /mnt/c/Users/[用户名]/Desktop/Rust区块链/Defi-Hot-wallet-Rust`
+3. 运行脚本：`bash scripts/run_coverage.sh`
+
+也可以针对特定文件或模块运行覆盖率：
+```bash
+# 针对特定文件
+bash scripts/run_coverage.sh --file ethereum.rs
+
+# 针对特定模块或测试
+bash scripts/run_coverage.sh --module core::wallet_manager_tests
+```
+在 WSL 中使用的是 Linux 原生工具链，可以更可靠地生成和解析覆盖率数据。
+
 ## 🚀 部署 / Deployment
 
 ### Docker 部署 / Docker Deployment

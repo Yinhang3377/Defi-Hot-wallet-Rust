@@ -1,8 +1,6 @@
-//! WalletManager 功能测试：测试所有 WalletManager 方法
-//! 覆盖：钱包 CRUD、余额、交易、桥接、加密、密钥派生等
-//! 使用 mock storage 和客户端，确保测试隔离
-//! 合并了 wallet_manager_test.rs 的独特测试（如并发），并进行了重构
-//! 添加 stub 测试（假的）：get_transaction_history, backup_wallet, restore_wallet, send_multi_sig_transaction
+﻿//! WalletManager 鍔熻兘娴嬭瘯锛氭祴璇曟墍鏈?WalletManager 鏂规硶
+//! 瑕嗙洊锛氶挶鍖?CRUD銆佷綑棰濄€佷氦鏄撱€佹ˉ鎺ャ€佸姞瀵嗐€佸瘑閽ユ淳鐢熺瓑
+//! 浣跨敤 mock storage 鍜屽鎴风锛岀‘淇濇祴璇曢殧绂?//! 鍚堝苟浜?wallet_manager_test.rs 鐨勭嫭鐗规祴璇曪紙濡傚苟鍙戯級锛屽苟杩涜浜嗛噸鏋?//! 娣诲姞 stub 娴嬭瘯锛堝亣鐨勶級锛歡et_transaction_history, backup_wallet, restore_wallet, send_multi_sig_transaction
 
 use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
 use defi_hot_wallet::core::wallet_manager::WalletManager;
@@ -10,12 +8,9 @@ use std::collections::HashMap;
 use tokio;
 use uuid::Uuid;
 
-/// 创建一个用于测试的 WalletConfig 实例。
-///
-/// 该配置使用内存中的 SQLite 数据库，以确保测试的隔离性和速度，
-/// 避免了文件 I/O 和磁盘状态的依赖。
-fn create_test_config() -> WalletConfig {
-    // 使用内存数据库，避免文件IO问题
+/// 鍒涘缓涓€涓敤浜庢祴璇曠殑 WalletConfig 瀹炰緥銆?///
+/// 璇ラ厤缃娇鐢ㄥ唴瀛樹腑鐨?SQLite 鏁版嵁搴擄紝浠ョ‘淇濇祴璇曠殑闅旂鎬у拰閫熷害锛?/// 閬垮厤浜嗘枃浠?I/O 鍜岀鐩樼姸鎬佺殑渚濊禆銆?fn create_test_config() -> WalletConfig {
+    // 浣跨敤鍐呭瓨鏁版嵁搴擄紝閬垮厤鏂囦欢IO闂
     WalletConfig {
         storage: StorageConfig {
             database_url: "sqlite::memory:".to_string(),
@@ -31,71 +26,65 @@ fn create_test_config() -> WalletConfig {
     }
 }
 
-/// 创建一个用于测试的 WalletManager 实例。
-///
-/// 这个异步辅助函数封装了 `WalletManager` 的创建过程，
-/// 使用 `create_test_config` 来获取一个干净的、基于内存的配置。
-async fn create_test_wallet_manager() -> WalletManager {
+/// 鍒涘缓涓€涓敤浜庢祴璇曠殑 WalletManager 瀹炰緥銆?///
+/// 杩欎釜寮傛杈呭姪鍑芥暟灏佽浜?`WalletManager` 鐨勫垱寤鸿繃绋嬶紝
+/// 浣跨敤 `create_test_config` 鏉ヨ幏鍙栦竴涓共鍑€鐨勩€佸熀浜庡唴瀛樼殑閰嶇疆銆?async fn create_test_wallet_manager() -> WalletManager {
     let config = create_test_config();
     WalletManager::new(&config).await.unwrap()
 }
 
-/// 显式清理函数，用于在测试后释放资源。
-///
-/// 在异步测试中，特别是使用内存数据库时，确保 `WalletManager`
-/// 被正确丢弃（drop）以关闭其数据库连接池是非常重要的。
-/// 这可以防止测试之间出现资源泄漏或状态污染。
-async fn cleanup(wm: WalletManager) {
-    // 强制钱包管理器关闭所有连接
-    drop(wm);
+/// 鏄惧紡娓呯悊鍑芥暟锛岀敤浜庡湪娴嬭瘯鍚庨噴鏀捐祫婧愩€?///
+/// 鍦ㄥ紓姝ユ祴璇曚腑锛岀壒鍒槸浣跨敤鍐呭瓨鏁版嵁搴撴椂锛岀‘淇?`WalletManager`
+/// 琚纭涪寮冿紙drop锛変互鍏抽棴鍏舵暟鎹簱杩炴帴姹犳槸闈炲父閲嶈鐨勩€?/// 杩欏彲浠ラ槻姝㈡祴璇曚箣闂村嚭鐜拌祫婧愭硠婕忔垨鐘舵€佹薄鏌撱€?async fn cleanup(wm: WalletManager) {
+    // 寮哄埗閽卞寘绠＄悊鍣ㄥ叧闂墍鏈夎繛鎺?    drop(wm);
 
-    // 这是一个小的技巧，尝试触发垃圾回收，以确保内存资源被及时释放。
-    // 强制一次小的内存分配以尝试触发垃圾回收
+    // 杩欐槸涓€涓皬鐨勬妧宸э紝灏濊瘯瑙﹀彂鍨冨溇鍥炴敹锛屼互纭繚鍐呭瓨璧勬簮琚強鏃堕噴鏀俱€?    // 寮哄埗涓€娆″皬鐨勫唴瀛樺垎閰嶄互灏濊瘯瑙﹀彂鍨冨溇鍥炴敹
     let _ = Box::new(0u8);
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_new_storage_error() {
     let local = tokio::task::LocalSet::new();
-    local.run_until(async {
-        let mut config = create_test_config();
-        config.storage.database_url = "invalid-protocol://".to_string();
-        let result = WalletManager::new(&config).await;
-        assert!(result.is_err());
-        // 在这种情况下，WalletManager 实例从未成功创建，因此不需要清理。
-        // 无需清理
-    }).await;
+    local
+        .run_until(async {
+            let mut config = create_test_config();
+            config.storage.database_url = "invalid-protocol://".to_string();
+            let result = WalletManager::new(&config).await;
+            assert!(result.is_err());
+            // 鍦ㄨ繖绉嶆儏鍐典笅锛學alletManager 瀹炰緥浠庢湭鎴愬姛鍒涘缓锛屽洜姝や笉闇€瑕佹竻鐞嗐€?            // 鏃犻渶娓呯悊
+        })
+        .await;
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_wallet_manager_create_and_list() {
     let local = tokio::task::LocalSet::new();
-    local.run_until(async {
-        let wm = create_test_wallet_manager().await;
-        let wallet_name = format!("test_wallet_{}", Uuid::new_v4()); // 使用 UUID 确保名称唯一
-        let result = wm.create_wallet(&wallet_name, false).await;
-        assert!(result.is_ok());
-        let wallet = result.unwrap();
-        assert_eq!(wallet.name, wallet_name);
-        assert!(!wallet.quantum_safe);
+    local
+        .run_until(async {
+            let wm = create_test_wallet_manager().await;
+            let wallet_name = format!("test_wallet_{}", Uuid::new_v4()); // 浣跨敤 UUID 纭繚鍚嶇О鍞竴
+            let result = wm.create_wallet(&wallet_name, false).await;
+            assert!(result.is_ok());
+            let wallet = result.unwrap();
+            assert_eq!(wallet.name, wallet_name);
+            assert!(!wallet.quantum_safe);
 
-        // 测试量子安全钱包
-        let result = wm.create_wallet("quantum_wallet", true).await;
-        assert!(result.is_ok());
-        let wallet = result.unwrap();
-        assert!(wallet.quantum_safe);
-        cleanup(wm).await;
-    }).await;
+            // 娴嬭瘯閲忓瓙瀹夊叏閽卞寘
+            let result = wm.create_wallet("quantum_wallet", true).await;
+            assert!(result.is_ok());
+            let wallet = result.unwrap();
+            assert!(wallet.quantum_safe);
+            cleanup(wm).await;
+        })
+        .await;
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_create_wallet_duplicate_name() {
     let manager = create_test_wallet_manager().await;
     let wallet_name = "duplicate_wallet";
-    // 第一次创建应该成功
-    manager.create_wallet(wallet_name, false).await.unwrap();
-    // 第二次使用相同名称创建应该失败
-    let result = manager.create_wallet(wallet_name, false).await;
+    // 绗竴娆″垱寤哄簲璇ユ垚鍔?    manager.create_wallet(wallet_name, false).await.unwrap();
+    // 绗簩娆′娇鐢ㄧ浉鍚屽悕绉板垱寤哄簲璇ュけ璐?    let result = manager.create_wallet(wallet_name, false).await;
     assert!(result.is_err());
     cleanup(manager).await;
 }
@@ -103,11 +92,10 @@ async fn test_create_wallet_duplicate_name() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_list_wallets() {
     let wm = create_test_wallet_manager().await;
-    // 创建两个钱包
+    // 鍒涘缓涓や釜閽卞寘
     wm.create_wallet("wallet1", false).await.unwrap();
     wm.create_wallet("wallet2", true).await.unwrap();
-    // 列出钱包并验证数量
-    let wallets = wm.list_wallets().await.unwrap();
+    // 鍒楀嚭閽卞寘骞堕獙璇佹暟閲?    let wallets = wm.list_wallets().await.unwrap();
     assert_eq!(wallets.len(), 2);
     cleanup(wm).await;
 }
@@ -115,11 +103,10 @@ async fn test_list_wallets() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_delete_wallet() {
     let wm = create_test_wallet_manager().await;
-    // 创建一个钱包然后删除它
+    // 鍒涘缓涓€涓挶鍖呯劧鍚庡垹闄ゅ畠
     wm.create_wallet("delete_wallet", false).await.unwrap();
     let result = wm.delete_wallet("delete_wallet").await;
-    // 验证删除成功且钱包列表为空
-    assert!(result.is_ok());
+    // 楠岃瘉鍒犻櫎鎴愬姛涓旈挶鍖呭垪琛ㄤ负绌?    assert!(result.is_ok());
     let wallets = wm.list_wallets().await.unwrap();
     assert_eq!(wallets.len(), 0);
     cleanup(wm).await;
@@ -128,8 +115,7 @@ async fn test_delete_wallet() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_delete_wallet_not_found() {
     let wm = create_test_wallet_manager().await;
-    // 尝试删除一个不存在的钱包，预期会失败
-    let result = wm.delete_wallet("nonexistent").await;
+    // 灏濊瘯鍒犻櫎涓€涓笉瀛樺湪鐨勯挶鍖咃紝棰勬湡浼氬け璐?    let result = wm.delete_wallet("nonexistent").await;
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -138,10 +124,8 @@ async fn test_delete_wallet_not_found() {
 async fn test_get_balance() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("balance_wallet", false).await.unwrap();
-    // 当前实现没有模拟的区块链客户端，因此调用 get_balance 会因为
-    // 无法连接到节点或解析密钥而失败。这是一个预期的错误。
-    let result = wm.get_balance("balance_wallet", "eth").await;
-    // 预期错误，因为无法解密密钥以获取地址
+    // 褰撳墠瀹炵幇娌℃湁妯℃嫙鐨勫尯鍧楅摼瀹㈡埛绔紝鍥犳璋冪敤 get_balance 浼氬洜涓?    // 鏃犳硶杩炴帴鍒拌妭鐐规垨瑙ｆ瀽瀵嗛挜鑰屽け璐ャ€傝繖鏄竴涓鏈熺殑閿欒銆?    let result = wm.get_balance("balance_wallet", "eth").await;
+    // 棰勬湡閿欒锛屽洜涓烘棤娉曡В瀵嗗瘑閽ヤ互鑾峰彇鍦板潃
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -150,9 +134,7 @@ async fn test_get_balance() {
 async fn test_send_transaction() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("tx_wallet", false).await.unwrap();
-    // 与 get_balance 类似，此操作因无法与区块链交互而预期失败。
-    // 它会因为无法解密密钥来签名交易而失败。
-    let result = wm.send_transaction("tx_wallet", "0x1234567890abcdef", "0.1", "eth").await;
+    // 涓?get_balance 绫讳技锛屾鎿嶄綔鍥犳棤娉曚笌鍖哄潡閾句氦浜掕€岄鏈熷け璐ャ€?    // 瀹冧細鍥犱负鏃犳硶瑙ｅ瘑瀵嗛挜鏉ョ鍚嶄氦鏄撹€屽け璐ャ€?    let result = wm.send_transaction("tx_wallet", "0x1234567890abcdef", "0.1", "eth").await;
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -161,8 +143,7 @@ async fn test_send_transaction() {
 async fn test_send_transaction_invalid_address() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("tx_wallet", false).await.unwrap();
-    // 验证地址格式的检查是否有效
-    let result = wm.send_transaction("tx_wallet", "invalid_address", "0.1", "eth").await;
+    // 楠岃瘉鍦板潃鏍煎紡鐨勬鏌ユ槸鍚︽湁鏁?    let result = wm.send_transaction("tx_wallet", "invalid_address", "0.1", "eth").await;
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -171,8 +152,7 @@ async fn test_send_transaction_invalid_address() {
 async fn test_send_transaction_negative_amount() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("tx_wallet", false).await.unwrap();
-    // 验证金额解析和检查是否有效
-    let result = wm.send_transaction("tx_wallet", "0x1234567890abcdef", "-0.1", "eth").await;
+    // 楠岃瘉閲戦瑙ｆ瀽鍜屾鏌ユ槸鍚︽湁鏁?    let result = wm.send_transaction("tx_wallet", "0x1234567890abcdef", "-0.1", "eth").await;
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -180,9 +160,7 @@ async fn test_send_transaction_negative_amount() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_bridge_assets() {
     let wm = create_test_wallet_manager().await;
-    // bridge_assets 是一个模拟实现，它总是返回一个模拟的交易哈希。
-    // 这个测试验证该模拟行为是否符合预期。
-    let result = wm.bridge_assets("bridge_wallet", "eth", "solana", "USDC", "10.0").await;
+    // bridge_assets 鏄竴涓ā鎷熷疄鐜帮紝瀹冩€绘槸杩斿洖涓€涓ā鎷熺殑浜ゆ槗鍝堝笇銆?    // 杩欎釜娴嬭瘯楠岃瘉璇ユā鎷熻涓烘槸鍚︾鍚堥鏈熴€?    let result = wm.bridge_assets("bridge_wallet", "eth", "solana", "USDC", "10.0").await;
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "mock_bridge_tx_hash");
     cleanup(wm).await;
@@ -191,10 +169,8 @@ async fn test_bridge_assets() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_bridge_assets_unsupported_chain() {
     let wm = create_test_wallet_manager().await;
-    // 即使链不受支持，当前的模拟实现也会成功。
-    // 一个更完整的测试会模拟桥接工厂（bridge factory）返回错误。
-    let result = wm.bridge_assets("bridge_wallet", "unsupported", "solana", "USDC", "10.0").await;
-    assert!(result.is_ok()); // 当前的 Mock 总是成功
+    // 鍗充娇閾句笉鍙楁敮鎸侊紝褰撳墠鐨勬ā鎷熷疄鐜颁篃浼氭垚鍔熴€?    // 涓€涓洿瀹屾暣鐨勬祴璇曚細妯℃嫙妗ユ帴宸ュ巶锛坆ridge factory锛夎繑鍥為敊璇€?    let result = wm.bridge_assets("bridge_wallet", "unsupported", "solana", "USDC", "10.0").await;
+    assert!(result.is_ok()); // 褰撳墠鐨?Mock 鎬绘槸鎴愬姛
     assert_eq!(result.unwrap(), "mock_bridge_tx_hash");
     cleanup(wm).await;
 }
@@ -203,18 +179,15 @@ async fn test_bridge_assets_unsupported_chain() {
 async fn test_get_transaction_history() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("history_wallet", false).await.unwrap();
-    // 这是一个桩（stub）实现，它总是返回一个空列表。
-    let history = wm.get_transaction_history("history_wallet").await.unwrap();
-    assert!(history.is_empty()); // Stub 返回空
-    cleanup(wm).await;
+    // 杩欐槸涓€涓々锛坰tub锛夊疄鐜帮紝瀹冩€绘槸杩斿洖涓€涓┖鍒楄〃銆?    let history = wm.get_transaction_history("history_wallet").await.unwrap();
+    assert!(history.is_empty()); // Stub 杩斿洖绌?    cleanup(wm).await;
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_backup_wallet() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("backup_wallet", false).await.unwrap();
-    // 桩实现现在返回真实的有效助记词；验证它看起来像 BIP39 的 24 词助记词。
-    let seed = wm.backup_wallet("backup_wallet").await.unwrap();
+    // 妗╁疄鐜扮幇鍦ㄨ繑鍥炵湡瀹炵殑鏈夋晥鍔╄璇嶏紱楠岃瘉瀹冪湅璧锋潵鍍?BIP39 鐨?24 璇嶅姪璁拌瘝銆?    let seed = wm.backup_wallet("backup_wallet").await.unwrap();
     assert_eq!(seed.split_whitespace().count(), 24, "backup mnemonic should be 24 words");
     cleanup(wm).await;
 }
@@ -222,13 +195,12 @@ async fn test_backup_wallet() {
 #[tokio::test(flavor = "current_thread")]
 async fn test_restore_wallet() {
     let wm = create_test_wallet_manager().await;
-    // 桩实现，总是返回成功。
-    let result = wm.restore_wallet(
+    // 妗╁疄鐜帮紝鎬绘槸杩斿洖鎴愬姛銆?    let result = wm.restore_wallet(
         "restored_wallet",
         "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
     )
     .await;
-    assert!(result.is_ok()); // Stub 总是成功
+    assert!(result.is_ok()); // Stub 鎬绘槸鎴愬姛
     cleanup(wm).await;
 }
 
@@ -237,8 +209,7 @@ async fn test_send_multi_sig_transaction() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("multi_wallet", false).await.unwrap();
     let signatures = vec!["sig1".to_string(), "sig2".to_string()];
-    // 桩实现，返回一个固定的假交易哈希。
-    let result = wm
+    // 妗╁疄鐜帮紝杩斿洖涓€涓浐瀹氱殑鍋囦氦鏄撳搱甯屻€?    let result = wm
         .send_multi_sig_transaction("multi_wallet", "0x1234567890abcdef", "0.1", "eth", &signatures)
         .await;
     assert!(result.is_ok());
@@ -250,10 +221,8 @@ async fn test_send_multi_sig_transaction() {
 async fn test_send_multi_sig_transaction_insufficient_signatures() {
     let wm = create_test_wallet_manager().await;
     wm.create_wallet("multi_wallet", false).await.unwrap();
-    let signatures = vec!["sig1".to_string()]; // 少于阈值 2
-    // 当前的桩实现不检查签名数量，所以这个测试会通过。
-    // 一个完整的实现应该在这里返回错误。
-    let result = wm
+    let signatures = vec!["sig1".to_string()]; // 灏戜簬闃堝€?2
+                                               // 褰撳墠鐨勬々瀹炵幇涓嶆鏌ョ鍚嶆暟閲忥紝鎵€浠ヨ繖涓祴璇曚細閫氳繃銆?                                               // 涓€涓畬鏁寸殑瀹炵幇搴旇鍦ㄨ繖閲岃繑鍥為敊璇€?    let result = wm
         .send_multi_sig_transaction("multi_wallet", "0x1234567890abcdef", "0.1", "eth", &signatures)
         .await;
     assert!(result.is_ok());
@@ -264,8 +233,7 @@ async fn test_send_multi_sig_transaction_insufficient_signatures() {
 async fn test_generate_mnemonic() {
     let wm = create_test_wallet_manager().await;
     let mnemonic = wm.generate_mnemonic().unwrap();
-    // 验证生成的助记词是否符合 BIP39 24 词的标准格式。
-    assert_eq!(mnemonic.split_whitespace().count(), 24);
+    // 楠岃瘉鐢熸垚鐨勫姪璁拌瘝鏄惁绗﹀悎 BIP39 24 璇嶇殑鏍囧噯鏍煎紡銆?    assert_eq!(mnemonic.split_whitespace().count(), 24);
     cleanup(wm).await;
 }
 
@@ -273,8 +241,7 @@ async fn test_generate_mnemonic() {
 async fn test_derive_master_key() {
     let wm = create_test_wallet_manager().await;
     let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-    // 验证从助记词派生的主密钥是否为预期的长度（32字节）。
-    let key = wm.derive_master_key(mnemonic).await.unwrap();
+    // 楠岃瘉浠庡姪璁拌瘝娲剧敓鐨勪富瀵嗛挜鏄惁涓洪鏈熺殑闀垮害锛?2瀛楄妭锛夈€?    let key = wm.derive_master_key(mnemonic).await.unwrap();
     assert_eq!(key.len(), 32);
     cleanup(wm).await;
 }
@@ -284,8 +251,7 @@ async fn test_derive_address_eth() {
     let wm = create_test_wallet_manager().await;
     let master_key = [0u8; 32];
     let address = wm.derive_address(&master_key, "eth").unwrap();
-    // 验证派生的以太坊地址是否以 "0x" 开头。
-    assert!(address.starts_with("0x"));
+    // 楠岃瘉娲剧敓鐨勪互澶潑鍦板潃鏄惁浠?"0x" 寮€澶淬€?    assert!(address.starts_with("0x"));
     cleanup(wm).await;
 }
 
@@ -294,8 +260,7 @@ async fn test_derive_address_solana() {
     let wm = create_test_wallet_manager().await;
     let master_key = [0u8; 32];
     let address = wm.derive_address(&master_key, "solana").unwrap();
-    // 验证派生的 Solana 地址（Base58 编码）不为空。
-    assert!(!address.is_empty());
+    // 楠岃瘉娲剧敓鐨?Solana 鍦板潃锛圔ase58 缂栫爜锛変笉涓虹┖銆?    assert!(!address.is_empty());
     cleanup(wm).await;
 }
 
@@ -303,8 +268,7 @@ async fn test_derive_address_solana() {
 async fn test_derive_address_unsupported_network() {
     let wm = create_test_wallet_manager().await;
     let master_key = [0u8; 32];
-    // 验证当提供不支持的网络时，是否返回错误。
-    let result = wm.derive_address(&master_key, "unsupported");
+    // 楠岃瘉褰撴彁渚涗笉鏀寔鐨勭綉缁滄椂锛屾槸鍚﹁繑鍥為敊璇€?    let result = wm.derive_address(&master_key, "unsupported");
     assert!(result.is_err());
     cleanup(wm).await;
 }
@@ -312,8 +276,7 @@ async fn test_derive_address_unsupported_network() {
 #[tokio::test(flavor = "current_thread")]
 async fn test_calculate_bridge_fee() {
     let wm = create_test_wallet_manager().await;
-    // 这是一个模拟实现，验证它是否返回预期的固定费用和时间。
-    let (fee, time) = wm.calculate_bridge_fee("eth", "solana", "USDC", "100.0").unwrap();
+    // 杩欐槸涓€涓ā鎷熷疄鐜帮紝楠岃瘉瀹冩槸鍚﹁繑鍥為鏈熺殑鍥哄畾璐圭敤鍜屾椂闂淬€?    let (fee, time) = wm.calculate_bridge_fee("eth", "solana", "USDC", "100.0").unwrap();
     assert_eq!(fee, "1");
     assert!(time > chrono::Utc::now());
     cleanup(wm).await;
@@ -322,21 +285,19 @@ async fn test_calculate_bridge_fee() {
 #[tokio::test(flavor = "current_thread")]
 async fn test_get_block_number() {
     let wm = create_test_wallet_manager().await;
-    // 与 get_balance 类似，由于没有网络连接，此操作预期会失败。
-    let result = wm.get_block_number("eth").await;
+    // 涓?get_balance 绫讳技锛岀敱浜庢病鏈夌綉缁滆繛鎺ワ紝姝ゆ搷浣滈鏈熶細澶辫触銆?    let result = wm.get_block_number("eth").await;
     assert!(result.is_err());
     cleanup(wm).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 async fn test_concurrent_create_wallet() {
-    // 这个测试验证 WalletManager 在并发环境下的鲁棒性。
-    let mut config = create_test_config();
+    // 杩欎釜娴嬭瘯楠岃瘉 WalletManager 鍦ㄥ苟鍙戠幆澧冧笅鐨勯瞾妫掓€с€?    let mut config = create_test_config();
     config.storage.max_connections = Some(10);
     let manager = WalletManager::new(&config).await.unwrap();
     let manager_arc = std::sync::Arc::new(manager);
 
-    // 创建多个线程同时调用 create_wallet
+    // 鍒涘缓澶氫釜绾跨▼鍚屾椂璋冪敤 create_wallet
     let mut handles = vec![];
     for i in 0..10 {
         let manager_clone = std::sync::Arc::clone(&manager_arc);
@@ -345,14 +306,12 @@ async fn test_concurrent_create_wallet() {
         });
         handles.push(handle);
     }
-    // 等待所有线程完成并验证每个操作都成功
-    for handle in handles {
+    // 绛夊緟鎵€鏈夌嚎绋嬪畬鎴愬苟楠岃瘉姣忎釜鎿嶄綔閮芥垚鍔?    for handle in handles {
         let result = handle.await.unwrap();
         assert!(result.is_ok());
     }
 
-    // 在测试结束时安全地清理资源
-    // 在测试结束时清理资源
+    // 鍦ㄦ祴璇曠粨鏉熸椂瀹夊叏鍦版竻鐞嗚祫婧?    // 鍦ㄦ祴璇曠粨鏉熸椂娓呯悊璧勬簮
     if let Ok(manager) = std::sync::Arc::try_unwrap(manager_arc) {
         cleanup(manager).await;
     }

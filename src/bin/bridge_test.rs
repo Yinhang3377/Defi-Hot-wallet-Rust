@@ -1,4 +1,4 @@
-// filepath: src\bin\bridge_test.rs
+﻿// filepath: src\bin\bridge_test.rs
 use clap::{Parser, Subcommand};
 use defi_hot_wallet::blockchain::bridge::{
     Bridge, BridgeTransactionStatus, EthereumToBSCBridge, EthereumToSolanaBridge,
@@ -51,8 +51,7 @@ enum Commands {
     },
 }
 
-// 模拟一个 SecureWalletData 结构体用于测试
-fn create_mock_wallet_data() -> SecureWalletData {
+// 妯℃嫙涓€涓?SecureWalletData 缁撴瀯浣撶敤浜庢祴璇?fn create_mock_wallet_data() -> SecureWalletData {
     SecureWalletData {
         info: WalletInfo {
             id: Uuid::from_str("12345678-1234-1234-1234-123456789012").unwrap(),
@@ -70,33 +69,33 @@ fn create_mock_wallet_data() -> SecureWalletData {
 
 // Helper function to monitor bridge transaction status
 async fn monitor_bridge_status(bridge: &impl Bridge, tx_hash: &str) {
-    println!("🔍 Monitoring bridge transaction: {}", tx_hash);
+    println!("馃攳 Monitoring bridge transaction: {}", tx_hash);
 
-    // 设置最大检查次数和超时
+    // 璁剧疆鏈€澶ф鏌ユ鏁板拰瓒呮椂
     let max_checks = 10;
     let timeout = tokio::time::Duration::from_secs(20);
     let start_time = tokio::time::Instant::now();
 
     for i in 1..=max_checks {
-        // 检查总时间是否已超时
+        // 妫€鏌ユ€绘椂闂存槸鍚﹀凡瓒呮椂
         if start_time.elapsed() > timeout {
-            println!("⏰ Monitoring timed out after {} seconds", timeout.as_secs());
+            println!("鈴?Monitoring timed out after {} seconds", timeout.as_secs());
             break;
         }
 
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         match bridge.check_transfer_status(tx_hash).await {
             Ok(status) => {
-                println!("⏱️  Status check {}: {:?}", i, status);
+                println!("鈴憋笍  Status check {}: {:?}", i, status);
                 if matches!(status, BridgeTransactionStatus::Completed) {
-                    println!("✅ Bridge transfer completed!");
+                    println!("鉁?Bridge transfer completed!");
                 }
                 if let BridgeTransactionStatus::Failed(ref reason) = status {
-                    println!("❌ Bridge transfer failed: {}", reason);
+                    println!("鉂?Bridge transfer failed: {}", reason);
                 }
             }
             Err(e) => {
-                println!("❌ Error checking status: {}", e);
+                println!("鉂?Error checking status: {}", e);
             }
         }
     }
@@ -109,37 +108,37 @@ async fn execute_bridge_command(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match command {
         Commands::EthToSol { amount, token } => {
-            println!("🌉 Testing ETH to Solana bridge with {} {}", amount, token);
+            println!("馃寜 Testing ETH to Solana bridge with {} {}", amount, token);
 
             let bridge = EthereumToSolanaBridge::new("0xMockBridgeContract");
             let result = bridge
                 .transfer_across_chains("eth", "solana", &token, &amount, &wallet_data)
                 .await?;
 
-            println!("🔄 Bridge transaction initiated: {}", result);
+            println!("馃攧 Bridge transaction initiated: {}", result);
             monitor_bridge_status(&bridge, &result).await;
         }
 
         Commands::SolToEth { amount, token } => {
-            println!("🌉 Testing Solana to ETH bridge with {} {}", amount, token);
+            println!("馃寜 Testing Solana to ETH bridge with {} {}", amount, token);
 
             let bridge = SolanaToEthereumBridge::new("0xMockReverseBridgeContract");
             let result = bridge
                 .transfer_across_chains("solana", "eth", &token, &amount, &wallet_data)
                 .await?;
 
-            println!("🔄 Bridge transaction initiated: {}", result);
+            println!("馃攧 Bridge transaction initiated: {}", result);
             monitor_bridge_status(&bridge, &result).await;
         }
 
         Commands::EthToBsc { amount, token } => {
-            println!("🌉 Testing ETH to BSC bridge with {} {}", amount, token);
+            println!("馃寜 Testing ETH to BSC bridge with {} {}", amount, token);
 
             let bridge = EthereumToBSCBridge::new("0xMockEthBscBridge");
             let result =
                 bridge.transfer_across_chains("eth", "bsc", &token, &amount, &wallet_data).await?;
 
-            println!("🔄 Bridge transaction initiated: {}", result);
+            println!("馃攧 Bridge transaction initiated: {}", result);
             monitor_bridge_status(&bridge, &result).await;
         }
     }
@@ -148,10 +147,10 @@ async fn execute_bridge_command(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 设置详细日志
+    // 璁剧疆璇︾粏鏃ュ織
     tracing_subscriber::fmt::init();
 
-    tracing::info!("🚀 Starting bridge test application");
+    tracing::info!("馃殌 Starting bridge test application");
 
     let cli = Cli::parse();
     let wallet_data = create_mock_wallet_data();
@@ -201,14 +200,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_bridge_execution() {
-        // 正常路径：桥接测试
-        let result = run_bridge_test("eth", "solana", "10.0", "USDC").await;
+        // 姝ｅ父璺緞锛氭ˉ鎺ユ祴璇?        let result = run_bridge_test("eth", "solana", "10.0", "USDC").await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_bridge_invalid_chains() {
-        // 错误路径：无效链
+        // 閿欒璺緞锛氭棤鏁堥摼
         let result = run_bridge_test("invalid", "solana", "10.0", "USDC").await;
         assert!(result.is_err());
         if let Err(e) = result {
@@ -218,8 +216,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_bridge_zero_value() {
-        // 边缘情况：零值
-        let result = run_bridge_test("eth", "solana", "0.0", "USDC").await;
+        // 杈圭紭鎯呭喌锛氶浂鍊?        let result = run_bridge_test("eth", "solana", "0.0", "USDC").await;
         // The mock bridge doesn't explicitly fail on zero amount, so this should be Ok
         assert!(result.is_ok());
     }

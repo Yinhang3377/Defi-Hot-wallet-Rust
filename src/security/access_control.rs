@@ -1,8 +1,8 @@
-// src/security/access_control.rs
+﻿// src/security/access_control.rs
 use crate::tools::error::WalletError;
 use std::collections::HashMap;
 
-/// 角色定义
+/// 瑙掕壊瀹氫箟
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Role {
     Admin,
@@ -22,7 +22,7 @@ impl std::fmt::Display for Role {
     }
 }
 
-/// 权限定义
+/// 鏉冮檺瀹氫箟
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Permission {
     CreateWallet,
@@ -46,18 +46,16 @@ impl std::fmt::Display for Permission {
     }
 }
 
-/// 访问控制管理器
-pub struct AccessControl {
+/// 璁块棶鎺у埗绠＄悊鍣?pub struct AccessControl {
     user_roles: HashMap<String, Vec<Role>>,
     role_permissions: HashMap<Role, Vec<Permission>>,
 }
 
 impl AccessControl {
-    /// 创建新的访问控制管理器
-    pub fn new() -> Self {
+    /// 鍒涘缓鏂扮殑璁块棶鎺у埗绠＄悊鍣?    pub fn new() -> Self {
         let mut role_permissions = HashMap::new();
 
-        // 定义角色权限
+        // 瀹氫箟瑙掕壊鏉冮檺
         role_permissions.insert(
             Role::Admin,
             vec![
@@ -83,13 +81,12 @@ impl AccessControl {
         Self { user_roles: HashMap::new(), role_permissions }
     }
 
-    /// 为用户分配角色
-    pub fn assign_role(&mut self, user_id: &str, role: Role) -> Result<(), WalletError> {
-        self.user_roles.entry(user_id.to_string()).or_insert_with(Vec::new).push(role);
+    /// 涓虹敤鎴峰垎閰嶈鑹?    pub fn assign_role(&mut self, user_id: &str, role: Role) -> Result<(), WalletError> {
+        self.user_roles.entry(user_id.to_string()).or_default().push(role);
         Ok(())
     }
 
-    /// 撤销用户角色
+    /// 鎾ら攢鐢ㄦ埛瑙掕壊
     pub fn revoke_role(&mut self, user_id: &str, role: &Role) -> Result<(), WalletError> {
         if let Some(roles) = self.user_roles.get_mut(user_id) {
             roles.retain(|r| r != role);
@@ -97,12 +94,12 @@ impl AccessControl {
         Ok(())
     }
 
-    /// 检查用户是否有指定角色
+    /// 妫€鏌ョ敤鎴锋槸鍚︽湁鎸囧畾瑙掕壊
     pub fn has_role(&self, user_id: &str, role: &Role) -> bool {
         self.user_roles.get(user_id).map(|roles| roles.contains(role)).unwrap_or(false)
     }
 
-    /// 检查用户是否有指定权限
+    /// 妫€鏌ョ敤鎴锋槸鍚︽湁鎸囧畾鏉冮檺
     pub fn has_permission(&self, user_id: &str, permission: &Permission) -> bool {
         if let Some(user_roles) = self.user_roles.get(user_id) {
             for role in user_roles {
@@ -116,23 +113,19 @@ impl AccessControl {
         false
     }
 
-    /// 获取用户的所有角色
-    pub fn get_user_roles(&self, user_id: &str) -> Vec<Role> {
+    /// 鑾峰彇鐢ㄦ埛鐨勬墍鏈夎鑹?    pub fn get_user_roles(&self, user_id: &str) -> Vec<Role> {
         self.user_roles.get(user_id).cloned().unwrap_or_default()
     }
 
-    /// 获取角色的所有权限
-    pub fn get_role_permissions(&self, role: &Role) -> Vec<Permission> {
+    /// 鑾峰彇瑙掕壊鐨勬墍鏈夋潈闄?    pub fn get_role_permissions(&self, role: &Role) -> Vec<Permission> {
         self.role_permissions.get(role).cloned().unwrap_or_default()
     }
 
-    /// 检查用户是否为管理员
-    pub fn is_admin(&self, user_id: &str) -> bool {
+    /// 妫€鏌ョ敤鎴锋槸鍚︿负绠＄悊鍛?    pub fn is_admin(&self, user_id: &str) -> bool {
         self.has_role(user_id, &Role::Admin)
     }
 
-    /// 检查用户是否为审计员
-    pub fn is_auditor(&self, user_id: &str) -> bool {
+    /// 妫€鏌ョ敤鎴锋槸鍚︿负瀹¤鍛?    pub fn is_auditor(&self, user_id: &str) -> bool {
         self.has_role(user_id, &Role::Auditor)
     }
 }
@@ -152,12 +145,11 @@ mod tests {
         let mut ac = AccessControl::new();
         let user_id = "user123";
 
-        // 分配角色
+        // 鍒嗛厤瑙掕壊
         ac.assign_role(user_id, Role::User).unwrap();
         assert!(ac.has_role(user_id, &Role::User));
 
-        // 检查权限
-        assert!(ac.has_permission(user_id, &Permission::CreateWallet));
+        // 妫€鏌ユ潈闄?        assert!(ac.has_permission(user_id, &Permission::CreateWallet));
         assert!(ac.has_permission(user_id, &Permission::ViewBalance));
         assert!(!ac.has_permission(user_id, &Permission::AuditLogs));
     }
@@ -167,7 +159,7 @@ mod tests {
         let mut ac = AccessControl::new();
         let user_id = "user123";
 
-        // 分配并撤销角色
+        // 鍒嗛厤骞舵挙閿€瑙掕壊
         ac.assign_role(user_id, Role::Admin).unwrap();
         assert!(ac.has_role(user_id, &Role::Admin));
 
@@ -182,11 +174,11 @@ mod tests {
 
         ac.assign_role(user_id, Role::Auditor).unwrap();
 
-        // 审计员应该有查看余额和审计日志的权限
+        // 瀹¤鍛樺簲璇ユ湁鏌ョ湅浣欓鍜屽璁℃棩蹇楃殑鏉冮檺
         assert!(ac.has_permission(user_id, &Permission::ViewBalance));
         assert!(ac.has_permission(user_id, &Permission::AuditLogs));
 
-        // 但不应该有管理用户的权限
+        // 浣嗕笉搴旇鏈夌鐞嗙敤鎴风殑鏉冮檺
         assert!(!ac.has_permission(user_id, &Permission::ManageUsers));
     }
 

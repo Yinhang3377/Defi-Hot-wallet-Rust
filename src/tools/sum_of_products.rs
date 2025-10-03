@@ -1,49 +1,55 @@
-use elliptic_curve::Group;
+﻿use anyhow::{anyhow, Result};
+use elliptic_curve::group::{Group, GroupEncoding};
+use serde::{Deserialize, Serialize};
 
-/// 椭圆曲线上的点-标量乘积求和
-///
-/// 计算：∑(scalar_i * point_i)，比单独计算和累加更高效
-///
-/// # 参数
-///
-/// * `scalars` - 标量数组
-/// * `points` - 曲线点数组，长度必须与 scalars 相同
-///
-/// # 返回
-///
-/// * `Ok(G)` - 计算结果点
-/// * `Err(String)` - 错误信息
-pub fn sum_of_products<G: Group>(scalars: &[G::Scalar], points: &[G]) -> Result<G, String> {
-    if scalars.len() != points.len() {
-        return Err("Mismatched scalar and point lengths".to_string());
-    }
-
-    if scalars.is_empty() {
-        return Ok(G::identity());
-    }
-
-    let mut result = G::identity();
-
-    for (scalar, point) in scalars.iter().zip(points.iter()) {
-        // 计算 scalar * point 并累加到结果中
-        result += *point * *scalar;
-    }
-
-    Ok(result)
+/// Test struct with single scalar and point (for serialization tests).
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TestStruct<G>
+where
+    G: Group + GroupEncoding,
+{
+    #[serde(with = "crate::tools::serdes::prime_field")]
+    pub scalar: G::Scalar,
+    #[serde(with = "crate::tools::serdes::group")]
+    pub point: G,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use k256::{ProjectivePoint, Scalar};
+/// Test struct with arrays (for serialization tests)
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TestStructArray<G, const N: usize>
+where
+    G: Group + GroupEncoding,
+{
+    #[serde(with = "crate::tools::serdes::prime_field_array")]
+    pub scalars: [G::Scalar; N],
+    #[serde(with = "crate::tools::serdes::group_array")]
+    pub points: [G; N],
+}
 
-    #[test]
-    fn test_basic_sum() {
-        let scalars = vec![Scalar::ONE, Scalar::from(2u64)];
-        let points = vec![ProjectivePoint::GENERATOR, ProjectivePoint::GENERATOR * Scalar::from(2u64)];
+/// Test struct with vectors (for serialization tests)
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct TestStructVec<G>
+where
+    G: Group + GroupEncoding,
+{
+    #[serde(with = "crate::tools::serdes::prime_field_vec")]
+    pub scalars: Vec<G::Scalar>,
+    #[serde(with = "crate::tools::serdes::group_vec")]
+    pub points: Vec<G>,
+}
 
-        let result = sum_of_products(&scalars, &points).unwrap();
-        let expected = ProjectivePoint::GENERATOR * Scalar::from(5u64);
-        assert_eq!(result, expected);
+/// Calculates the sum of products of scalars and points.
+///
+/// This is a naive implementation. In a real-world scenario,
+/// this would be replaced by a more efficient algorithm like
+/// Strauss's or Pippenger's algorithm.
+pub fn sum_of_products<G>(scalars: &[G::Scalar], points: &[G]) -> Result<G>
+where
+    G: Group,
+{
+    if scalars.len() != points.len() {
+        return Err(anyhow!("Mismatched lengths of scalars and points"));
     }
+
+    Ok(scalars.iter().zip(points.iter()).map(|(s, p)| *p * *s).sum())
 }

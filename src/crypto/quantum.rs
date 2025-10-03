@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info};
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -22,7 +22,7 @@ pub struct QuantumSafeEncryption {
 
 impl QuantumSafeEncryption {
     pub fn new() -> Result<Self> {
-        info!("🔐 Initializing Quantum-Safe Encryption (Simulated Kyber1024)");
+        info!("馃攼 Initializing Quantum-Safe Encryption (Simulated Kyber1024)");
         let mut instance = Self { keypair: None };
         instance.generate_keypair()?;
         Ok(instance)
@@ -42,7 +42,7 @@ impl QuantumSafeEncryption {
 
         self.keypair = Some(keypair.clone());
 
-        info!("✅ Quantum-safe keypair generated (simulated)");
+        info!("鉁?Quantum-safe keypair generated (simulated)");
         Ok(keypair)
     }
 
@@ -56,8 +56,7 @@ impl QuantumSafeEncryption {
         use rand::RngCore;
         use sha2::{Digest, Sha256};
 
-        // 固定密钥，保证测试中加解密一致
-        let aes_key = Sha256::digest(SHARED_SECRET);
+        // 鍥哄畾瀵嗛挜锛屼繚璇佹祴璇曚腑鍔犺В瀵嗕竴鑷?        let aes_key = Sha256::digest(SHARED_SECRET);
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key));
 
         let mut nonce_bytes = [0u8; AES_NONCE_LEN];
@@ -68,11 +67,11 @@ impl QuantumSafeEncryption {
             .encrypt(nonce, plaintext)
             .map_err(|e| anyhow::anyhow!("AES encryption failed: {e}"))?;
 
-        // 模拟 KEM 的密文部分（仅用于占位）
+        // 妯℃嫙 KEM 鐨勫瘑鏂囬儴鍒嗭紙浠呯敤浜庡崰浣嶏級
         let mut simulated_kyber_ciphertext = vec![0u8; KYBER_CIPHERTEXT_LEN];
         rand::thread_rng().fill_bytes(&mut simulated_kyber_ciphertext);
 
-        // 打包格式: [4 bytes len][kyber_ct][12 bytes nonce][aes_ct]
+        // 鎵撳寘鏍煎紡: [4 bytes len][kyber_ct][12 bytes nonce][aes_ct]
         let mut result = Vec::with_capacity(
             4 + simulated_kyber_ciphertext.len() + AES_NONCE_LEN + ciphertext.len(),
         );
@@ -81,12 +80,12 @@ impl QuantumSafeEncryption {
         result.extend_from_slice(&nonce_bytes);
         result.extend_from_slice(&ciphertext);
 
-        // 零化中间敏感数据
+        // 闆跺寲涓棿鏁忔劅鏁版嵁
         use zeroize::Zeroize;
         nonce_bytes.zeroize();
         simulated_kyber_ciphertext.zeroize();
 
-        debug!("✅ Data encrypted with quantum-safe encryption (simulated)");
+        debug!("鉁?Data encrypted with quantum-safe encryption (simulated)");
         Ok(result)
     }
 
@@ -128,7 +127,7 @@ impl QuantumSafeEncryption {
             .decrypt(nonce, aes_ciphertext)
             .map_err(|e| anyhow::anyhow!("AES decryption failed: {e}"))?;
 
-        debug!("✅ Data decrypted with quantum-safe encryption (simulated)");
+        debug!("鉁?Data decrypted with quantum-safe encryption (simulated)");
         Ok(plaintext)
     }
 

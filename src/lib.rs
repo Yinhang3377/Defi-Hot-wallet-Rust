@@ -1,4 +1,4 @@
-//! # DeFi Hot Wallet Library
+﻿//! # DeFi Hot Wallet Library
 //!
 //! This is the main library crate for the DeFi Hot Wallet application. It encapsulates
 //! all the core logic, including wallet management, cryptographic operations,
@@ -19,6 +19,7 @@ pub mod mvp;
 pub mod network;
 pub mod ops;
 pub mod security;
+pub mod service;
 pub mod storage;
 pub mod tools;
 pub mod utils;

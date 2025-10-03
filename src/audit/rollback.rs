@@ -1,19 +1,14 @@
-/// 代表一个针对特定交易的回滚操作。
-#[derive(Debug, Clone, PartialEq, Eq)]
+﻿/// 浠ｈ〃涓€涓拡瀵圭壒瀹氫氦鏄撶殑鍥炴粴鎿嶄綔銆?#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rollback {
     pub tx_id: String,
 }
 
 impl Rollback {
-    /// 为一个给定的交易ID创建一个新的回滚请求。
-    pub fn new(tx_id: &str) -> Self {
-        Self {
-            tx_id: tx_id.to_string(),
-        }
+    /// 涓轰竴涓粰瀹氱殑浜ゆ槗ID鍒涘缓涓€涓柊鐨勫洖婊氳姹傘€?    pub fn new(tx_id: &str) -> Self {
+        Self { tx_id: tx_id.to_string() }
     }
 }
 
-/// 执行回滚操作的占位函数。
-pub fn rollback_tx(_tx_id: &str) -> Result<(), &'static str> {
+/// 鎵ц鍥炴粴鎿嶄綔鐨勫崰浣嶅嚱鏁般€?pub fn rollback_tx(_tx_id: &str) -> Result<(), &'static str> {
     Ok(())
 }

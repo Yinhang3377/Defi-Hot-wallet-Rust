@@ -1,10 +1,10 @@
-use std::sync::Mutex;
+﻿use std::sync::Mutex;
 
-// 为了测试目的，使用一个简单的内存存储
-// 在实际应用中，这会是一个安全的、持久化的存储机制
+// 涓轰簡娴嬭瘯鐩殑锛屼娇鐢ㄤ竴涓畝鍗曠殑鍐呭瓨瀛樺偍
+// 鍦ㄥ疄闄呭簲鐢ㄤ腑锛岃繖浼氭槸涓€涓畨鍏ㄧ殑銆佹寔涔呭寲鐨勫瓨鍌ㄦ満鍒?
 static KEY_STORAGE: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 
-/// 密钥管理相关的错误类型
+/// 瀵嗛挜绠＄悊鐩稿叧鐨勯敊璇被鍨?
 #[derive(Debug, thiserror::Error)]
 pub enum KeyManagementError {
     #[error("Key generation failed")]
@@ -17,19 +17,19 @@ pub enum KeyManagementError {
     InvalidKey(String),
 }
 
-/// 生成一个新的密钥。
-/// 在实际应用中，这会使用一个密码学安全的随机数生成器。
+/// 鐢熸垚涓€涓柊鐨勫瘑閽ャ€?
+/// 鍦ㄥ疄闄呭簲鐢ㄤ腑锛岃繖浼氫娇鐢ㄤ竴涓瘑鐮佸瀹夊叏鐨勯殢鏈烘暟鐢熸垚鍣ㄣ€?
 pub fn generate_key() -> Result<Vec<u8>, KeyManagementError> {
-    // 示例：生成一个16字节的密钥
-    // 实际应用中应使用 `rand::Rng` 和 `rand::thread_rng()`
+    // 绀轰緥锛氱敓鎴愪竴涓?6瀛楄妭鐨勫瘑閽?
+    // 瀹為檯搴旂敤涓簲浣跨敤 `rand::Rng` 鍜?`rand::thread_rng()`
     Ok(vec![
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
         0x10,
     ])
 }
 
-/// 存储一个密钥。
-/// 在实际应用中，这会将密钥加密并持久化存储。
+/// 瀛樺偍涓€涓瘑閽ャ€?
+/// 鍦ㄥ疄闄呭簲鐢ㄤ腑锛岃繖浼氬皢瀵嗛挜鍔犲瘑骞舵寔涔呭寲瀛樺偍銆?
 pub fn store_key(key: &[u8]) -> Result<(), KeyManagementError> {
     if key.is_empty() {
         return Err(KeyManagementError::InvalidKey("Key cannot be empty".to_string()));
@@ -41,8 +41,8 @@ pub fn store_key(key: &[u8]) -> Result<(), KeyManagementError> {
     Ok(())
 }
 
-/// 检索存储的密钥。
-/// 在实际应用中，这会从持久化存储中读取并解密密钥。
+/// 妫€绱㈠瓨鍌ㄧ殑瀵嗛挜銆?
+/// 鍦ㄥ疄闄呭簲鐢ㄤ腑锛岃繖浼氫粠鎸佷箙鍖栧瓨鍌ㄤ腑璇诲彇骞惰В瀵嗗瘑閽ャ€?
 pub fn retrieve_key() -> Result<Vec<u8>, KeyManagementError> {
     let storage = KEY_STORAGE
         .lock()
@@ -50,8 +50,8 @@ pub fn retrieve_key() -> Result<Vec<u8>, KeyManagementError> {
     storage.clone().ok_or(KeyManagementError::KeyNotFound)
 }
 
-/// 清除所有存储的密钥。
-/// 在实际应用中，这会安全地擦除持久化存储中的密钥。
+/// 娓呴櫎鎵€鏈夊瓨鍌ㄧ殑瀵嗛挜銆?
+/// 鍦ㄥ疄闄呭簲鐢ㄤ腑锛岃繖浼氬畨鍏ㄥ湴鎿﹂櫎鎸佷箙鍖栧瓨鍌ㄤ腑鐨勫瘑閽ャ€?
 pub fn clear_keys() -> Result<(), KeyManagementError> {
     let mut storage = KEY_STORAGE
         .lock()
@@ -68,12 +68,12 @@ mod tests {
     fn test_generate_key() {
         let key = generate_key().unwrap();
         assert!(!key.is_empty());
-        assert_eq!(key.len(), 16); // 假设生成16字节密钥
+        assert_eq!(key.len(), 16); // 鍋囪鐢熸垚16瀛楄妭瀵嗛挜
     }
 
     #[test]
     fn test_store_key() {
-        clear_keys().unwrap(); // 确保测试前状态干净
+        clear_keys().unwrap(); // 纭繚娴嬭瘯鍓嶇姸鎬佸共鍑€
         let key = vec![1, 2, 3];
         store_key(&key).unwrap();
         let retrieved = retrieve_key().unwrap();
@@ -82,13 +82,13 @@ mod tests {
 
     #[test]
     fn test_store_key_empty() {
-        clear_keys().unwrap(); // 确保测试前状态干净
+        clear_keys().unwrap(); // 纭繚娴嬭瘯鍓嶇姸鎬佸共鍑€
         assert!(store_key(&[]).is_err());
     }
 
     #[test]
     fn test_retrieve_key_not_found() {
-        clear_keys().unwrap(); // 确保没有密钥
+        clear_keys().unwrap(); // 纭繚娌℃湁瀵嗛挜
         assert!(retrieve_key().is_err());
     }
 }

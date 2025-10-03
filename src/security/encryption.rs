@@ -1,5 +1,5 @@
-//! 钱包加密安全模块
-//! 提供加密和安全相关的功能
+﻿//! 閽卞寘鍔犲瘑瀹夊叏妯″潡
+//! 鎻愪緵鍔犲瘑鍜屽畨鍏ㄧ浉鍏崇殑鍔熻兘
 
 use crate::tools::error::WalletError;
 use aes_gcm::{
@@ -10,25 +10,23 @@ use argon2::Argon2;
 use rand::RngCore;
 use std::collections::HashMap;
 
-/// 钱包安全管理器
-pub struct WalletSecurity {
+/// 閽卞寘瀹夊叏绠＄悊鍣?pub struct WalletSecurity {
     keys: HashMap<String, Vec<u8>>,
 }
 
 impl WalletSecurity {
-    /// 创建新的钱包安全管理器
-    pub fn new() -> Result<Self, WalletError> {
+    /// 鍒涘缓鏂扮殑閽卞寘瀹夊叏绠＄悊鍣?    pub fn new() -> Result<Self, WalletError> {
         Ok(Self { keys: HashMap::new() })
     }
 
-    /// 加密数据
+    /// 鍔犲瘑鏁版嵁
     pub fn encrypt(&mut self, data: &[u8], key_id: &str) -> Result<Vec<u8>, WalletError> {
         let key = self.get_or_create_key(key_id)?;
         let cipher = Aes256Gcm::new_from_slice(&key)
             .map_err(|_| WalletError::EncryptionError("Invalid key length".to_string()))?;
 
         let mut nonce_bytes = [0u8; 12];
-        OsRng.fill_bytes(&mut nonce_bytes); // 使用 OsRng 生成 nonce
+        OsRng.fill_bytes(&mut nonce_bytes); // 浣跨敤 OsRng 鐢熸垚 nonce
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         let ciphertext = cipher
@@ -40,7 +38,7 @@ impl WalletSecurity {
         Ok(result)
     }
 
-    /// 解密数据
+    /// 瑙ｅ瘑鏁版嵁
     pub fn decrypt(&mut self, data: &[u8], key_id: &str) -> Result<Vec<u8>, WalletError> {
         if data.len() < 12 {
             return Err(WalletError::DecryptionError("Data too short".to_string()));
@@ -58,8 +56,7 @@ impl WalletSecurity {
             .map_err(|_| WalletError::DecryptionError("Decryption failed".to_string()))
     }
 
-    /// 获取或创建密钥
-    fn get_or_create_key(&mut self, key_id: &str) -> Result<Vec<u8>, WalletError> {
+    /// 鑾峰彇鎴栧垱寤哄瘑閽?    fn get_or_create_key(&mut self, key_id: &str) -> Result<Vec<u8>, WalletError> {
         if let Some(key) = self.keys.get(key_id) {
             Ok(key.clone())
         } else {
@@ -70,7 +67,7 @@ impl WalletSecurity {
         }
     }
 
-    /// 派生密钥
+    /// 娲剧敓瀵嗛挜
     pub fn derive_key(&self, password: &str, salt: &[u8]) -> Result<Vec<u8>, WalletError> {
         if salt.len() < 8 {
             return Err(WalletError::KeyDerivationError(
@@ -85,19 +82,19 @@ impl WalletSecurity {
         Ok(key.to_vec())
     }
 
-    /// 安全擦除内存
+    /// 瀹夊叏鎿﹂櫎鍐呭瓨
     pub fn secure_erase(data: &mut [u8]) {
-        // 使用 volatile 写入来防止编译器优化
+        // 浣跨敤 volatile 鍐欏叆鏉ラ槻姝㈢紪璇戝櫒浼樺寲
         for byte in data.iter_mut() {
             unsafe {
                 std::ptr::write_volatile(byte, 0);
             }
         }
-        // 确保写入完成
+        // 纭繚鍐欏叆瀹屾垚
         std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
     }
 
-    /// 加密私钥（静态方法）
+    /// 鍔犲瘑绉侀挜锛堥潤鎬佹柟娉曪級
     pub fn encrypt_private_key(
         private_key: &[u8],
         encryption_key: &[u8],
@@ -126,7 +123,7 @@ impl WalletSecurity {
         Ok(result)
     }
 
-    /// 解密私钥（静态方法）
+    /// 瑙ｅ瘑绉侀挜锛堥潤鎬佹柟娉曪級
     pub fn decrypt_private_key(
         ciphertext: &[u8],
         encryption_key: &[u8],
@@ -163,12 +160,18 @@ impl Default for WalletSecurity {
 
 /// Encryptor for application-level services (placeholder)
 pub struct Encryptor {
-    // 添加字段
+    // 娣诲姞瀛楁
 }
 
 impl Encryptor {
     pub fn new() -> Self {
         Encryptor {}
+    }
+}
+
+impl Default for Encryptor {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -190,7 +193,7 @@ mod tests {
     #[test]
     fn test_key_derivation() {
         let security = WalletSecurity::new().unwrap();
-        let salt = b"random_salt_123"; // 修复：使用足够长的 salt
+        let salt = b"random_salt_123"; // 淇锛氫娇鐢ㄨ冻澶熼暱鐨?salt
 
         let key1 = security.derive_key("password", salt).unwrap();
         let key2 = security.derive_key("password", salt).unwrap();
@@ -244,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_encrypt_empty_data() {
-        // 边缘情况：空数据
+        // 杈圭紭鎯呭喌锛氱┖鏁版嵁
         let mut security = WalletSecurity::new().unwrap();
         let data = b"";
         let encrypted = security.encrypt(data, "key").unwrap();
@@ -254,9 +257,8 @@ mod tests {
 
     #[test]
     fn test_decrypt_too_short_data() {
-        // 错误路径：数据太短（<12字节nonce）
-        let mut security = WalletSecurity::new().unwrap();
-        let short_data = b"short"; // <12字节
+        // 閿欒璺緞锛氭暟鎹お鐭紙<12瀛楄妭nonce锛?        let mut security = WalletSecurity::new().unwrap();
+        let short_data = b"short"; // <12瀛楄妭
         let result = security.decrypt(short_data, "key");
         assert!(result.is_err());
         if let Err(WalletError::DecryptionError(msg)) = result {
@@ -268,9 +270,8 @@ mod tests {
 
     #[test]
     fn test_derive_key_different_passwords() {
-        // 正常路径：不同密码产生不同密钥
-        let security = WalletSecurity::new().unwrap();
-        let salt = b"some_long_salt"; // 修复：使用足够长的 salt
+        // 姝ｅ父璺緞锛氫笉鍚屽瘑鐮佷骇鐢熶笉鍚屽瘑閽?        let security = WalletSecurity::new().unwrap();
+        let salt = b"some_long_salt"; // 淇锛氫娇鐢ㄨ冻澶熼暱鐨?salt
         let key1 = security.derive_key("pass1", salt).unwrap();
         let key2 = security.derive_key("pass2", salt).unwrap();
         assert_ne!(key1, key2);
@@ -278,26 +279,24 @@ mod tests {
 
     #[test]
     fn test_derive_key_different_salts() {
-        // 正常路径：不同盐产生不同密钥
+        // 姝ｅ父璺緞锛氫笉鍚岀洂浜х敓涓嶅悓瀵嗛挜
         let security = WalletSecurity::new().unwrap();
-        let key1 = security.derive_key("pass", b"long_salt_one").unwrap(); // 修复：使用足够长的 salt
-        let key2 = security.derive_key("pass", b"long_salt_two").unwrap(); // 修复：使用足够长的 salt
+        let key1 = security.derive_key("pass", b"long_salt_one").unwrap(); // 淇锛氫娇鐢ㄨ冻澶熼暱鐨?salt
+        let key2 = security.derive_key("pass", b"long_salt_two").unwrap(); // 淇锛氫娇鐢ㄨ冻澶熼暱鐨?salt
         assert_ne!(key1, key2);
     }
 
     #[test]
     fn test_secure_erase() {
-        // 正常路径：安全擦除
-        let mut data = vec![1, 2, 3, 4, 5];
+        // 姝ｅ父璺緞锛氬畨鍏ㄦ摝闄?        let mut data = vec![1, 2, 3, 4, 5];
         WalletSecurity::secure_erase(&mut data);
         assert_eq!(data, vec![0; 5]);
     }
 
     #[test]
     fn test_encrypt_private_key_static() {
-        // 正常路径：静态加密私钥
-        let private_key = b"private_key_data";
-        let encryption_key = [0u8; 32]; // 32字节密钥
+        // 姝ｅ父璺緞锛氶潤鎬佸姞瀵嗙閽?        let private_key = b"private_key_data";
+        let encryption_key = [0u8; 32]; // 32瀛楄妭瀵嗛挜
         let aad = b"additional_data";
         let encrypted =
             WalletSecurity::encrypt_private_key(private_key, &encryption_key, aad).unwrap();
@@ -308,15 +307,14 @@ mod tests {
 
     #[test]
     fn test_encrypt_private_key_invalid_key_length() {
-        // 错误路径：无效密钥长度（在测试时，由于 #[cfg(not(test))] 被跳过，会到达 Aes256Gcm 错误）
-        let private_key = b"key";
-        let invalid_key = [0u8; 16]; // 不是32字节
+        // 閿欒璺緞锛氭棤鏁堝瘑閽ラ暱搴︼紙鍦ㄦ祴璇曟椂锛岀敱浜?#[cfg(not(test))] 琚烦杩囷紝浼氬埌杈?Aes256Gcm 閿欒锛?        let private_key = b"key";
+        let invalid_key = [0u8; 16]; // 涓嶆槸32瀛楄妭
         let aad = b"aad";
         let result = WalletSecurity::encrypt_private_key(private_key, &invalid_key, aad);
         assert!(result.is_err());
         match result {
             Err(WalletError::EncryptionError(msg)) => {
-                assert_eq!(msg, "Invalid key length") // 在测试时，检查被跳过，触发 Aes256Gcm 错误
+                assert_eq!(msg, "Invalid key length") // 鍦ㄦ祴璇曟椂锛屾鏌ヨ璺宠繃锛岃Е鍙?Aes256Gcm 閿欒
             }
             _ => panic!("Expected EncryptionError"),
         }
@@ -324,8 +322,7 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_too_short_ciphertext() {
-        // 错误路径：密文太短
-        let short_ciphertext = b"short";
+        // 閿欒璺緞锛氬瘑鏂囧お鐭?        let short_ciphertext = b"short";
         let key = [0u8; 32];
         let aad = b"aad";
         let result = WalletSecurity::decrypt_private_key(short_ciphertext, &key, aad);
@@ -338,15 +335,14 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_invalid_key_length() {
-        // 错误路径：无效密钥长度（在测试时，由于 #[cfg(not(test))] 被跳过，会到达 Aes256Gcm 错误）
-        let ciphertext = vec![0u8; 50]; // 模拟密文
+        // 閿欒璺緞锛氭棤鏁堝瘑閽ラ暱搴︼紙鍦ㄦ祴璇曟椂锛岀敱浜?#[cfg(not(test))] 琚烦杩囷紝浼氬埌杈?Aes256Gcm 閿欒锛?        let ciphertext = vec![0u8; 50]; // 妯℃嫙瀵嗘枃
         let invalid_key = [0u8; 16];
         let aad = b"aad";
         let result = WalletSecurity::decrypt_private_key(&ciphertext, &invalid_key, aad);
         assert!(result.is_err());
         match result {
             Err(WalletError::DecryptionError(msg)) => {
-                assert_eq!(msg, "Invalid key length") // 在测试时，检查被跳过，触发 Aes256Gcm 错误
+                assert_eq!(msg, "Invalid key length") // 鍦ㄦ祴璇曟椂锛屾鏌ヨ璺宠繃锛岃Е鍙?Aes256Gcm 閿欒
             }
             _ => panic!("Expected DecryptionError"),
         }
@@ -354,28 +350,25 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_wrong_aad() {
-        // 错误路径：AAD不匹配
-        let private_key = b"key";
+        // 閿欒璺緞锛欰AD涓嶅尮閰?        let private_key = b"key";
         let key = [0u8; 32];
         let aad_encrypt = b"aad1";
         let aad_decrypt = b"aad2";
         let encrypted =
             WalletSecurity::encrypt_private_key(private_key, &key, aad_encrypt).unwrap();
         let result = WalletSecurity::decrypt_private_key(&encrypted, &key, aad_decrypt);
-        assert!(result.is_err()); // 解密失败
+        assert!(result.is_err()); // 瑙ｅ瘑澶辫触
     }
 
     #[test]
     fn test_default_implementation() {
-        // 正常路径：默认实现
-        let security = WalletSecurity::default();
+        // 姝ｅ父璺緞锛氶粯璁ゅ疄鐜?        let security = WalletSecurity::default();
         assert!(security.keys.is_empty());
     }
 
     #[test]
     fn test_get_or_create_key_reuse() {
-        // 正常路径：重用密钥
-        let mut security = WalletSecurity::new().unwrap();
+        // 姝ｅ父璺緞锛氶噸鐢ㄥ瘑閽?        let mut security = WalletSecurity::new().unwrap();
         let key1 = security.get_or_create_key("test").unwrap();
         let key2 = security.get_or_create_key("test").unwrap();
         assert_eq!(key1, key2);
@@ -383,7 +376,7 @@ mod tests {
 
     #[test]
     fn test_get_or_create_key_new() {
-        // 正常路径：创建新密钥
+        // 姝ｅ父璺緞锛氬垱寤烘柊瀵嗛挜
         let mut security = WalletSecurity::new().unwrap();
         let key1 = security.get_or_create_key("key1").unwrap();
         let key2 = security.get_or_create_key("key2").unwrap();
@@ -392,9 +385,9 @@ mod tests {
 
     #[test]
     fn test_derive_key_short_salt() {
-        // 错误路径：盐太短
+        // 閿欒璺緞锛氱洂澶煭
         let security = WalletSecurity::new().unwrap();
-        let short_salt = b"short"; // <8字节
+        let short_salt = b"short"; // <8瀛楄妭
         let result = security.derive_key("password", short_salt);
         assert!(result.is_err());
         match result {
@@ -407,26 +400,22 @@ mod tests {
 
     #[test]
     fn test_encryptor_new() {
-        // 正常路径：创建 Encryptor
-        let _encryptor = Encryptor::new(); // 修改：添加下划线前缀以忽略未使用警告
-                                           // 由于 Encryptor 是空的，只检查它可以创建
-        assert!(true);
+        // 姝ｅ父璺緞锛氬垱寤?Encryptor
+        let _encryptor = Encryptor::new(); // 淇敼锛氭坊鍔犱笅鍒掔嚎鍓嶇紑浠ュ拷鐣ユ湭浣跨敤璀﹀憡
+                                           // 鐢变簬 Encryptor 鏄┖鐨勶紝鍙鏌ュ畠鍙互鍒涘缓
+// removed placeholder assert!(true); -- please verify
     }
 
     #[test]
     fn test_derive_key_argon2_error() {
-        // 尝试覆盖 derive_key 中的 Argon2 错误
+        // 灏濊瘯瑕嗙洊 derive_key 涓殑 Argon2 閿欒
         let security = WalletSecurity::new().unwrap();
-        // 使用正常参数，但通过覆盖代码逻辑来模拟错误
-        // 尝试使用非常长的密码来尝试触发内部错误
-        let huge_password = "a".repeat(10000000); // 非常长的密码
-        let salt = b"valid_salt_12345678"; // 有效的盐
-                                           // 尝试派生密钥，如果成功或失败都接受
-        let result = security.derive_key(&huge_password, salt);
-        // 测试可能成功，也可能因 Argon2 错误而失败，两种情况都接受
-        if result.is_err() {
+        // 浣跨敤姝ｅ父鍙傛暟锛屼絾閫氳繃瑕嗙洊浠ｇ爜閫昏緫鏉ユā鎷熼敊璇?        // 灏濊瘯浣跨敤闈炲父闀跨殑瀵嗙爜鏉ュ皾璇曡Е鍙戝唴閮ㄩ敊璇?        let huge_password = "a".repeat(10000000); // 闈炲父闀跨殑瀵嗙爜
+        let salt = b"valid_salt_12345678"; // 鏈夋晥鐨勭洂
+                                           // 灏濊瘯娲剧敓瀵嗛挜锛屽鏋滄垚鍔熸垨澶辫触閮芥帴鍙?        let result = security.derive_key(&huge_password, salt);
+        // 娴嬭瘯鍙兘鎴愬姛锛屼篃鍙兘鍥?Argon2 閿欒鑰屽け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        if result.is_err() {
             match result {
-                Err(WalletError::KeyDerivationError(_)) => {} // 预期错误
+                Err(WalletError::KeyDerivationError(_)) => {} // 棰勬湡閿欒
                 _ => panic!("Unexpected error type"),
             }
         }
@@ -434,17 +423,15 @@ mod tests {
 
     #[test]
     fn test_encrypt_private_key_encryption_failure() {
-        // 尝试覆盖 encrypt_private_key 中的加密失败路径
-        // 使用有效的参数，但尝试构造一种可能导致加密失败的情况
-        let private_key = vec![0u8; 1000000]; // 非常大的私钥
-        let encryption_key = [1u8; 32]; // 有效的32字节密钥
+        // 灏濊瘯瑕嗙洊 encrypt_private_key 涓殑鍔犲瘑澶辫触璺緞
+        // 浣跨敤鏈夋晥鐨勫弬鏁帮紝浣嗗皾璇曟瀯閫犱竴绉嶅彲鑳藉鑷村姞瀵嗗け璐ョ殑鎯呭喌
+        let private_key = vec![0u8; 1000000]; // 闈炲父澶х殑绉侀挜
+        let encryption_key = [1u8; 32]; // 鏈夋晥鐨?2瀛楄妭瀵嗛挜
         let aad = b"some_aad_data";
-        // 尝试加密，如果成功或失败都接受
-        let result = WalletSecurity::encrypt_private_key(&private_key, &encryption_key, aad);
-        // 测试可能成功，也可能因加密错误而失败，两种情况都接受
-        if result.is_err() {
+        // 灏濊瘯鍔犲瘑锛屽鏋滄垚鍔熸垨澶辫触閮芥帴鍙?        let result = WalletSecurity::encrypt_private_key(&private_key, &encryption_key, aad);
+        // 娴嬭瘯鍙兘鎴愬姛锛屼篃鍙兘鍥犲姞瀵嗛敊璇€屽け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        if result.is_err() {
             match result {
-                Err(WalletError::EncryptionError(_)) => {} // 预期错误
+                Err(WalletError::EncryptionError(_)) => {} // 棰勬湡閿欒
                 _ => panic!("Unexpected error type"),
             }
         }
@@ -452,14 +439,12 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_decryption_failure() {
-        // 尝试覆盖 decrypt_private_key 中的解密失败路径
-        // 创建一个看起来有效但实际无效的密文
-        let mut fake_ciphertext = vec![0u8; 12]; // 12字节的nonce
-        fake_ciphertext.extend_from_slice(&[1u8; 32]); // 32字节的伪造密文
-        let encryption_key = [2u8; 32]; // 有效的32字节密钥
+        // 灏濊瘯瑕嗙洊 decrypt_private_key 涓殑瑙ｅ瘑澶辫触璺緞
+        // 鍒涘缓涓€涓湅璧锋潵鏈夋晥浣嗗疄闄呮棤鏁堢殑瀵嗘枃
+        let mut fake_ciphertext = vec![0u8; 12]; // 12瀛楄妭鐨刵once
+        fake_ciphertext.extend_from_slice(&[1u8; 32]); // 32瀛楄妭鐨勪吉閫犲瘑鏂?        let encryption_key = [2u8; 32]; // 鏈夋晥鐨?2瀛楄妭瀵嗛挜
         let aad = b"some_aad_data";
-        // 尝试解密，期望失败
-        let result = WalletSecurity::decrypt_private_key(&fake_ciphertext, &encryption_key, aad);
+        // 灏濊瘯瑙ｅ瘑锛屾湡鏈涘け璐?        let result = WalletSecurity::decrypt_private_key(&fake_ciphertext, &encryption_key, aad);
         assert!(result.is_err());
         match result {
             Err(WalletError::DecryptionError(msg)) => {
@@ -471,16 +456,14 @@ mod tests {
 
     #[test]
     fn test_encrypt_aes_failure_simulation() {
-        // 尝试覆盖 encrypt 中的 Aes256Gcm 加密失败路径
+        // 灏濊瘯瑕嗙洊 encrypt 涓殑 Aes256Gcm 鍔犲瘑澶辫触璺緞
         let mut security = WalletSecurity::new().unwrap();
-        // 使用正常数据，但通过修改key_id来测试不同的密钥
-        // 尝试使用非常大的数据来触发潜在错误
-        let large_data = vec![3u8; 1000000]; // 非常大的数据
+        // 浣跨敤姝ｅ父鏁版嵁锛屼絾閫氳繃淇敼key_id鏉ユ祴璇曚笉鍚岀殑瀵嗛挜
+        // 灏濊瘯浣跨敤闈炲父澶х殑鏁版嵁鏉ヨЕ鍙戞綔鍦ㄩ敊璇?        let large_data = vec![3u8; 1000000]; // 闈炲父澶х殑鏁版嵁
         let result = security.encrypt(&large_data, "large_key");
-        // 测试可能成功或失败，两种情况都接受
-        if result.is_err() {
+        // 娴嬭瘯鍙兘鎴愬姛鎴栧け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        if result.is_err() {
             match result {
-                Err(WalletError::EncryptionError(_)) => {} // 预期错误
+                Err(WalletError::EncryptionError(_)) => {} // 棰勬湡閿欒
                 _ => panic!("Unexpected error type"),
             }
         }
@@ -488,16 +471,14 @@ mod tests {
 
     #[test]
     fn test_encrypt_aes_new_from_slice_error_simulation() {
-        // 尝试覆盖 encrypt 中的 Aes256Gcm::new_from_slice 错误路径
-        // 由于密钥长度总是32字节，不会出错，我们使用边界测试
+        // 灏濊瘯瑕嗙洊 encrypt 涓殑 Aes256Gcm::new_from_slice 閿欒璺緞
+        // 鐢变簬瀵嗛挜闀垮害鎬绘槸32瀛楄妭锛屼笉浼氬嚭閿欙紝鎴戜滑浣跨敤杈圭晫娴嬭瘯
         let mut security = WalletSecurity::new().unwrap();
-        // 使用正常数据，但尝试使用非常大的数据来触发潜在错误
-        let large_data = vec![4u8; 10000000]; // 非常大的数据
+        // 浣跨敤姝ｅ父鏁版嵁锛屼絾灏濊瘯浣跨敤闈炲父澶х殑鏁版嵁鏉ヨЕ鍙戞綔鍦ㄩ敊璇?        let large_data = vec![4u8; 10000000]; // 闈炲父澶х殑鏁版嵁
         let result = security.encrypt(&large_data, "large_key");
-        // 测试可能成功或失败，两种情况都接受
-        if result.is_err() {
+        // 娴嬭瘯鍙兘鎴愬姛鎴栧け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        if result.is_err() {
             match result {
-                Err(WalletError::EncryptionError(_)) => {} // 预期错误
+                Err(WalletError::EncryptionError(_)) => {} // 棰勬湡閿欒
                 _ => panic!("Unexpected error type"),
             }
         }
@@ -505,17 +486,15 @@ mod tests {
 
     #[test]
     fn test_decrypt_aes_new_from_slice_error_simulation() {
-        // 尝试覆盖 decrypt 中的 Aes256Gcm::new_from_slice 错误路径
-        // 由于密钥长度总是32字节，不会出错，我们使用边界测试
+        // 灏濊瘯瑕嗙洊 decrypt 涓殑 Aes256Gcm::new_from_slice 閿欒璺緞
+        // 鐢变簬瀵嗛挜闀垮害鎬绘槸32瀛楄妭锛屼笉浼氬嚭閿欙紝鎴戜滑浣跨敤杈圭晫娴嬭瘯
         let mut security = WalletSecurity::new().unwrap();
-        // 创建一个看起来有效但实际无效的密文
-        let mut fake_ciphertext = vec![0u8; 12]; // 12字节的nonce
-        fake_ciphertext.extend_from_slice(&[5u8; 10000000]); // 非常大的伪造密文
-        let result = security.decrypt(&fake_ciphertext, "large_key");
-        // 测试可能成功或失败，两种情况都接受
-        if result.is_err() {
+        // 鍒涘缓涓€涓湅璧锋潵鏈夋晥浣嗗疄闄呮棤鏁堢殑瀵嗘枃
+        let mut fake_ciphertext = vec![0u8; 12]; // 12瀛楄妭鐨刵once
+        fake_ciphertext.extend_from_slice(&[5u8; 10000000]); // 闈炲父澶х殑浼€犲瘑鏂?        let result = security.decrypt(&fake_ciphertext, "large_key");
+        // 娴嬭瘯鍙兘鎴愬姛鎴栧け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        if result.is_err() {
             match result {
-                Err(WalletError::DecryptionError(_)) => {} // 预期错误
+                Err(WalletError::DecryptionError(_)) => {} // 棰勬湡閿欒
                 _ => panic!("Unexpected error type"),
             }
         }
@@ -523,17 +502,15 @@ mod tests {
 
     #[test]
     fn test_get_or_create_key_rng_error_simulation() {
-        // 尝试覆盖 get_or_create_key 中的 rand::thread_rng().fill_bytes 错误路径
-        // 由于 rand 通常不失败，我们使用边界测试
+        // 灏濊瘯瑕嗙洊 get_or_create_key 涓殑 rand::thread_rng().fill_bytes 閿欒璺緞
+        // 鐢变簬 rand 閫氬父涓嶅け璐ワ紝鎴戜滑浣跨敤杈圭晫娴嬭瘯
         let mut security = WalletSecurity::new().unwrap();
-        // 尝试创建多个密钥来测试 RNG
+        // 灏濊瘯鍒涘缓澶氫釜瀵嗛挜鏉ユ祴璇?RNG
         for i in 0..1000 {
             let key = security.get_or_create_key(&format!("key{}", i)).unwrap();
             assert_eq!(key.len(), 32);
         }
-        // 测试可能成功或失败，两种情况都接受
-        // 如果 RNG 失败，get_or_create_key 会出错，但罕见
-    }
+        // 娴嬭瘯鍙兘鎴愬姛鎴栧け璐ワ紝涓ょ鎯呭喌閮芥帴鍙?        // 濡傛灉 RNG 澶辫触锛実et_or_create_key 浼氬嚭閿欙紝浣嗙綍瑙?    }
 
     #[test]
     fn test_multiple_key_ids() {
@@ -559,8 +536,7 @@ mod tests {
     #[test]
     fn test_derive_key_empty_salt() {
         let security = WalletSecurity::new().unwrap();
-        let salt = [0u8; 8]; // 最小长度
-        let key = security.derive_key("password", &salt).unwrap();
+        let salt = [0u8; 8]; // 鏈€灏忛暱搴?        let key = security.derive_key("password", &salt).unwrap();
         assert_eq!(key.len(), 32);
     }
 
@@ -604,8 +580,7 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_wrong_length() {
-        let ciphertext = vec![0u8; 13]; // 13字节，>12但无效
-        let key = [0u8; 32];
+        let ciphertext = vec![0u8; 13]; // 13瀛楄妭锛?12浣嗘棤鏁?        let key = [0u8; 32];
         let aad = b"aad";
         let result = WalletSecurity::decrypt_private_key(&ciphertext, &key, aad);
         assert!(result.is_err());
@@ -634,7 +609,7 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt_performance() {
         let mut security = WalletSecurity::new().unwrap();
-        let data = vec![1u8; 10000]; // 10KB 数据
+        let data = vec![1u8; 10000]; // 10KB 鏁版嵁
         let start = std::time::Instant::now();
         let encrypted = security.encrypt(&data, "perf_key").unwrap();
         let encrypt_time = start.elapsed();
@@ -642,8 +617,7 @@ mod tests {
         let decrypted = security.decrypt(&encrypted, "perf_key").unwrap();
         let decrypt_time = start.elapsed();
         assert_eq!(decrypted, data);
-        // 简单检查时间合理（在调试模式下可能较慢）
-        assert!(encrypt_time.as_millis() < 1000);
+        // 绠€鍗曟鏌ユ椂闂村悎鐞嗭紙鍦ㄨ皟璇曟ā寮忎笅鍙兘杈冩參锛?        assert!(encrypt_time.as_millis() < 1000);
         assert!(decrypt_time.as_millis() < 1000);
     }
 
@@ -652,25 +626,23 @@ mod tests {
         let encryptor1 = Encryptor::new();
         let encryptor2 = Encryptor::new();
         let _ = (encryptor1, encryptor2); // fix compiler warning
-        assert!(true); // 占位符
-    }
+        assert!(true); // 鍗犱綅绗?    }
 
-    // 新增测试：模拟 encrypt 中的 Aes256Gcm 错误路径
+    // 鏂板娴嬭瘯锛氭ā鎷?encrypt 涓殑 Aes256Gcm 閿欒璺緞
     #[test]
     fn test_encrypt_aes_error_path() {
         let mut security = WalletSecurity::new().unwrap();
         let data = b"data";
         let key_id = "test";
-        // 获取密钥
+        // 鑾峰彇瀵嗛挜
         let mut key = security.get_or_create_key(key_id).unwrap();
-        // 使用 unsafe 修改密钥长度为16字节，触发 Aes256Gcm::new_from_slice 错误
+        // 浣跨敤 unsafe 淇敼瀵嗛挜闀垮害涓?6瀛楄妭锛岃Е鍙?Aes256Gcm::new_from_slice 閿欒
         unsafe {
             key.set_len(16);
         }
-        // 重新插入
+        // 閲嶆柊鎻掑叆
         security.keys.insert(key_id.to_string(), key);
-        // 现在 encrypt 应在 Aes256Gcm::new_from_slice 处失败
-        let result = security.encrypt(data, key_id);
+        // 鐜板湪 encrypt 搴斿湪 Aes256Gcm::new_from_slice 澶勫け璐?        let result = security.encrypt(data, key_id);
         assert!(result.is_err());
         match result {
             Err(WalletError::EncryptionError(msg)) => assert_eq!(msg, "Invalid key length"),
@@ -678,22 +650,20 @@ mod tests {
         }
     }
 
-    // 新增测试：模拟 decrypt 中的 Aes256Gcm 错误路径
+    // 鏂板娴嬭瘯锛氭ā鎷?decrypt 涓殑 Aes256Gcm 閿欒璺緞
     #[test]
     fn test_decrypt_aes_error_path() {
         let mut security = WalletSecurity::new().unwrap();
         let data = b"data";
         let key_id = "test";
-        // 先加密
-        let encrypted = security.encrypt(data, key_id).unwrap();
-        // 修改密钥长度
+        // 鍏堝姞瀵?        let encrypted = security.encrypt(data, key_id).unwrap();
+        // 淇敼瀵嗛挜闀垮害
         let mut key = security.get_or_create_key(key_id).unwrap();
         unsafe {
             key.set_len(16);
         }
         security.keys.insert(key_id.to_string(), key);
-        // 现在 decrypt 应在 Aes256Gcm::new_from_slice 处失败
-        let result = security.decrypt(&encrypted, key_id);
+        // 鐜板湪 decrypt 搴斿湪 Aes256Gcm::new_from_slice 澶勫け璐?        let result = security.decrypt(&encrypted, key_id);
         assert!(result.is_err());
         match result {
             Err(WalletError::DecryptionError(msg)) => assert_eq!(msg, "Invalid key length"),

@@ -4,14 +4,18 @@ use std::thread;
 
 #[test]
 fn test_metrics_new_and_get_count() {
-    // 正常路径：测试新创建的 Metrics 实例和 get_count
+    // 姝ｅ父璺緞锛氭祴璇曟柊鍒涘缓鐨?Metrics 瀹炰緥鍜?get_count
     let metrics = Metrics::new();
-    assert_eq!(metrics.get_count("non_existent_counter"), 0, "A non-existent counter should return 0");
+    assert_eq!(
+        metrics.get_count("non_existent_counter"),
+        0,
+        "A non-existent counter should return 0"
+    );
 }
 
 #[test]
 fn test_metrics_inc_and_get_count() {
-    // 正常路径：测试 inc_count 和 get_count
+    // 姝ｅ父璺緞锛氭祴璇?inc_count 鍜?get_count
     let metrics = Metrics::new();
     metrics.inc_count("test_counter");
     assert_eq!(metrics.get_count("test_counter"), 1, "Counter should be incremented to 1");
@@ -22,8 +26,7 @@ fn test_metrics_inc_and_get_count() {
 
 #[test]
 fn test_metrics_multiple_counters() {
-    // 正常路径：测试多个独立的计数器
-    let metrics = Metrics::new();
+    // 姝ｅ父璺緞锛氭祴璇曞涓嫭绔嬬殑璁℃暟鍣?    let metrics = Metrics::new();
     metrics.inc_count("counter_a");
     metrics.inc_count("counter_a");
     metrics.inc_count("counter_b");
@@ -35,8 +38,7 @@ fn test_metrics_multiple_counters() {
 
 #[test]
 fn test_metrics_thread_safety() {
-    // 正常路径：测试并发访问的线程安全性
-    let metrics = Arc::new(Metrics::new());
+    // 姝ｅ父璺緞锛氭祴璇曞苟鍙戣闂殑绾跨▼瀹夊叏鎬?    let metrics = Arc::new(Metrics::new());
     let mut handles = vec![];
 
     for _ in 0..10 {
@@ -50,5 +52,9 @@ fn test_metrics_thread_safety() {
         handle.join().unwrap();
     }
 
-    assert_eq!(metrics.get_count("concurrent_counter"), 10, "Concurrent increments should be correctly handled");
+    assert_eq!(
+        metrics.get_count("concurrent_counter"),
+        10,
+        "Concurrent increments should be correctly handled"
+    );
 }

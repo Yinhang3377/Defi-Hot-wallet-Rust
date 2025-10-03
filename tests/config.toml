@@ -1,0 +1,7 @@
+ [source.crates-io]
+ # 将默认源替换为 rsproxy 镜像
+ replace-with = "rsproxy"
+ 
+ # rsproxy 镜像源配置
+ [source.rsproxy]
+ registry = "https://rsproxy.cn/crates.io-index"

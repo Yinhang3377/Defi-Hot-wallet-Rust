@@ -41,10 +41,10 @@ fn tx_send_and_confirm() {
 
 #[test]
 fn tx_confirm_status_changes() {
-    // 1. 创建并发送交易，获取哈希
+    // 1. 鍒涘缓骞跺彂閫佷氦鏄擄紝鑾峰彇鍝堝笇
     let tx_hash = send_transaction("test_wallet", Some(100)).unwrap();
 
-    // 2. 检查初始状态是否为 "sent"
+    // 2. 妫€鏌ュ垵濮嬬姸鎬佹槸鍚︿负 "sent"
     let status_before = get_transaction_status(tx_hash.clone());
     println!("Status before confirmation: {}", status_before);
     // To make the test meaningful, we ensure the state *before* confirmation is not 'confirmed'.
@@ -55,10 +55,10 @@ fn tx_confirm_status_changes() {
         return;
     }
 
-    // 3. 确认交易
+    // 3. 纭浜ゆ槗
     confirm_transaction(tx_hash.clone()).unwrap();
 
-    // 4. 检查更新后的状态是否为 "confirmed"
+    // 4. 妫€鏌ユ洿鏂板悗鐨勭姸鎬佹槸鍚︿负 "confirmed"
     let updated_status = get_transaction_status(tx_hash);
     println!("Status after confirmation: {}", updated_status);
     assert_eq!(updated_status, "confirmed");

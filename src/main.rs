@@ -1,10 +1,9 @@
-// src/main.rs
-//! DeFi 热钱包主程序
-//! 提供命令行接口和核心功能
+﻿// src/main.rs
+//! DeFi 鐑挶鍖呬富绋嬪簭
+//! 鎻愪緵鍛戒护琛屾帴鍙ｅ拰鏍稿績鍔熻兘
 use clap::{Parser, Subcommand};
 use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
 use defi_hot_wallet::core::WalletManager;
-use serde_json;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -16,88 +15,81 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 #[command(about = "A secure DeFi hot wallet with quantum-safe encryption")]
 #[command(version = "0.1.0")]
 pub struct Cli {
-    /// 配置文件路径
+    /// 閰嶇疆鏂囦欢璺緞
     #[arg(short, long, value_name = "FILE")]
     config: Option<PathBuf>,
 
-    /// 日志级别
+    /// 鏃ュ織绾у埆
     #[arg(short = 'l', long, value_name = "LOG_LEVEL", default_value = "info")]
     log_level: String,
 
-    /// 子命令
-    #[command(subcommand)]
-    command: Option<Commands>, // 使子命令可选
-}
+    /// 瀛愬懡浠?    #[command(subcommand)]
+    command: Option<Commands>, // 浣垮瓙鍛戒护鍙€?}
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// 创建新钱包
-    Create {
-        /// 钱包名称
+    /// 鍒涘缓鏂伴挶鍖?    Create {
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 输出文件路径
+        /// 杈撳嚭鏂囦欢璺緞
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
-    /// 显示钱包信息
+    /// 鏄剧ず閽卞寘淇℃伅
     Info {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
     },
-    /// 转账
+    /// 杞处
     Transfer {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 接收地址
+        /// 鎺ユ敹鍦板潃
         #[arg(short, long)]
         to: String,
-        /// 金额
+        /// 閲戦
         #[arg(short, long)]
         amount: String,
     },
-    /// 查询余额
+    /// 鏌ヨ浣欓
     Balance {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
     },
-    /// 桥接转账
+    /// 妗ユ帴杞处
     Bridge {
-        /// 钱包名称
+        /// 閽卞寘鍚嶇О
         #[arg(short, long)]
         name: String,
-        /// 源链
+        /// 婧愰摼
         #[arg(long)]
         from_chain: String,
-        /// 目标链
-        #[arg(long)]
+        /// 鐩爣閾?        #[arg(long)]
         to_chain: String,
-        /// 代币
+        /// 浠ｅ竵
         #[arg(short, long)]
         token: String,
-        /// 金额
+        /// 閲戦
         #[arg(short, long)]
         amount: String,
     },
-    /// 列出所有钱包
-    List,
-    /// 生成助记词
-    GenerateMnemonic,
+    /// 鍒楀嚭鎵€鏈夐挶鍖?    List,
+    /// 鐢熸垚鍔╄璇?    GenerateMnemonic,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
-    // 初始化日志
-    init_logging(&cli.log_level)?;
+    // 鍒濆鍖栨棩蹇?    init_logging(&cli.log_level)?;
 
     info!("Starting DeFi Hot Wallet v{}", env!("CARGO_PKG_VERSION"));
 
-    // 从默认配置加载，并允许通过环境变量覆盖数据库 URL
+    // 浠庨粯璁ら厤缃姞杞斤紝骞跺厑璁搁€氳繃鐜鍙橀噺瑕嗙洊鏁版嵁搴?URL
     let database_url =
         std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://./wallets.db".to_string());
     let wallet_config = WalletConfig {
@@ -116,7 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let wallet_manager = WalletManager::new(&wallet_config).await?;
 
-    // 执行命令
+    // 鎵ц鍛戒护
     match cli.command {
         Some(Commands::Create { name, output }) => {
             let info = wallet_manager.create_wallet(&name, true).await?;
@@ -124,7 +116,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let wallet_data = serde_json::to_string_pretty(&info)?;
                 fs::write(output_path, wallet_data)?;
             }
-            println!("✅ Wallet '{}' created successfully.", info.name);
+            println!("鉁?Wallet '{}' created successfully.", info.name);
         }
         Some(Commands::Info { name }) => {
             // This command is better served by `list` for now.
@@ -132,21 +124,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Some(Commands::Transfer { name, to, amount }) => {
             let tx_hash = wallet_manager.send_transaction(&name, &to, &amount, "eth").await?;
-            println!("💸 Transaction sent! Hash: {}", tx_hash);
+            println!("馃捀 Transaction sent! Hash: {}", tx_hash);
         }
         Some(Commands::Balance { name }) => {
             let balance = wallet_manager.get_balance(&name, "eth").await?;
-            println!("💰 Balance for '{}': {} ETH", name, balance);
+            println!("馃挵 Balance for '{}': {} ETH", name, balance);
         }
         Some(Commands::Bridge { name, from_chain, to_chain, token, amount }) => {
             let bridge_id = wallet_manager
                 .bridge_assets(&name, &from_chain, &to_chain, &token, &amount)
                 .await?;
-            println!("🌉 Bridge transaction initiated with ID: {}", bridge_id);
+            println!("馃寜 Bridge transaction initiated with ID: {}", bridge_id);
         }
         Some(Commands::List) => {
             let wallets = wallet_manager.list_wallets().await?;
-            println!("📋 Wallets:");
+            println!("馃搵 Wallets:");
             for wallet in wallets {
                 println!("  - {}", wallet.name);
             }
@@ -168,7 +160,7 @@ fn init_logging(level: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let subscriber = FmtSubscriber::builder()
         .with_env_filter(filter)
-        .with_max_level(tracing::Level::TRACE) // 确保所有级别都能被 env_filter 处理
+        .with_max_level(tracing::Level::TRACE) // 纭繚鎵€鏈夌骇鍒兘鑳借 env_filter 澶勭悊
         .finish();
 
     tracing::subscriber::set_global_default(subscriber)?;
@@ -183,38 +175,37 @@ mod tests {
     async fn run(args: Vec<&str>) -> Result<(), WalletError> {
         let cli =
             Cli::try_parse_from(args).map_err(|e| WalletError::ValidationError(e.to_string()))?;
-        // 模拟 main 逻辑，但简化
-        match cli.command {
+        // 妯℃嫙 main 閫昏緫锛屼絾绠€鍖?        match cli.command {
             Some(Commands::Create { name, output: _ }) => {
-                // 模拟创建
+                // 妯℃嫙鍒涘缓
                 println!("Simulated create: {}", name);
             }
             Some(Commands::Transfer { name, to, amount }) => {
-                // 模拟转账
+                // 妯℃嫙杞处
                 println!("Simulated transfer from {} to {} amount {}", name, to, amount);
             }
             Some(Commands::Balance { name }) => {
-                // 模拟查询余额
+                // 妯℃嫙鏌ヨ浣欓
                 println!("Simulated balance check for {}", name);
             }
             Some(Commands::Info { name }) => {
-                // 模拟查询信息
+                // 妯℃嫙鏌ヨ淇℃伅
                 println!("Simulated info for {}", name);
             }
             Some(Commands::List) => {
-                // 模拟列出
+                // 妯℃嫙鍒楀嚭
                 println!("Simulated list wallets");
             }
             Some(Commands::GenerateMnemonic) => {
-                // 模拟生成助记词
-                println!("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon"); // 24 字示例
-            }
+                // 妯℃嫙鐢熸垚鍔╄璇?                println!("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon");
+                // 24 瀛楃ず渚?            }
             None => {
-                // 无子命令时返回错误
-                return Err(WalletError::ValidationError("No subcommand provided. Use --help for usage.".into()));
+                // 鏃犲瓙鍛戒护鏃惰繑鍥為敊璇?                return Err(WalletError::ValidationError(
+                    "No subcommand provided. Use --help for usage.".into(),
+                ));
             }
             _ => {
-                // 对于其他命令，暂时返回错误或打印消息
+                // 瀵逛簬鍏朵粬鍛戒护锛屾殏鏃惰繑鍥為敊璇垨鎵撳嵃娑堟伅
                 println!("Unsupported command in test");
             }
         }
@@ -223,12 +214,10 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_main_execution_help() {
-        // 正常路径：模拟主函数调用 --help
-        // clap 在 --help 时会正常退出，这会导致 try_parse_from 返回错误，但这是预期行为。
-        let args = vec!["hot_wallet", "--help"];
+        // 姝ｅ父璺緞锛氭ā鎷熶富鍑芥暟璋冪敤 --help
+        // clap 鍦?--help 鏃朵細姝ｅ父閫€鍑猴紝杩欎細瀵艰嚧 try_parse_from 杩斿洖閿欒锛屼絾杩欐槸棰勬湡琛屼负銆?        let args = vec!["hot_wallet", "--help"];
         let result = run(args).await;
-        // --help 打印信息并以成功状态退出，clap 的 try_parse_from 会将其视为错误
-        assert!(result.is_err());
+        // --help 鎵撳嵃淇℃伅骞朵互鎴愬姛鐘舵€侀€€鍑猴紝clap 鐨?try_parse_from 浼氬皢鍏惰涓洪敊璇?        assert!(result.is_err());
         if let Err(WalletError::ValidationError(e)) = result {
             assert!(e.contains("Usage: hot_wallet"));
         } else {
@@ -238,8 +227,7 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_main_invalid_args() {
-        // 错误路径：无效参数
-        let args = vec!["hot_wallet", "--invalid-arg"];
+        // 閿欒璺緞锛氭棤鏁堝弬鏁?        let args = vec!["hot_wallet", "--invalid-arg"];
         let result = run(args).await;
         assert!(result.is_err());
         assert!(matches!(result, Err(WalletError::ValidationError(_))));
@@ -247,8 +235,7 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_main_no_subcommand() {
-        // 边缘情况：无子命令
-        let args = vec!["hot_wallet"];
+        // 杈圭紭鎯呭喌锛氭棤瀛愬懡浠?        let args = vec!["hot_wallet"];
         let result = run(args).await;
         assert!(result.is_err());
         assert!(matches!(
@@ -266,10 +253,18 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn test_main_transfer() {
-        let args =
-            vec!["hot_wallet", "transfer", "--name", "test_wallet", "--to", "0x123", "--amount", "1.0"];
+        let args = vec![
+            "hot_wallet",
+            "transfer",
+            "--name",
+            "test_wallet",
+            "--to",
+            "0x123",
+            "--amount",
+            "1.0",
+        ];
         let result = run(args).await;
-        assert!(result.is_ok()); // 假设模拟成功
+        assert!(result.is_ok()); // 鍋囪妯℃嫙鎴愬姛
     }
 
     #[tokio::test(flavor = "current_thread")]

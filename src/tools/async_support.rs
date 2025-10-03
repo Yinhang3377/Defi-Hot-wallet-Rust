@@ -1,6 +1,5 @@
-// src/tools/async_support.rs
-//! 异步支持工具
-//! 提供异步编程的辅助功能和工具
+﻿// src/tools/async_support.rs
+//! 鎻愪緵寮傛缂栫▼鐨勮緟鍔╁姛鑳藉拰宸ュ叿
 
 use crate::tools::error::WalletError;
 use futures::future::join_all;
@@ -9,10 +8,10 @@ use std::time::{Duration, Instant};
 use tokio::time::timeout;
 use tracing::info;
 
-/// 异步操作结果类型
+/// 寮傛鎿嶄綔缁撴灉绫诲瀷
 pub type AsyncResult<T> = Result<T, WalletError>;
 
-/// 超时配置
+/// 瓒呮椂閰嶇疆
 #[derive(Debug, Clone)]
 pub struct TimeoutConfig {
     pub duration: Duration,
@@ -20,32 +19,30 @@ pub struct TimeoutConfig {
 }
 
 impl TimeoutConfig {
-    /// 创建新的超时配置
+    /// 鍒涘缓鏂扮殑瓒呮椂閰嶇疆
     pub fn new(duration: Duration, operation_name: impl Into<String>) -> Self {
         Self { duration, operation_name: operation_name.into() }
     }
 
-    /// 标准超时（30秒）
+    /// 鏍囧噯瓒呮椂锛?0绉掞級
     pub fn standard(operation_name: impl Into<String>) -> Self {
         Self::new(Duration::from_secs(30), operation_name)
     }
 
-    /// 短超时（5秒）
+    /// 鐭秴鏃讹紙5绉掞級
     pub fn short(operation_name: impl Into<String>) -> Self {
         Self::new(Duration::from_secs(5), operation_name)
     }
 
-    /// 长超时（5分钟）
-    pub fn long(operation_name: impl Into<String>) -> Self {
+    /// 闀胯秴鏃讹紙5鍒嗛挓锛?    pub fn long(operation_name: impl Into<String>) -> Self {
         Self::new(Duration::from_secs(300), operation_name)
     }
 }
 
-/// 带超时的异步操作执行器
-pub struct AsyncExecutor;
+/// 甯﹁秴鏃剁殑寮傛鎿嶄綔鎵ц鍣?pub struct AsyncExecutor;
 
 impl AsyncExecutor {
-    /// 执行异步操作，带超时控制
+    /// 鎵ц寮傛鎿嶄綔锛屽甫瓒呮椂鎺у埗
     pub async fn execute_with_timeout<F, T>(future: F, config: TimeoutConfig) -> AsyncResult<T>
     where
         F: Future<Output = AsyncResult<T>>,
@@ -59,15 +56,14 @@ impl AsyncExecutor {
         }
     }
 
-    /// 执行异步操作，不带超时
-    pub async fn execute<F, T>(future: F) -> AsyncResult<T>
+    /// 鎵ц寮傛鎿嶄綔锛屼笉甯﹁秴鏃?    pub async fn execute<F, T>(future: F) -> AsyncResult<T>
     where
         F: Future<Output = AsyncResult<T>>,
     {
         future.await
     }
 
-    /// 重试异步操作
+    /// 閲嶈瘯寮傛鎿嶄綔
     pub async fn retry<F, Fut, T>(
         mut operation: F,
         max_attempts: usize,
@@ -107,18 +103,16 @@ impl AsyncExecutor {
     }
 }
 
-/// 异步任务管理器
-pub struct TaskManager<T> {
+/// 寮傛浠诲姟绠＄悊鍣?pub struct TaskManager<T> {
     tasks: Vec<tokio::task::JoinHandle<AsyncResult<T>>>,
 }
 
 impl<T: Send + 'static> TaskManager<T> {
-    /// 创建新的任务管理器
-    pub fn new() -> Self {
+    /// 鍒涘缓鏂扮殑浠诲姟绠＄悊鍣?    pub fn new() -> Self {
         Self { tasks: Vec::new() }
     }
 
-    /// 启动异步任务
+    /// 鍚姩寮傛浠诲姟
     pub fn spawn<F>(&mut self, future: F)
     where
         F: Future<Output = AsyncResult<T>> + Send + 'static,
@@ -127,8 +121,7 @@ impl<T: Send + 'static> TaskManager<T> {
         self.tasks.push(handle);
     }
 
-    /// 等待所有任务完成
-    pub async fn wait_all(&mut self) -> AsyncResult<Vec<T>> {
+    /// 绛夊緟鎵€鏈変换鍔″畬鎴?    pub async fn wait_all(&mut self) -> AsyncResult<Vec<T>> {
         let mut successful_results = Vec::new();
 
         for handle in self.tasks.drain(..) {
@@ -147,18 +140,14 @@ impl<T: Send + 'static> TaskManager<T> {
         Ok(successful_results)
     }
 
-    /// 取消所有任务
-    /// 注意：这会立即中止任务，可能不会运行它们的清理代码（Drop）。
-    /// 如果任务持有需要优雅关闭的资源（如文件句柄、网络连接），
-    /// 最好使用其他机制（如取消令牌）来通知它们关闭。
-    pub fn cancel_all(&mut self) {
+    /// 鍙栨秷鎵€鏈変换鍔?    /// 娉ㄦ剰锛氳繖浼氱珛鍗充腑姝换鍔★紝鍙兘涓嶄細杩愯瀹冧滑鐨勬竻鐞嗕唬鐮侊紙Drop锛夈€?    /// 濡傛灉浠诲姟鎸佹湁闇€瑕佷紭闆呭叧闂殑璧勬簮锛堝鏂囦欢鍙ユ焺銆佺綉缁滆繛鎺ワ級锛?    /// 鏈€濂戒娇鐢ㄥ叾浠栨満鍒讹紙濡傚彇娑堜护鐗岋級鏉ラ€氱煡瀹冧滑鍏抽棴銆?    pub fn cancel_all(&mut self) {
         for handle in &self.tasks {
             handle.abort();
         }
         self.tasks.clear();
     }
 
-    /// 获取活跃任务数量
+    /// 鑾峰彇娲昏穬浠诲姟鏁伴噺
     pub fn active_count(&self) -> usize {
         self.tasks.len()
     }
@@ -172,25 +161,22 @@ impl<T: Send + 'static> Default for TaskManager<T> {
 
 impl<T> Drop for TaskManager<T> {
     fn drop(&mut self) {
-        // 在Drop时取消所有任务
-        for handle in &self.tasks {
+        // 鍦―rop鏃跺彇娑堟墍鏈変换鍔?        for handle in &self.tasks {
             handle.abort();
         }
     }
 }
 
-/// 异步信号量
-pub struct AsyncSemaphore {
+/// 寮傛淇″彿閲?pub struct AsyncSemaphore {
     semaphore: tokio::sync::Semaphore,
 }
 
 impl AsyncSemaphore {
-    /// 创建新的信号量
-    pub fn new(permits: usize) -> Self {
+    /// 鍒涘缓鏂扮殑淇″彿閲?    pub fn new(permits: usize) -> Self {
         Self { semaphore: tokio::sync::Semaphore::new(permits) }
     }
 
-    /// 获取许可
+    /// 鑾峰彇璁稿彲
     pub async fn acquire(&self) -> Result<SemaphorePermit<'_>, WalletError> {
         match self.semaphore.acquire().await {
             Ok(permit) => Ok(SemaphorePermit { _permit: permit }),
@@ -198,23 +184,21 @@ impl AsyncSemaphore {
         }
     }
 
-    /// 尝试获取许可（非阻塞）
-    pub fn try_acquire(&self) -> Option<SemaphorePermit<'_>> {
+    /// 灏濊瘯鑾峰彇璁稿彲锛堥潪闃诲锛?    pub fn try_acquire(&self) -> Option<SemaphorePermit<'_>> {
         self.semaphore.try_acquire().ok().map(|permit| SemaphorePermit { _permit: permit })
     }
 
-    /// 获取可用许可数量
+    /// 鑾峰彇鍙敤璁稿彲鏁伴噺
     pub fn available_permits(&self) -> usize {
         self.semaphore.available_permits()
     }
 }
 
-/// 信号量许可
-pub struct SemaphorePermit<'a> {
+/// 淇″彿閲忚鍙?pub struct SemaphorePermit<'a> {
     _permit: tokio::sync::SemaphorePermit<'a>,
 }
 
-/// 异步事件总线
+/// 寮傛浜嬩欢鎬荤嚎
 pub struct AsyncEventBus<T> {
     sender: tokio::sync::broadcast::Sender<T>,
 }
@@ -223,13 +207,13 @@ impl<T> AsyncEventBus<T>
 where
     T: Clone + Send + Sync + 'static,
 {
-    /// 创建新的事件总线
+    /// 鍒涘缓鏂扮殑浜嬩欢鎬荤嚎
     pub fn new(capacity: usize) -> Self {
         let (sender, _) = tokio::sync::broadcast::channel(capacity);
         Self { sender }
     }
 
-    /// 发布事件
+    /// 鍙戝竷浜嬩欢
     pub fn publish(&self, event: T) -> Result<(), WalletError> {
         match self.sender.send(event) {
             Ok(_) => Ok(()),
@@ -237,24 +221,22 @@ where
         }
     }
 
-    /// 订阅事件
+    /// 璁㈤槄浜嬩欢
     pub fn subscribe(&self) -> tokio::sync::broadcast::Receiver<T> {
         self.sender.subscribe()
     }
 }
 
-/// 异步延迟执行器
-pub struct AsyncDelayExecutor {
+/// 寮傛寤惰繜鎵ц鍣?pub struct AsyncDelayExecutor {
     delay: Duration,
 }
 
 impl AsyncDelayExecutor {
-    /// 创建新的延迟执行器
-    pub fn new(delay: Duration) -> Self {
+    /// 鍒涘缓鏂扮殑寤惰繜鎵ц鍣?    pub fn new(delay: Duration) -> Self {
         Self { delay }
     }
 
-    /// 延迟执行异步操作
+    /// 寤惰繜鎵ц寮傛鎿嶄綔
     pub async fn execute_after<F, T>(&self, operation: F) -> AsyncResult<T>
     where
         F: Future<Output = AsyncResult<T>>,
@@ -264,36 +246,33 @@ impl AsyncDelayExecutor {
     }
 }
 
-/// 异步性能监控
+/// 寮傛鎬ц兘鐩戞帶
 pub struct AsyncPerformanceMonitor {
     start_time: Instant,
     operation_name: String,
 }
 
 impl AsyncPerformanceMonitor {
-    /// 开始监控
-    pub fn start(operation_name: impl Into<String>) -> Self {
+    /// 寮€濮嬬洃鎺?    pub fn start(operation_name: impl Into<String>) -> Self {
         Self { start_time: Instant::now(), operation_name: operation_name.into() }
     }
 
-    /// 结束监控并记录性能
+    /// 缁撴潫鐩戞帶骞惰褰曟€ц兘
     pub fn finish(self) {
         let duration = self.start_time.elapsed();
         info!(operation = %self.operation_name, ?duration, "Async operation completed");
     }
 
-    /// 结束监控并返回持续时间
-    pub fn finish_with_duration(self) -> Duration {
+    /// 缁撴潫鐩戞帶骞惰繑鍥炴寔缁椂闂?    pub fn finish_with_duration(self) -> Duration {
         let duration = self.start_time.elapsed();
         info!(operation = %self.operation_name, ?duration, "Async operation completed");
         duration
     }
 }
 
-/// 异步工具函数
-
-/// 并发执行多个异步操作
-pub async fn concurrent_execute<F, T>(futures: Vec<F>) -> Vec<AsyncResult<T>>
+/// 寮傛宸ュ叿鍑芥暟
+///
+/// 骞跺彂鎵ц澶氫釜寮傛鎿嶄綔銆?pub async fn concurrent_execute<F, T>(futures: Vec<F>) -> Vec<AsyncResult<T>>
 where
     F: Future<Output = AsyncResult<T>> + Send,
     T: Send,
@@ -301,8 +280,7 @@ where
     join_all(futures).await
 }
 
-/// 顺序执行异步操作，直到第一个成功
-pub async fn execute_until_success<F, Fut, T>(operations: Vec<F>) -> AsyncResult<T>
+/// 椤哄簭鎵ц寮傛鎿嶄綔锛岀洿鍒扮涓€涓垚鍔?pub async fn execute_until_success<F, Fut, T>(operations: Vec<F>) -> AsyncResult<T>
 where
     F: Fn() -> Fut,
     Fut: Future<Output = AsyncResult<T>>,
@@ -331,12 +309,10 @@ mod tests {
     async fn test_timeout_execution() {
         let config = TimeoutConfig::short("test_operation");
 
-        // 成功的操作
-        let result = AsyncExecutor::execute_with_timeout(async { Ok(42) }, config.clone()).await;
+        // 鎴愬姛鐨勬搷浣?        let result = AsyncExecutor::execute_with_timeout(async { Ok(42) }, config.clone()).await;
         assert_eq!(result.unwrap(), 42);
 
-        // 超时的操作
-        let result = AsyncExecutor::execute_with_timeout(
+        // 瓒呮椂鐨勬搷浣?        let result = AsyncExecutor::execute_with_timeout(
             async {
                 tokio::time::sleep(Duration::from_secs(10)).await;
                 Ok(42)
@@ -398,8 +374,7 @@ mod tests {
         let permit1 = semaphore.acquire().await.unwrap();
         let permit2 = semaphore.acquire().await.unwrap();
 
-        // 第三个获取应该等待，但我们这里测试可用数量
-        assert_eq!(semaphore.available_permits(), 0);
+        // 绗笁涓幏鍙栧簲璇ョ瓑寰咃紝浣嗘垜浠繖閲屾祴璇曞彲鐢ㄦ暟閲?        assert_eq!(semaphore.available_permits(), 0);
 
         drop(permit1);
         assert_eq!(semaphore.available_permits(), 1);

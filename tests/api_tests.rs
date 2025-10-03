@@ -1,7 +1,4 @@
-//! API 功能测试：测试所有 API 端点的正常功能
-//! 覆盖：钱包管理、交易、历史、备份、多签名、桥接、指标、健康检查
-//! 使用认证头，确保通过 API key 检查
-
+//! API 鍔熻兘娴嬭瘯锛氭祴璇曟墍鏈?API 绔偣鐨勬甯稿姛鑳?//! 瑕嗙洊锛氶挶鍖呯鐞嗐€佷氦鏄撱€佸巻鍙层€佸浠姐€佸绛惧悕銆佹ˉ鎺ャ€佹寚鏍囥€佸仴搴锋鏌?//! 浣跨敤璁よ瘉澶达紝纭繚閫氳繃 API key 妫€鏌?
 use axum::http::StatusCode;
 use axum_test::TestServer;
 use defi_hot_wallet::api::server::WalletServer;
@@ -13,7 +10,7 @@ use tokio;
 fn create_test_config() -> WalletConfig {
     WalletConfig {
         storage: StorageConfig {
-            database_url: "sqlite::memory:".to_string(), // 修复：移除 //
+            database_url: "sqlite::memory:".to_string(), // 淇锛氱Щ闄?//
             max_connections: Some(1),
             connection_timeout_seconds: Some(30),
         },
@@ -53,8 +50,7 @@ async fn test_health_check() {
     assert_eq!(response.status_code(), StatusCode::OK);
     let body: serde_json::Value = response.json();
     assert_eq!(body["status"], "ok");
-    assert!(body["version"].is_string()); // 补丁：检查版本
-    assert!(body["timestamp"].is_string()); // 补丁：检查时间戳
+    assert!(body["version"].is_string()); // 琛ヤ竵锛氭鏌ョ増鏈?    assert!(body["timestamp"].is_string()); // 琛ヤ竵锛氭鏌ユ椂闂存埑
 }
 
 #[tokio::test]
@@ -67,12 +63,12 @@ async fn test_create_wallet() {
     let response = server
         .post("/api/wallets")
         .json(&payload)
-        .add_header("Authorization", "test_api_key") // 修复：添加认证头
+        .add_header("Authorization", "test_api_key") // 淇锛氭坊鍔犺璇佸ご
         .await;
     assert_eq!(response.status_code(), StatusCode::OK);
     let body: serde_json::Value = response.json();
     assert_eq!(body["name"], "test_wallet");
-    assert_eq!(body["quantum_safe"], true);
+    assert!(body["quantum_safe"]);
     assert!(body["id"].is_string());
 }
 
@@ -82,7 +78,7 @@ async fn test_list_wallets() {
     let response = server.get("/api/wallets").add_header("Authorization", "test_api_key").await;
     assert_eq!(response.status_code(), StatusCode::OK);
     let body: Vec<serde_json::Value> = response.json();
-    assert!(body.is_empty()); // 初始为空
+    assert!(body.is_empty()); // 鍒濆涓虹┖
 }
 
 #[tokio::test]
@@ -102,8 +98,8 @@ async fn test_get_balance() {
         .get("/api/wallets/test_wallet/balance?network=eth")
         .add_header("Authorization", "test_api_key")
         .await;
-    // 因为测试服务器没有配置区块链客户端，所以会返回 500 错误
-    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR); // 预期错误，因为没有客户端
+    // 鍥犱负娴嬭瘯鏈嶅姟鍣ㄦ病鏈夐厤缃尯鍧楅摼瀹㈡埛绔紝鎵€浠ヤ細杩斿洖 500 閿欒
+    assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR); // 棰勬湡閿欒锛屽洜涓烘病鏈夊鎴风
 }
 
 #[tokio::test]

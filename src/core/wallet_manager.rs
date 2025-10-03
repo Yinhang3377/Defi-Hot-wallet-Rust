@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+﻿use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -43,6 +43,8 @@ pub struct WalletManager {
     bridges: Arc<HashMap<String, Box<dyn Bridge>>>,
 }
 
+// 瀹氫箟绫诲瀷鍒悕浠ユ彁楂樺彲璇绘€?type WalletKeyMaterial = (Vec<u8>, Vec<u8>, Vec<u8>);
+
 impl WalletManager {
     pub async fn new(config: &WalletConfig) -> Result<Self, WalletError> {
         info!("Initializing WalletManager");
@@ -75,7 +77,7 @@ impl WalletManager {
         for (name, network_config) in &config.blockchain.networks {
             info!("Initializing client for network: {}", name);
 
-            // 添加重试逻辑
+            // 娣诲姞閲嶈瘯閫昏緫
             let mut retry_count = 0;
             let max_retries = 3;
             let mut last_error = None;
@@ -118,14 +120,13 @@ impl WalletManager {
                     Ok(c) => {
                         let native_token = c.get_native_token().to_string();
                         blockchain_clients.insert(name.clone(), c);
-                        info!("✅ {} client initialized for network '{}'", native_token, name);
-                        break; // 成功连接，跳出重试循环
-                    }
+                        info!("鉁?{} client initialized for network '{}'", native_token, name);
+                        break; // 鎴愬姛杩炴帴锛岃烦鍑洪噸璇曞惊鐜?                    }
                     Err(e) => {
                         last_error = Some(e);
                         retry_count += 1;
                         if retry_count < max_retries {
-                            warn!("⚠️ Attempt {} failed for {}, retrying...", retry_count, name);
+                            warn!("鈿狅笍 Attempt {} failed for {}, retrying...", retry_count, name);
                             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                         }
                     }
@@ -134,9 +135,9 @@ impl WalletManager {
 
             if retry_count == max_retries {
                 warn!(
-                    "⚠️ Failed to initialize client for {} after {} attempts: {}",
+                    "鈿狅笍 Failed to initialize client for {} after {} attempts: {}",
                     name,
-                    max_retries, // 移除 .to_string()
+                    max_retries, // 绉婚櫎 .to_string()
                     last_error.unwrap_or_else(|| WalletError::Other("Unknown error".to_string()))
                 );
             }
@@ -152,7 +153,7 @@ impl WalletManager {
         })
     }
 
-    // 新增一个用于测试的构造函数，允许注入 mock storage
+    // 鏂板涓€涓敤浜庢祴璇曠殑鏋勯€犲嚱鏁帮紝鍏佽娉ㄥ叆 mock storage
     #[cfg(test)]
     pub async fn new_with_storage(
         _config: &WalletConfig,
@@ -178,8 +179,7 @@ impl WalletManager {
             quantum_crypto,
             _multisig: multisig,
             _hsm: hsm,
-            blockchain_clients: Arc::new(HashMap::new()), // 在测试中通常不需要完整的客户端
-            bridges: Arc::new(bridges),
+            blockchain_clients: Arc::new(HashMap::new()), // 鍦ㄦ祴璇曚腑閫氬父涓嶉渶瑕佸畬鏁寸殑瀹㈡埛绔?            bridges: Arc::new(bridges),
         })
     }
 
@@ -200,7 +200,7 @@ impl WalletManager {
             .await
             .map_err(|e| WalletError::KeyDerivationError(e.to_string()))?;
         let mut master_key = [0u8; 32];
-        master_key.copy_from_slice(&master_key_vec); // 立即释放包含完整种子的 Vec
+        master_key.copy_from_slice(&master_key_vec); // 绔嬪嵆閲婃斁鍖呭惈瀹屾暣绉嶅瓙鐨?Vec
         drop(master_key_vec);
 
         // Create wallet info
@@ -215,11 +215,11 @@ impl WalletManager {
 
         // Create Shamir secret shares (2-of-3 threshold)
         let _shamir_shares_tuples = shamir::split_secret(master_key, 2, 3)
-            .map_err(|e| WalletError::CryptoError(e.to_string()))?; // 修复：为闭包参数添加显式类型
+            .map_err(|e| WalletError::CryptoError(e.to_string()))?; // 淇锛氫负闂寘鍙傛暟娣诲姞鏄惧紡绫诲瀷
         let _shamir_shares: Vec<Vec<u8>> = _shamir_shares_tuples
             .into_iter()
             .map(|(id, bytes): (u8, [u8; 32])| {
-                // 修复：为闭包参数添加显式类型
+                // 淇锛氫负闂寘鍙傛暟娣诲姞鏄惧紡绫诲瀷
                 let mut share = Vec::with_capacity(33); // 1-byte ID + 32-byte data
                 share.push(id);
                 share.extend_from_slice(&bytes);
@@ -241,7 +241,7 @@ impl WalletManager {
         // Clear sensitive data from memory
         encrypted_wallet_data.zeroize();
 
-        info!("✅ Wallet '{}' created with ID: {}", name, wallet_info.id);
+        info!("鉁?Wallet '{}' created with ID: {}", name, wallet_info.id);
         Ok(wallet_info)
     }
 
@@ -262,7 +262,7 @@ impl WalletManager {
             .delete_wallet(name)
             .await
             .map_err(|e| WalletError::StorageError(e.to_string()))?;
-        info!("✅ Wallet '{}' deleted successfully", name);
+        info!("鉁?Wallet '{}' deleted successfully", name);
         Ok(())
     }
 
@@ -334,7 +334,7 @@ impl WalletManager {
         // Zeroize sensitive data after use
         wallet_data.zeroize();
 
-        info!("✅ Transaction sent with hash: {}", tx_hash);
+        info!("鉁?Transaction sent with hash: {}", tx_hash);
         Ok(tx_hash)
     }
 
@@ -401,17 +401,16 @@ impl WalletManager {
         _token: &str,
         amount: &str,
     ) -> Result<(String, chrono::DateTime<chrono::Utc>), WalletError> {
-        // 基于链间流动性、当前拥堵情况等计算费用
-        // 这里简化为金额的1%
+        // 鍩轰簬閾鹃棿娴佸姩鎬с€佸綋鍓嶆嫢鍫垫儏鍐电瓑璁＄畻璐圭敤
+        // 杩欓噷绠€鍖栦负閲戦鐨?%
         let amount_decimal =
             amount.parse::<f64>().map_err(|e| WalletError::ValidationError(e.to_string()))?;
         let fee = (amount_decimal * 0.01).to_string();
 
-        // 估算完成时间，基于链间确认时间
-        let estimated_blocks = match (from_chain, to_chain) {
-            ("eth", _) => 20,    // 以太坊约5分钟
-            ("solana", _) => 32, // Solana约1分钟
-            ("bsc", _) => 40,    // BSC约2分钟
+        // 浼扮畻瀹屾垚鏃堕棿锛屽熀浜庨摼闂寸‘璁ゆ椂闂?        let estimated_blocks = match (from_chain, to_chain) {
+            ("eth", _) => 20,    // 浠ュお鍧婄害5鍒嗛挓
+            ("solana", _) => 32, // Solana绾?鍒嗛挓
+            ("bsc", _) => 40,    // BSC绾?鍒嗛挓
             _ => 30,             // Default value if chain combination is not found
         };
 
@@ -421,7 +420,7 @@ impl WalletManager {
         Ok((fee, estimated_time))
     }
 
-    // 启动后台监控任务
+    // 鍚姩鍚庡彴鐩戞帶浠诲姟
     #[allow(dead_code)]
     fn start_bridge_monitor(&self, bridge_tx_id: String) {
         let storage = Arc::clone(&self.storage);
@@ -588,7 +587,7 @@ impl WalletManager {
         &self,
         data: &[u8],
         master_key: &[u8],
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), WalletError> {
+    ) -> Result<WalletKeyMaterial, WalletError> {
         // Derive a dedicated encryption key from the master key to avoid reuse.
         let mut enc_key_bytes = [0u8; 32];
         let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(b"enc-salt"), master_key);
@@ -627,7 +626,7 @@ impl WalletManager {
             Aes256Gcm, Key, Nonce,
         };
 
-        // 使用正确的主密钥重新派生加密密钥
+        // 浣跨敤姝ｇ‘鐨勪富瀵嗛挜閲嶆柊娲剧敓鍔犲瘑瀵嗛挜
         let mut enc_key_bytes = [0u8; 32];
         let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(salt), master_key);
         hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes).map_err(|e| {
@@ -645,13 +644,12 @@ impl WalletManager {
         Ok(plaintext)
     }
 
-    // 新增方法（stub 实现，返回错误）
+    // 鏂板鏂规硶锛坰tub 瀹炵幇锛岃繑鍥為敊璇級
     pub async fn get_transaction_history(
         &self,
         _wallet_name: &str,
     ) -> Result<Vec<String>, WalletError> {
-        // Stub: 返回空历史
-        Ok(vec![])
+        // Stub: 杩斿洖绌哄巻鍙?        Ok(vec![])
     }
 
     pub async fn backup_wallet(&self, _wallet_name: &str) -> Result<String, WalletError> {
@@ -731,7 +729,7 @@ impl WalletManager {
         _network: &str,
         _signatures: &[String],
     ) -> Result<String, WalletError> {
-        // Stub: 返回假 tx_hash
+        // Stub: 杩斿洖鍋?tx_hash
         Ok("fake_multi_sig_tx_hash".to_string())
     }
 }

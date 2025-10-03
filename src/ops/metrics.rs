@@ -1,4 +1,4 @@
-//! src/ops/metrics.rs
+﻿//! src/ops/metrics.rs
 //!
 //! Provides basic metrics collection functionality.
 

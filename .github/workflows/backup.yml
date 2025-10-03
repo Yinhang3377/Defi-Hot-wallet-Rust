@@ -10,11 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-<<<<<<< HEAD
-=======
-        with:
-          fetch-depth: 0
->>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
       - name: Archive wallet data
         run: |
           mkdir -p backup

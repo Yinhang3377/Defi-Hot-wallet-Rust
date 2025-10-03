@@ -1,11 +1,11 @@
-//! tests/blockchain_ethereum_balance_fee_tests.rs
+﻿//! tests/blockchain_ethereum_balance_fee_tests.rs
 //!
 //! Tests for Ethereum blockchain client balance and fee estimation functionality.
 
 use defi_hot_wallet::blockchain::ethereum::*;
-use defi_hot_wallet::blockchain::traits::BlockchainClient; // 导入 BlockchainClient trait
+use defi_hot_wallet::blockchain::traits::BlockchainClient; // 瀵煎叆 BlockchainClient trait
 use ethers::providers::{MockProvider, Provider};
-use ethers::types::{U256};
+use ethers::types::U256;
 
 fn create_mock_client() -> (EthereumClient<MockProvider>, MockProvider) {
     let mock_provider = MockProvider::new();
@@ -18,12 +18,10 @@ async fn test_get_balance_valid_address() {
     let (client, mock_provider) = create_mock_client();
     let address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
 
-    // 配置 MockProvider 的响应
-    let _ = mock_provider.push(U256::from(100_000_000_000_000_000u64)); // 模拟返回余额 0.1 ether (10^17 wei)
+    // 閰嶇疆 MockProvider 鐨勫搷搴?    let _ = mock_provider.push(U256::from(100_000_000_000_000_000u64)); // 妯℃嫙杩斿洖浣欓 0.1 ether (10^17 wei)
 
     let balance = client.get_balance(address).await.unwrap();
-    assert_eq!(balance, "0.100000000000000000"); // 调整断言值，匹配实际返回值
-}
+    assert_eq!(balance, "0.100000000000000000"); // 璋冩暣鏂█鍊硷紝鍖归厤瀹為檯杩斿洖鍊?}
 
 #[tokio::test]
 async fn test_get_balance_invalid_address() {
@@ -45,12 +43,11 @@ async fn test_estimate_fee_valid_inputs() {
     let to_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
     let amount = "0.1";
 
-    // 配置 MockProvider 的响应
-    let _ = mock_provider.push(U256::from(42_000_000_000u64)); // 模拟返回 gas price 42 Gwei (42 * 10^9 wei)
-    let _ = mock_provider.push(U256::from(21_000u64)); // 模拟返回 gas limit 21000
+    // 閰嶇疆 MockProvider 鐨勫搷搴?    let _ = mock_provider.push(U256::from(42_000_000_000u64)); // 妯℃嫙杩斿洖 gas price 42 Gwei (42 * 10^9 wei)
+    let _ = mock_provider.push(U256::from(21_000u64)); // 妯℃嫙杩斿洖 gas limit 21000
 
     let fee = client.estimate_fee(to_address, amount).await.unwrap();
-    assert_eq!(fee, "0.000000000441000000"); // 调整断言值，匹配以太单位
+    assert_eq!(fee, "0.000000000441000000"); // 璋冩暣鏂█鍊硷紝鍖归厤浠ュお鍗曚綅
 }
 
 #[tokio::test]

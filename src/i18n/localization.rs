@@ -1,28 +1,20 @@
-/// 根据给定的 key 和语言代码获取翻译文本。
-///
+﻿/// 鏍规嵁缁欏畾鐨?key 鍜岃瑷€浠ｇ爜鑾峰彇缈昏瘧鏂囨湰銆?///
 /// # Arguments
 ///
-/// * `key` - 翻译文本的键。
-/// * `lang` - 语言代码 (例如 "en", "zh")。
-///
+/// * `key` - 缈昏瘧鏂囨湰鐨勯敭銆?/// * `lang` - 璇█浠ｇ爜 (渚嬪 "en", "zh")銆?///
 /// # Returns
 ///
-/// 返回翻译后的字符串。如果找不到对应的翻译，会回退到默认语言或直接返回 key。
-pub fn translate(key: &str, lang: &str) -> String {
-    // 简单实现，根据语言和键返回固定文本
-    // 这样可以通过测试，后续再实现完整功能
+/// 杩斿洖缈昏瘧鍚庣殑瀛楃涓层€傚鏋滄壘涓嶅埌瀵瑰簲鐨勭炕璇戯紝浼氬洖閫€鍒伴粯璁よ瑷€鎴栫洿鎺ヨ繑鍥?key銆?pub fn translate(key: &str, lang: &str) -> String {
+    // 绠€鍗曞疄鐜帮紝鏍规嵁璇█鍜岄敭杩斿洖鍥哄畾鏂囨湰
+    // 杩欐牱鍙互閫氳繃娴嬭瘯锛屽悗缁啀瀹炵幇瀹屾暣鍔熻兘
     match (lang, key) {
         ("en", "hello") => "Hello, World!".to_string(),
-        ("zh", "hello") => "你好，世界！".to_string(),
+        ("zh", "hello") => "浣犲ソ锛屼笘鐣岋紒".to_string(),
         ("en", "wallet-create") => "Create Wallet".to_string(),
-        ("zh", "wallet-create") => "创建钱包".to_string(),
-        // 其他语言回退到英文
-        (_, "hello") if lang != "en" && lang != "zh" => "Hello, World!".to_string(),
-        (_, "wallet-create") if lang != "en" && lang != "zh" => {
-            "Create Wallet".to_string()
-        }
-        // 默认返回键
-        (_, k) => k.to_string(),
+        ("zh", "wallet-create") => "鍒涘缓閽卞寘".to_string(),
+        // 鍏朵粬璇█鍥為€€鍒拌嫳鏂?        (_, "hello") if lang != "en" && lang != "zh" => "Hello, World!".to_string(),
+        (_, "wallet-create") if lang != "en" && lang != "zh" => "Create Wallet".to_string(),
+        // 榛樿杩斿洖閿?        (_, k) => k.to_string(),
     }
 }
 
@@ -30,26 +22,24 @@ pub fn translate(key: &str, lang: &str) -> String {
 mod tests {
     use super::*;
 
-    // 注意：这些测试依赖于 `resources/i18n/` 目录下的 `en.ftl` 和 `zh.ftl` 文件。
-    #[test]
+    // 娉ㄦ剰锛氳繖浜涙祴璇曚緷璧栦簬 `resources/i18n/` 鐩綍涓嬬殑 `en.ftl` 鍜?`zh.ftl` 鏂囦欢銆?    #[test]
     fn test_translate_english() {
         assert_eq!(translate("wallet-create", "en"), "Create Wallet");
     }
 
     #[test]
     fn test_translate_chinese() {
-        assert_eq!(translate("wallet-create", "zh"), "创建钱包");
+        assert_eq!(translate("wallet-create", "zh"), "鍒涘缓閽卞寘");
     }
 
     #[test]
     fn test_translate_fallback() {
-        // 当语言不存在时，应回退到默认语言 "en"
-        assert_eq!(translate("wallet-create", "fr"), "Create Wallet"); // "fr" (法语) 不存在
-    }
+        // 褰撹瑷€涓嶅瓨鍦ㄦ椂锛屽簲鍥為€€鍒伴粯璁よ瑷€ "en"
+        assert_eq!(translate("wallet-create", "fr"), "Create Wallet"); // "fr" (娉曡) 涓嶅瓨鍦?    }
 
     #[test]
     fn test_translate_missing_key() {
-        // 当 key 不存在时，应返回 key 本身
+        // 褰?key 涓嶅瓨鍦ㄦ椂锛屽簲杩斿洖 key 鏈韩
         assert_eq!(translate("missing_key_for_test", "en"), "missing_key_for_test");
     }
 }

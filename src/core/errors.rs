@@ -1,4 +1,4 @@
-use std::fmt;
+﻿use std::fmt;
 
 /// Custom error type for wallet operations.
 #[derive(Debug)]
