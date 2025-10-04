@@ -1,4 +1,3 @@
-// ...existing code...
 use defi_hot_wallet::crypto::shamir::{combine_secret, split_secret};
 use itertools::Itertools;
 
@@ -129,4 +128,3 @@ fn test_shamir_tampered_share() {
     assert!(result.is_ok());
     assert_ne!(result.unwrap(), secret);
 }
-// ...existing code...
