@@ -1,3 +1,4 @@
+// ...existing code...
 //! Anti-debugging functionality
 //!
 //! This module provides tools to detect if the application is being run under a debugger,
@@ -37,8 +38,8 @@ pub fn is_debugger_present() -> bool {
         // If the file can't be opened or read, we can't detect a debugger, so we default to false.
         if let Ok(file) = File::open("/proc/self/status") {
             let reader = BufReader::new(file);
-            // Use `flatten()` to iterate only over Ok(String) lines, avoiding manual `if let Ok(...)`
-            for line in reader.lines().flatten() {
+            // Use map_while(Result::ok) so we stop if an Err is produced instead of looping forever.
+            for line in reader.lines().map_while(Result::ok) {
                 if line.starts_with("TracerPid:") {
                     if let Some(pid_str) = line.split_whitespace().nth(1) {
                         if pid_str != "0" {
@@ -87,3 +88,4 @@ pub fn is_debugger_present() -> bool {
         false
     }
 }
+// ...existing code...
