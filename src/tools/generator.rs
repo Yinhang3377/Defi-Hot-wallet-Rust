@@ -1,6 +1,6 @@
-﻿// src/core/config.rs
-//! 閰嶇疆绠＄悊妯″潡
-//! 鎻愪緵閰嶇疆鏂囦欢鐨勫姞杞姐€佷繚瀛樸€侀獙璇佸拰绠＄悊鍔熻兘
+// src/tools/generator.rs
+//! 配置管理模块
+//! 提供配置文件的读取、验证和管理功能
 
 use crate::tools::error::WalletError;
 use serde::{Deserialize, Serialize};
@@ -8,131 +8,149 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
-/// 搴旂敤绋嬪簭閰嶇疆
+/// 应用级配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    /// 搴旂敤绋嬪簭鍩烘湰淇℃伅
+    /// 应用基本信息
     pub app: AppConfig,
-    /// 鍖哄潡閾剧綉缁滈厤缃?    pub blockchain: BlockchainConfig,
-    /// 瀹夊叏閰嶇疆
+    /// 模块网络级配置
+    pub blockchain: BlockchainConfig,
+    /// 安全配置
     pub security: SecurityConfig,
-    /// 瀛樺偍閰嶇疆
+    /// 存储配置
     pub storage: StorageConfig,
-    /// 鐩戞帶閰嶇疆
+    /// 监控配置
     pub monitoring: MonitoringConfig,
-    /// 鍥介檯鍖栭厤缃?    pub i18n: I18nConfig,
+    /// 国际化配置
+    pub i18n: I18nConfig,
 }
 
-/// 搴旂敤绋嬪簭鍩烘湰閰嶇疆
+/// 应用信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
-    /// 搴旂敤绋嬪簭鍚嶇О
+    /// 应用名称
     pub name: String,
-    /// 鐗堟湰
+    /// 版本
     pub version: String,
-    /// 鐜
+    /// 环境
     pub environment: String,
-    /// 璋冭瘯妯″紡
+    /// 测试模式
     pub debug: bool,
-    /// 鏃ュ織绾у埆
+    /// 日志级别
     pub log_level: String,
 }
 
-/// 鍖哄潡閾剧綉缁滈厤缃?#[derive(Debug, Clone, Serialize, Deserialize)]
+/// 模块网络级配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockchainConfig {
-    /// 榛樿缃戠粶
+    /// 默认网络
     pub default_network: String,
-    /// 缃戠粶閰嶇疆鍒楄〃
+    /// 网络配置列表
     pub networks: HashMap<String, NetworkConfig>,
 }
 
-/// 缃戠粶閰嶇疆
+/// 网络配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkConfig {
-    /// 缃戠粶鍚嶇О
+    /// 网络名称
     pub name: String,
     /// RPC URL
     pub rpc_url: String,
-    /// 閾綢D
+    /// 链 ID
     pub chain_id: u64,
-    /// 璐у竵绗﹀彿
+    /// 代币符号
     pub symbol: String,
-    /// 鍖哄潡娴忚鍣║RL
+    /// 区块链浏览器 URL（可选）
     pub explorer_url: Option<String>,
-    /// 纭鍧楁暟
+    /// 确认数
     pub confirmations: u64,
 }
 
-/// 瀹夊叏閰嶇疆
+/// 安全配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SecurityConfig {
-    /// 鍔犲瘑绠楁硶
+    /// 加密算法
     pub encryption_algorithm: String,
-    /// 瀵嗛挜娲剧敓鍑芥暟
+    /// 密钥派生算法
     pub kdf_algorithm: String,
-    /// 瀵嗙爜鏈€灏忛暱搴?    pub min_password_length: usize,
-    /// 浼氳瘽瓒呮椂鏃堕棿锛堢锛?    pub session_timeout: u64,
-    /// 鏈€澶х櫥褰曞皾璇曟鏁?    pub max_login_attempts: u32,
-    /// 閿佸畾鏃堕棿锛堢锛?    pub lockout_duration: u64,
-    /// 鍚敤鍙屽洜绱犺璇?    pub enable_2fa: bool,
-    /// 鍚堣妫€鏌?    pub compliance: ComplianceConfig,
+    /// 最小密码长度
+    pub min_password_length: usize,
+    /// 会话超时时间（秒）
+    pub session_timeout: u64,
+    /// 最大登录尝试次数
+    pub max_login_attempts: u32,
+    /// 锁定持续时间（秒）
+    pub lockout_duration: u64,
+    /// 是否启用 2FA
+    pub enable_2fa: bool,
+    /// 合规检查配置
+    pub compliance: ComplianceConfig,
 }
 
-/// 鍚堣閰嶇疆
+/// 合规配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComplianceConfig {
-    /// 鍚敤鍚堣妫€鏌?    pub enabled: bool,
-    /// 鍙楅檺鍥藉鍒楄〃
+    /// 是否启用合规检查
+    pub enabled: bool,
+    /// 受限国家列表
     pub restricted_countries: Vec<String>,
-    /// 鍙楅檺鍦板潃鍒楄〃
+    /// 受限地址列表
     pub sanctioned_addresses: Vec<String>,
-    /// 浜ゆ槗闄愰
+    /// 交易限额配置
     pub transaction_limits: HashMap<String, f64>,
-    /// KYC瑕佹眰
+    /// 是否要求 KYC
     pub require_kyc: bool,
 }
 
-/// 瀛樺偍閰嶇疆
+/// 存储配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StorageConfig {
-    /// 鏁版嵁搴撶被鍨?    pub database_type: String,
-    /// 鏁版嵁搴揢RL
+    /// 数据库类型
+    pub database_type: String,
+    /// 数据库 URL
     pub database_url: String,
-    /// 杩炴帴姹犲ぇ灏?    pub connection_pool_size: u32,
-    /// 缂撳瓨澶у皬
+    /// 连接池大小
+    pub connection_pool_size: u32,
+    /// 缓存大小
     pub cache_size: usize,
-    /// 澶囦唤闂撮殧锛堢锛?    pub backup_interval: u64,
-    /// 淇濈暀澶囦唤鏁伴噺
+    /// 备份间隔（秒）
+    pub backup_interval: u64,
+    /// 备份保留数量
     pub backup_retention: u32,
 }
 
-/// 鐩戞帶閰嶇疆
+/// 监控配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MonitoringConfig {
-    /// 鍚敤鐩戞帶
+    /// 是否启用监控
     pub enabled: bool,
-    /// 鎸囨爣鏀堕泦闂撮殧锛堢锛?    pub metrics_interval: u64,
-    /// 鍋ュ悍妫€鏌ラ棿闅旓紙绉掞級
+    /// 指标采集间隔（秒）
+    pub metrics_interval: u64,
+    /// 健康检查间隔（秒）
     pub health_check_interval: u64,
-    /// 璀︽姤闃堝€?    pub alert_thresholds: HashMap<String, f64>,
-    /// 鏃ュ織杞浆澶у皬锛圡B锛?    pub log_rotation_size: u64,
-    /// 淇濈暀鏃ュ織澶╂暟
+    /// 告警阈值配置
+    pub alert_thresholds: HashMap<String, f64>,
+    /// 日志轮转大小（MB）
+    pub log_rotation_size: u64,
+    /// 日志保留天数
     pub log_retention_days: u32,
 }
 
-/// 鍥介檯鍖栭厤缃?#[derive(Debug, Clone, Serialize, Deserialize)]
+/// 国际化配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct I18nConfig {
-    /// 榛樿璇█
+    /// 默认语言
     pub default_language: String,
-    /// 鏀寔鐨勮瑷€鍒楄〃
+    /// 支持的语言列表
     pub supported_languages: Vec<String>,
-    /// 缈昏瘧鏂囦欢璺緞
+    /// 翻译文件路径
     pub translation_path: String,
-    /// 鏃跺尯
+    /// 时区
     pub timezone: String,
 }
 
-/// 閰嶇疆绠＄悊鍣?pub struct ConfigManager {
+/// 配置管理器
+pub struct ConfigManager {
     config: Config,
     config_path: String,
 }
@@ -145,14 +163,15 @@ impl Default for ConfigManager {
 }
 
 impl ConfigManager {
-    /// 鍒涘缓鏂扮殑閰嶇疆绠＄悊鍣?    pub fn new(config_path: impl Into<String>) -> Self {
+    /// 创建新的配置管理器
+    pub fn new(config_path: impl Into<String>) -> Self {
         Self { config: Config::default(), config_path: config_path.into() }
     }
 
-    /// 鍔犺浇閰嶇疆
-    pub fn load(&mut self) -> Result<(), WalletError> {
+    /// 加载配置
+    pub fn load(&mut self) -> std::result::Result<(), WalletError> {
         if !Path::new(&self.config_path).exists() {
-            // 濡傛灉閰嶇疆鏂囦欢涓嶅瓨鍦紝鍒涘缓榛樿閰嶇疆
+            // 如果配置文件不存在，创建默认配置并保存
             self.config = Config::default();
             self.save()?;
             return Ok(());
@@ -166,12 +185,12 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// 淇濆瓨閰嶇疆
-    pub fn save(&self) -> Result<(), WalletError> {
+    /// 保存配置
+    pub fn save(&self) -> std::result::Result<(), WalletError> {
         let content = serde_json::to_string_pretty(&self.config)
             .map_err(|e| WalletError::SerializationError(e.to_string()))?;
 
-        // 纭繚鐩綍瀛樺湪
+        // 如果父目录存在则创建目录
         if let Some(parent) = Path::new(&self.config_path).parent() {
             fs::create_dir_all(parent).map_err(WalletError::IoError)?;
         }
@@ -181,31 +200,32 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// 鑾峰彇閰嶇疆
+    /// 获取只读配置引用
     pub fn get_config(&self) -> &Config {
         &self.config
     }
 
-    /// 鑾峰彇鍙彉閰嶇疆
+    /// 获取可变配置引用
     pub fn get_config_mut(&mut self) -> &mut Config {
         &mut self.config
     }
 
-    /// 璁剧疆閰嶇疆
+    /// 设置配置
     pub fn set_config(&mut self, config: Config) {
         self.config = config;
     }
 
-    /// 楠岃瘉閰嶇疆
-    pub fn validate(&self) -> Result<(), WalletError> {
+    /// 验证配置
+    pub fn validate(&self) -> std::result::Result<(), WalletError> {
         self.config.validate()
     }
 
-    /// 閲嶇疆涓洪粯璁ら厤缃?    pub fn reset_to_default(&mut self) {
+    /// 重置为默认配置
+    pub fn reset_to_default(&mut self) {
         self.config = Config::default();
     }
 
-    /// 鑾峰彇閰嶇疆璺緞
+    /// 获取配置路径
     pub fn config_path(&self) -> &str {
         &self.config_path
     }
@@ -307,9 +327,9 @@ impl Default for Config {
 }
 
 impl Config {
-    /// 楠岃瘉閰嶇疆
-    pub fn validate(&self) -> Result<(), WalletError> {
-        // 楠岃瘉搴旂敤绋嬪簭閰嶇疆
+    /// 验证配置
+    pub fn validate(&self) -> std::result::Result<(), WalletError> {
+        // 验证应用配置
         if self.app.name.is_empty() {
             return Err(WalletError::InvalidInput("App name cannot be empty".to_string()));
         }
@@ -318,7 +338,8 @@ impl Config {
             return Err(WalletError::InvalidInput("App version cannot be empty".to_string()));
         }
 
-        // 楠岃瘉鍖哄潡閾鹃厤缃?        if self.blockchain.networks.is_empty() {
+        // 验证区块链模块配置
+        if self.blockchain.networks.is_empty() {
             return Err(WalletError::InvalidInput(
                 "At least one network must be configured".to_string(),
             ));
@@ -330,24 +351,25 @@ impl Config {
             ));
         }
 
-        // 楠岃瘉瀹夊叏閰嶇疆
+        // 验证安全配置
         if self.security.min_password_length < 8 {
             return Err(WalletError::InvalidInput(
                 "Minimum password length must be at least 8".to_string(),
             ));
         }
 
-        // 楠岃瘉瀛樺偍閰嶇疆
+        // 验证存储配置
         if self.storage.database_url.is_empty() {
             return Err(WalletError::InvalidInput("Database URL cannot be empty".to_string()));
         }
 
-        // 楠岃瘉鐩戞帶閰嶇疆
+        // 验证监控配置
         if self.monitoring.enabled && self.monitoring.metrics_interval == 0 {
             return Err(WalletError::InvalidInput("Metrics interval cannot be zero".to_string()));
         }
 
-        // 楠岃瘉鍥介檯鍖栭厤缃?        if self.i18n.supported_languages.is_empty() {
+        // 验证国际化配置
+        if self.i18n.supported_languages.is_empty() {
             return Err(WalletError::InvalidInput(
                 "At least one supported language must be specified".to_string(),
             ));
@@ -362,12 +384,12 @@ impl Config {
         Ok(())
     }
 
-    /// 鑾峰彇缃戠粶閰嶇疆
+    /// 获取网络配置
     pub fn get_network(&self, network_name: &str) -> Option<&NetworkConfig> {
         self.blockchain.networks.get(network_name)
     }
 
-    /// 鑾峰彇榛樿缃戠粶閰嶇疆
+    /// 获取默认网络配置
     pub fn get_default_network(&self) -> &NetworkConfig {
         self.blockchain
             .networks
@@ -375,7 +397,7 @@ impl Config {
             .expect("Default network should exist")
     }
 
-    /// 妫€鏌ュ湴鍧€鏄惁鍙楅檺
+    /// 检查地址是否受限
     pub fn is_address_restricted(&self, address: &str) -> bool {
         self.security.compliance.enabled
             && self
@@ -386,7 +408,8 @@ impl Config {
                 .any(|restricted| restricted.eq_ignore_ascii_case(address))
     }
 
-    /// 妫€鏌ュ浗瀹舵槸鍚﹀彈闄?    pub fn is_country_restricted(&self, country: &str) -> bool {
+    /// 检查国家是否受限
+    pub fn is_country_restricted(&self, country: &str) -> bool {
         self.security.compliance.enabled
             && self
                 .security
@@ -396,7 +419,7 @@ impl Config {
                 .any(|restricted| restricted.eq_ignore_ascii_case(country))
     }
 
-    /// 鑾峰彇浜ゆ槗闄愰
+    /// 获取周期交易限额
     pub fn get_transaction_limit(&self, period: &str) -> Option<f64> {
         if !self.security.compliance.enabled {
             return None;

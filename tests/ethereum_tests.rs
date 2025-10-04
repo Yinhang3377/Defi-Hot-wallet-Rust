@@ -1,5 +1,5 @@
 use defi_hot_wallet::blockchain::ethereum::EthereumClient;
-use defi_hot_wallet::blockchain::traits::BlockchainClient;
+use defi_hot_wallet::blockchain::BlockchainClient;
 use ethers::providers::{Http, Provider};
 use std::convert::TryFrom;
 
@@ -16,7 +16,8 @@ async fn send_transaction_invalid_key_errors() {
 
 #[test]
 fn validate_address_public_api() {
-    // 涓轰簡璋冪敤 validate_address锛屾垜浠渶瑕佷竴涓?EthereumClient 鐨勫疄渚?    let provider = Provider::<Http>::try_from("http://127.0.0.1:8545").unwrap();
+    // This test doesn't need a live provider; creating a provider instance is lightweight here.
+    let provider = Provider::<Http>::try_from("http://127.0.0.1:8545").unwrap();
     let client = EthereumClient::new_with_provider(provider);
 
     assert!(client.validate_address("0x742d35Cc6634C0532925a3b8D400e8B78fFe4860").unwrap());

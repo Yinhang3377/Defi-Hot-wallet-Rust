@@ -1,13 +1,14 @@
-﻿use lazy_static::lazy_static;
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-// 浣跨敤 lazy_static 杩涜绾跨▼瀹夊叏鐨勫崟娆″垵濮嬪寲
+// 使用 lazy_static 初始化全局可变事务状态存储
 lazy_static! {
     static ref TX_STATUS: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
-// 杈呭姪鍑芥暟锛岀敤浜庤幏鍙栧叏灞€鐨勭姸鎬佸瓨鍌?fn status_store() -> &'static Mutex<HashMap<String, String>> {
+/// 返回对全局状态存储的引用
+fn status_store() -> &'static Mutex<HashMap<String, String>> {
     &TX_STATUS
 }
 
@@ -23,24 +24,25 @@ pub fn create_wallet(name: &str) -> Result<Wallet, String> {
         return Err("Invalid wallet name".to_string());
     }
     Ok(Wallet {
-        address: "0x".to_string() + &"0".repeat(40),
-        private_key: "priv_key_".to_string() + name,
-        mnemonic: "test ".repeat(11) + "ball",
+        address: format!("0x{}", "0".repeat(40)),
+        private_key: format!("priv_key_{}", name),
+        mnemonic: format!("{}ball", "test ".repeat(11)),
     })
 }
 
 pub fn bridge_assets_amount(amount: Option<&str>) -> Result<f64, String> {
     match amount {
-        Some(s) if s.parse::<f64>().is_ok() && s.parse::<f64>().unwrap() > 0.0 => {
-            Ok(s.parse().unwrap())
-        }
-        _ => Err("Invalid amount".to_string()),
+        Some(s) => match s.parse::<f64>() {
+            Ok(v) if v > 0.0 => Ok(v),
+            _ => Err("Invalid amount".to_string()),
+        },
+        None => Err("Invalid amount".to_string()),
     }
 }
 
 pub fn generate_log(msg: &str) -> String {
-    // 鐪熷疄瀹炵幇鍙帴鍏?tracing/log
-    format!("LOG: {msg}")
+    // 简单日志格式化（实际代码应使用 tracing/log）
+    format!("LOG: {}", msg)
 }
 
 pub fn query_balance(_account: &str) -> u128 {
@@ -99,39 +101,56 @@ pub fn is_signature_valid(_sig: &[u8], _public_key: &str) -> bool {
 }
 
 pub fn send_transaction(wallet: &str, amount: Option<u64>) -> Result<String, String> {
-    if amount.is_none() || amount.unwrap() == 0 {
-        // 楠岃瘉閲戦
+    if amount.unwrap_or(0) == 0 {
         return Err("Invalid amount".to_string());
     }
     if wallet.is_empty() || wallet.chars().any(|c| !c.is_alphanumeric() && c != '_') {
-        // 楠岃瘉閽卞寘鍚嶇О
         return Err("Invalid wallet name".to_string());
     }
-    // 鐢熸垚涓€涓ā鎷熺殑浜ゆ槗鍝堝笇
+
     let hash = format!("0xhash_{}", wallet);
-    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵彃鍏ユ柊浜ゆ槗鐨勭姸鎬佷负 "sent"
     let mut map = status_store().lock().unwrap();
     map.insert(hash.clone(), "sent".into());
     Ok(hash)
 }
 
 pub fn confirm_transaction(id_or_hash: String) -> Result<bool, String> {
-    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵洿鏂颁氦鏄撶姸鎬佷负 "confirmed"
     let mut map = status_store().lock().unwrap();
     map.insert(id_or_hash, "confirmed".into());
     Ok(true)
 }
 
 pub fn get_transaction_status(id_or_hash: String) -> String {
-    // 鑾峰彇鐘舵€佸瓨鍌ㄧ殑閿侊紝骞舵煡璇氦鏄撶姸鎬?    let map = status_store().lock().unwrap();
-    map.get(&id_or_hash).cloned().unwrap_or_else(|| "pending".into()) // 濡傛灉鎵句笉鍒帮紝鍒欒繑鍥?"pending"
+    let map = status_store().lock().unwrap();
+    map.get(&id_or_hash).cloned().unwrap_or_else(|| "pending".into())
 }
 
 pub fn calculate_bridge_fee(amount: Option<&str>) -> Result<f64, String> {
     match amount {
-        Some(s) if s.parse::<f64>().is_ok() && s.parse::<f64>().unwrap() > 0.0 => {
-            Ok(s.parse::<f64>().unwrap() * 0.01)
-        }
-        _ => Err("Invalid amount".to_string()),
+        Some(s) => match s.parse::<f64>() {
+            Ok(v) if v > 0.0 => Ok(v * 0.01),
+            _ => Err("Invalid amount".to_string()),
+        },
+        None => Err("Invalid amount".to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tx_status_set_get_clear() {
+        let tx = "tx123";
+        let hash = send_transaction(tx, Some(1)).expect("send tx");
+        assert_eq!(get_transaction_status(hash.clone()), "sent".to_string());
+        assert!(confirm_transaction(hash.clone()).unwrap());
+        assert_eq!(get_transaction_status(hash), "confirmed".to_string());
+    }
+
+    #[test]
+    fn create_wallet_validation() {
+        assert!(create_wallet("").is_err());
+        assert!(create_wallet("validName1").is_ok());
     }
 }

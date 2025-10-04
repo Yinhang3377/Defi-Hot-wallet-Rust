@@ -1,23 +1,25 @@
-﻿// src/security/memory_protection.rs
+// src/security/memory_protection.rs
 //! 鍐呭瓨淇濇姢妯″潡
-//! 鐢ㄤ簬瀹夊叏澶勭悊鏁忔劅鏁版嵁锛岄槻姝㈠唴瀛樻硠闇?
+//! 鐢ㄤ簬瀹夊叏澶勭悊鏁忔劅鏁版嵁锛岄槻姝㈠唴瀹?
+
 use crate::tools::error::WalletError;
 use std::alloc::{alloc, dealloc, Layout};
 use std::ptr;
 
-/// 瀹夊叏鍐呭瓨缂撳啿鍖?/// 鍦―rop鏃惰嚜鍔ㄦ竻闄ゅ唴瀹?pub struct SecureBuffer {
+/// 安全缓冲区：分配未初始化内存并在 Drop 时清零
+pub struct SecureBuffer {
     ptr: *mut u8,
     len: usize,
     layout: Layout,
 }
 
 impl SecureBuffer {
-    /// 鍒涘缓鏂扮殑瀹夊叏缂撳啿鍖?    pub fn new(size: usize) -> Result<Self, WalletError> {
+    pub fn new(size: usize) -> Result<Self, WalletError> {
         if size == 0 {
             return Err(WalletError::InvalidInput("Buffer size cannot be zero".to_string()));
         }
 
-        let layout = Layout::array::<u8>(size)
+        let layout = Layout::from_size_align(size, 8)
             .map_err(|_| WalletError::InvalidInput("Invalid buffer layout".to_string()))?;
 
         let ptr = unsafe { alloc(layout) };
@@ -28,28 +30,29 @@ impl SecureBuffer {
         Ok(Self { ptr, len: size, layout })
     }
 
-    /// 鑾峰彇缂撳啿鍖洪暱搴?    pub fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.len
     }
 
-    /// 妫€鏌ョ紦鍐插尯鏄惁涓虹┖
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
 
-    /// 瀹夊叏鍦板啓鍏ユ暟鎹?    pub fn write(&mut self, data: &[u8]) -> Result<(), WalletError> {
+    pub fn write(&mut self, data: &[u8]) -> Result<(), WalletError> {
         if data.len() > self.len {
             return Err(WalletError::InvalidInput("Data too large for buffer".to_string()));
         }
-
         unsafe {
             ptr::copy_nonoverlapping(data.as_ptr(), self.ptr, data.len());
+            // zero the rest (optional)
+            if data.len() < self.len {
+                ptr::write_bytes(self.ptr.add(data.len()), 0, self.len - data.len());
+            }
         }
-
         Ok(())
     }
 
-    /// 瀹夊叏鍦拌鍙栨暟鎹?    pub fn read(&self, dest: &mut [u8]) -> Result<usize, WalletError> {
+    pub fn read(&self, dest: &mut [u8]) -> Result<usize, WalletError> {
         let read_len = dest.len().min(self.len);
         unsafe {
             ptr::copy_nonoverlapping(self.ptr, dest.as_mut_ptr(), read_len);
@@ -57,16 +60,12 @@ impl SecureBuffer {
         Ok(read_len)
     }
 
-    /// 鑾峰彇鍙璁块棶
     pub fn as_slice(&self) -> &[u8] {
         unsafe { std::slice::from_raw_parts(self.ptr, self.len) }
     }
 
-    /// 鑾峰彇鍙啓璁块棶锛堜笉瀹夊叏锛?    ///
     /// # Safety
-    ///
-    /// 璋冪敤鑰呭繀椤荤‘淇?
-    /// - 涓嶄細鏈夊叾浠栧紩鐢ㄥ悓鏃惰闂浉鍚屽唴瀛?    /// - 涓嶄細瓒婄晫鍐欏叆鏁版嵁
+    /// 调用者必须保证对返回的可变切片的使用不会违反所有权和别名规则。
     pub unsafe fn as_mut_slice(&mut self) -> &mut [u8] {
         std::slice::from_raw_parts_mut(self.ptr, self.len)
     }
@@ -74,7 +73,6 @@ impl SecureBuffer {
 
 impl Drop for SecureBuffer {
     fn drop(&mut self) {
-        // 鍦ㄩ噴鏀惧墠娓呴櫎鍐呭瓨鍐呭
         unsafe {
             clear_sensitive_data(self.ptr, self.len);
             dealloc(self.ptr, self.layout);
@@ -84,68 +82,67 @@ impl Drop for SecureBuffer {
 
 impl Clone for SecureBuffer {
     fn clone(&self) -> Self {
-        let new_buf = Self::new(self.len).expect("Failed to clone SecureBuffer");
-        unsafe {
-            ptr::copy_nonoverlapping(self.ptr, new_buf.ptr, self.len);
+        if self.is_empty() {
+            // This path is unlikely given `new` prevents zero-sized buffers,
+            // but it's robust to handle it. We can't create a zero-sized
+            // buffer, so we create a minimal valid one and return it empty.
+            // A better approach would be to allow zero-sized buffers if the design permits.
+            return Self::new(1).expect("Failed to create minimal buffer for cloning empty one");
         }
+        let new_buf = Self::new(self.len).expect("Failed to clone SecureBuffer");
+        unsafe { ptr::copy_nonoverlapping(self.ptr, new_buf.ptr, self.len) };
         new_buf
     }
 }
 
-/// 娓呴櫎鏁忔劅鏁版嵁
-/// 浣跨敤澶氱鏂规硶纭繚鏁版嵁琚鐩?///
-/// # Safety
+/// 清除敏感内存（尽量使用不可优化掉的写法）
 ///
-/// 姝ゅ嚱鏁伴渶瑕佷竴涓湁鏁堢殑鎸囬拡鍜岄暱搴︺€傝皟鐢ㄨ€呭繀椤荤‘淇?
-/// - `ptr` 鎸囧悜鏈夋晥鐨勫唴瀛樺尯鍩燂紝骞朵笖鍙啓鍏?/// - `len` 涓嶈秴杩囧垎閰嶇粰 `ptr` 鐨勫唴瀛樺ぇ灏?/// - 鎿嶄綔鏈熼棿 `ptr` 涓嶄細琚叾浠栦唬鐮佽闂?pub unsafe fn clear_sensitive_data(ptr: *mut u8, len: usize) {
+/// # Safety
+/// - `ptr` 必须指向可写的内存且长度至少为 `len`
+pub unsafe fn clear_sensitive_data(ptr: *mut u8, len: usize) {
     if ptr.is_null() || len == 0 {
         return;
     }
 
-    // 鏂规硶1: 鐢ㄩ浂瑕嗙洊
-    ptr::write_bytes(ptr, 0, len);
-
-    // 鏂规硶2: 鐢ㄤ吉闅忔満锛堢ず渚嬶級鏁版嵁瑕嗙洊
+    // 首先用 volatile 写入 0，确保不会被优化掉
     for i in 0..len {
-        *ptr.add(i) = (i % 256) as u8;
+        std::ptr::write_volatile(ptr.add(i), 0u8);
     }
 
-    // 鏂规硶3: 鍐嶆鐢ㄩ浂瑕嗙洊
-    ptr::write_bytes(ptr, 0, len);
-
-    // 鏂规硶4: 鐢?xFF瑕嗙洊
-    ptr::write_bytes(ptr, 0xFF, len);
-
-    // 鏈€缁堢敤闆惰鐩?    ptr::write_bytes(ptr, 0, len);
+    // Memory fence to prevent reordering
+    std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
 }
 
-/// 娓呴櫎鏁忔劅鏁版嵁缂撳啿鍖猴紙瀹夊叏鍖呰锛?pub fn clear_sensitive(buf: &mut [u8]) {
+/// 安全清零切片
+pub fn clear_sensitive(buf: &mut [u8]) {
     unsafe {
         clear_sensitive_data(buf.as_mut_ptr(), buf.len());
     }
 }
 
-/// 瀹夊叏瀛楃涓茬被鍨?/// 鍦―rop鏃惰嚜鍔ㄦ竻闄ゅ唴瀹?pub struct SecureString {
+/// 安全字符串（基于 SecureBuffer）
+pub struct SecureString {
     buffer: SecureBuffer,
 }
 
 impl SecureString {
-    /// 鍒涘缓鏂扮殑瀹夊叏瀛楃涓?    pub fn new(s: &str) -> Result<Self, WalletError> {
+    pub fn new(s: &str) -> Result<Self, WalletError> {
+        if s.is_empty() {
+            return Err(WalletError::InvalidInput("SecureString cannot be empty".to_string()));
+        }
         let mut buffer = SecureBuffer::new(s.len())?;
         buffer.write(s.as_bytes())?;
         Ok(Self { buffer })
     }
 
-    /// 鑾峰彇瀛楃涓查暱搴?    pub fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.buffer.len()
     }
 
-    /// 妫€鏌ュ瓧绗︿覆鏄惁涓虹┖
     pub fn is_empty(&self) -> bool {
         self.buffer.len() == 0
     }
 
-    /// 瀹夊叏鍦拌幏鍙栧瓧绗︿覆鍐呭
     pub fn reveal(&self) -> Result<String, WalletError> {
         let mut data = vec![0u8; self.len()];
         self.buffer.read(&mut data)?;
@@ -156,33 +153,39 @@ impl SecureString {
 
 impl Drop for SecureString {
     fn drop(&mut self) {
-        // SecureBuffer 鐨?Drop 浼氬鐞嗘竻闄?    }
+        // SecureBuffer 的 Drop 会清理底层内容
+    }
 }
 
-/// 鍐呭瓨閿佸畾锛堥槻姝㈤〉闈氦鎹級
-/// 娉ㄦ剰锛氳繖闇€瑕佺壒瀹氱殑绯荤粺鏉冮檺
+/// 尝试锁定内存页，防止被换出（平台相关）
 ///
 /// # Safety
-///
-/// 璋冪敤鑰呭繀椤荤‘淇?
-/// - `ptr` 鎸囧悜鏈夋晥鐨勩€佸凡鍒嗛厤鐨勫唴瀛?/// - `len` 涓嶈秴杩囧垎閰嶇殑鍐呭瓨澶у皬
-/// - 閿佸畾鐨勫唴瀛樹笉浼氳繃澶氭秷鑰楃郴缁熻祫婧?pub unsafe fn lock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
+/// - `ptr` 必须指向一个有效的内存区域，长度为 `len`
+pub unsafe fn lock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
+    if ptr.is_null() || len == 0 {
+        return Err(WalletError::InvalidInput(
+            "Invalid pointer/length for lock_memory".to_string(),
+        ));
+    }
+
     #[cfg(unix)]
     {
         use libc::mlock;
-        let result = mlock(ptr as *const std::ffi::c_void, len);
-        if result != 0 {
+        let res = mlock(ptr as *const std::ffi::c_void, len as libc::size_t);
+        if res != 0 {
             return Err(WalletError::MemoryError("Failed to lock memory".to_string()));
         }
+        Ok(())
     }
 
     #[cfg(windows)]
     {
         use winapi::um::memoryapi::VirtualLock;
-        let result = VirtualLock(ptr as winapi::shared::minwindef::LPVOID, len);
-        if result == 0 {
+        let res = VirtualLock(ptr as winapi::shared::minwindef::LPVOID, len);
+        if res == 0 {
             return Err(WalletError::MemoryError("Failed to lock memory".to_string()));
         }
+        Ok(())
     }
 
     #[cfg(not(any(unix, windows)))]
@@ -191,32 +194,37 @@ impl Drop for SecureString {
             "Memory locking not supported on this platform".to_string(),
         ));
     }
-
-    Ok(())
 }
 
-/// 鍐呭瓨瑙ｉ攣
+/// 解锁内存页
 ///
 /// # Safety
-///
-/// 璋冪敤鑰呭繀椤荤‘淇?
-/// - `ptr` 鎸囧悜涔嬪墠閫氳繃 `lock_memory` 閿佸畾鐨勫唴瀛?/// - `len` 涓庨攣瀹氭椂浣跨敤鐨勭浉鍚?pub unsafe fn unlock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
+/// - `ptr` 必须指向先前被 lock_memory 锁定的内存区域
+pub unsafe fn unlock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
+    if ptr.is_null() || len == 0 {
+        return Err(WalletError::InvalidInput(
+            "Invalid pointer/length for unlock_memory".to_string(),
+        ));
+    }
+
     #[cfg(unix)]
     {
         use libc::munlock;
-        let result = munlock(ptr as *const std::ffi::c_void, len);
-        if result != 0 {
+        let res = munlock(ptr as *const std::ffi::c_void, len as libc::size_t);
+        if res != 0 {
             return Err(WalletError::MemoryError("Failed to unlock memory".to_string()));
         }
+        Ok(())
     }
 
     #[cfg(windows)]
     {
         use winapi::um::memoryapi::VirtualUnlock;
-        let result = VirtualUnlock(ptr as winapi::shared::minwindef::LPVOID, len);
-        if result == 0 {
+        let res = VirtualUnlock(ptr as winapi::shared::minwindef::LPVOID, len);
+        if res == 0 {
             return Err(WalletError::MemoryError("Failed to unlock memory".to_string()));
         }
+        Ok(())
     }
 
     #[cfg(not(any(unix, windows)))]
@@ -225,11 +233,10 @@ impl Drop for SecureString {
             "Memory unlocking not supported on this platform".to_string(),
         ));
     }
-
-    Ok(())
 }
 
-/// 瀹夊叏鍐呭瓨鍒嗛厤鍣?pub struct SecureAllocator {
+/// 管理已锁定内存页面的简单分配器（示例实现）
+pub struct SecureAllocator {
     locked_pages: Vec<(usize, usize)>, // (ptr, size)
 }
 
@@ -238,16 +245,15 @@ impl SecureAllocator {
         Self { locked_pages: Vec::new() }
     }
 
-    /// 鍒嗛厤骞堕攣瀹氬唴瀛?    pub fn alloc_locked(&mut self, size: usize) -> Result<SecureBuffer, WalletError> {
+    pub fn alloc_locked(&mut self, size: usize) -> Result<SecureBuffer, WalletError> {
         let buffer = SecureBuffer::new(size)?;
         unsafe {
-            lock_memory(buffer.ptr, buffer.len)?;
+            lock_memory(buffer.ptr, buffer.len())?;
         }
         self.locked_pages.push((buffer.ptr as usize, buffer.len));
         Ok(buffer)
     }
 
-    /// 瑙ｉ攣鎵€鏈夊垎閰嶇殑鍐呭瓨
     pub fn unlock_all(&mut self) -> Result<(), WalletError> {
         for (ptr, size) in &self.locked_pages {
             unsafe {
@@ -267,11 +273,13 @@ impl Default for SecureAllocator {
 
 impl Drop for SecureAllocator {
     fn drop(&mut self) {
-        let _ = self.unlock_all(); // 蹇界暐閿欒锛屽洜涓烘垜浠鍦ㄦ竻鐞?    }
+        // 尽量尝试解锁，忽略错误
+        let _ = self.unlock_all();
+    }
 }
 
-/// 涓存椂鏁忔劅鏁版嵁澶勭悊
-/// 纭繚鍦ㄤ綔鐢ㄥ煙缁撴潫鏃舵竻闄ゆ暟鎹?pub struct TempSensitive<T, F>
+/// 短期敏感数据包装：Drop 时执行传入的清理函数
+pub struct TempSensitive<T, F>
 where
     F: FnMut(&mut T),
 {
@@ -360,15 +368,12 @@ mod tests {
     #[test]
     fn test_secure_allocator() {
         let mut allocator = SecureAllocator::new();
-
-        // 鍦ㄦ煇浜涚幆澧冧腑鍙兘闇€瑕佹潈闄愭墠鑳介攣瀹氬唴瀛?        let result = allocator.alloc_locked(64);
+        let result = allocator.alloc_locked(64);
         if let Ok(buffer) = result {
             assert_eq!(buffer.len(), 64);
-            // 瑙ｉ攣鎵€鏈夊唴瀛?            let _ = allocator.unlock_all();
+            let _ = allocator.unlock_all();
         }
     }
-
-    // 鎵╁睍鐢ㄤ緥
 
     #[test]
     fn test_secure_buffer_new_zero_fails() {
@@ -463,14 +468,15 @@ mod tests {
                 let unlock_res = unsafe { unlock_memory(ptr, len) };
                 assert!(unlock_res.is_ok());
             }
-            Err(_) => assert!(true), // 骞冲彴/鏉冮檺涓嶆敮鎸佹椂鍏佽澶辫触
+            Err(_) => assert!(true),
         }
     }
 
     #[test]
     fn test_secure_allocator_unlock_all_idempotent() {
         let mut allocator = SecureAllocator::new();
-        let _ = allocator.alloc_locked(32); // 鍙兘鍥犳潈闄愬け璐?        let _ = allocator.unlock_all();
+        let _ = allocator.alloc_locked(32);
+        let _ = allocator.unlock_all();
         let second = allocator.unlock_all();
         assert!(second.is_ok());
     }

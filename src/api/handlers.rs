@@ -1,4 +1,4 @@
-﻿// src/api/handlers.rs
+// src/api/handlers.rs
 use crate::api::types::{BridgeAssetsRequest, BridgeResponse, ErrorResponse};
 use crate::core::wallet_manager::WalletManager;
 use axum::{extract::State, http::StatusCode, Json};

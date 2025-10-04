@@ -1,4 +1,4 @@
-﻿use anyhow::Result;
+use anyhow::Result;
 use regex::Regex;
 
 /// Validates an Ethereum address.

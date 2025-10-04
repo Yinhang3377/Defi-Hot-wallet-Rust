@@ -47,14 +47,15 @@ where
 }
 
 // 替换原来的重复定义：提供一个 "relaxed" 名称的实现供测试/上游调用。
-// 该最小实现对空输入返回 identity，避免对 trait 较严格的类型产生约束冲突。
-// 如需完整实现，可在后续提交中根据具体 Group/Scalar trait 实现乘法逻辑。
-pub fn sum_of_products_impl_relaxed<G>(_pairs: &[(G::Scalar, G)]) -> G
+// 当可用时（例如在 sop_patch_tests 或启用 alloc/std 时），使用点乘实现；否则回退到 identity。
+// 该实现对需要 Copy + Mul 的类型执行正确的累加，能让 k256 的测试通过。
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub fn sum_of_products_impl_relaxed<G>(pairs: &[(G::Scalar, G)]) -> G
 where
-    G: elliptic_curve::Group,
+    G: elliptic_curve::Group + Copy + core::ops::Mul<G::Scalar, Output = G>,
+    G::Scalar: Copy,
 {
-    // 对于编译检查与 test 桩，返回群的恒等元。
-    G::identity()
+    pairs.iter().copied().fold(G::identity(), |acc, (s, p)| acc + (p * s))
 }
 
 // 为没有 alloc/std 特性的情况提供实现（加入 cfg，避免与上面的同名冲突）

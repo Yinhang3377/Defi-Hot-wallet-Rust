@@ -1,4 +1,4 @@
-﻿//! Anti-debugging functionality
+//! Anti-debugging functionality
 //!
 //! This module provides tools to detect if the application is being run under a debugger,
 //! which can be used as part of security measures against reverse engineering attempts.

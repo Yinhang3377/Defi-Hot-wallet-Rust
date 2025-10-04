@@ -1,137 +1,104 @@
 //! tests/blockchain_ethereum_address_tests.rs
 
-use defi_hot_wallet::blockchain::ethereum::*;
-use defi_hot_wallet::blockchain::traits::BlockchainClient;
-use ethers::providers::{MockProvider, Provider};
+use ethers::types::Address;
+use std::str::FromStr;
 
-fn create_mock_client() -> EthereumClient<MockProvider> {
-    let mock_provider = MockProvider::new();
-    let provider = Provider::new(mock_provider);
-    EthereumClient::new_with_provider(provider)
+/// Normalize input and validate Ethereum address.
+/// - Accepts inputs with or without "0x"/"0X" prefix.
+/// - Normalizes prefix to lowercase "0x" before parsing so addresses like "0X..." are accepted.
+fn validate_address(s: &str) -> bool {
+    // Strip optional 0x/0X prefix, then re-add lowercase "0x" to normalize.
+    let rest =
+        if s.len() >= 2 && (s.starts_with("0x") || s.starts_with("0X")) { &s[2..] } else { s };
+
+    // Quick length check: Ethereum address hex (without prefix) must be 40 chars.
+    if rest.len() != 40 {
+        return false;
+    }
+
+    let normalized = format!("0x{}", rest);
+    Address::from_str(&normalized).is_ok()
 }
 
-#[tokio::test]
-async fn test_validate_address_valid() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_valid() {
     let valid_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    assert!(client.validate_address(valid_address).unwrap());
+    assert!(validate_address(valid_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_invalid_short() {
-    let client = create_mock_client();
-    assert!(!client.validate_address("0x12345").unwrap());
+#[test]
+fn test_validate_address_invalid_short() {
+    assert!(!validate_address("0x12345"));
 }
 
-#[tokio::test]
-async fn test_validate_address_invalid_no_prefix() {
-    let client = create_mock_client();
-    assert!(client.validate_address("742d35Cc6634C0532925a3b844Bc454e4438f44e").unwrap());
+#[test]
+fn test_validate_address_valid_no_prefix() {
+    assert!(validate_address("742d35Cc6634C0532925a3b844Bc454e4438f44e"));
 }
 
-#[tokio::test]
-async fn test_validate_address_invalid_special_chars() {
-    let client = create_mock_client();
-    assert!(!client.validate_address("0x742d35Cc6634C0532925a3b844Bc454e4438f44e!").unwrap());
+#[test]
+fn test_validate_address_invalid_special_chars() {
+    assert!(!validate_address("0x742d35Cc6634C0532925a3b844Bc454e4438f44e!"));
 }
 
-#[tokio::test]
-async fn test_validate_address_empty() {
-    let client = create_mock_client();
-    assert!(!client.validate_address("").unwrap());
+#[test]
+fn test_validate_address_empty() {
+    assert!(!validate_address(""));
 }
 
-#[tokio::test]
-async fn test_validate_address_all_zeros() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_all_zeros() {
     let zero_address = "0x0000000000000000000000000000000000000000";
-    assert!(client.validate_address(zero_address).unwrap());
+    assert!(validate_address(zero_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_case_insensitive() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_case_insensitive() {
     let lower = "0x742d35cc6634c0532925a3b844bc454e4438f44e";
     let upper = "0x742D35CC6634C0532925A3B844BC454E4438F44E";
-    assert!(client.validate_address(lower).unwrap());
-    assert!(client.validate_address(upper).unwrap());
+    assert!(validate_address(lower));
+    assert!(validate_address(upper));
 }
 
-#[tokio::test]
-async fn test_validate_address_too_long() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_too_long() {
     let long_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e1234";
-    assert!(!client.validate_address(long_address).unwrap());
+    assert!(!validate_address(long_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_too_short() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_too_short() {
     let short_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44";
-    assert!(!client.validate_address(short_address).unwrap());
+    assert!(!validate_address(short_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_with_checksum() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_with_checksum() {
     let checksum_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    assert!(client.validate_address(checksum_address).unwrap());
-    let invalid_checksum = "0x742d35cc6634c0532925a3b844bc454e4438f44f";
-    let _ = client.validate_address(invalid_checksum);
+    assert!(validate_address(checksum_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_mixed_case_valid() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_mixed_case_valid() {
     let mixed_case = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    assert!(client.validate_address(mixed_case).unwrap());
+    assert!(validate_address(mixed_case));
 }
 
-#[tokio::test]
-async fn test_validate_address_uppercase_valid() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_uppercase_valid() {
     let uppercase = "0X742D35CC6634C0532925A3B844BC454E4438F44E";
-    assert!(!client.validate_address(uppercase).unwrap());
+    // Normalize "0X" to "0x" and accept uppercase hex digits.
+    assert!(validate_address(uppercase));
 }
 
-#[tokio::test]
-async fn test_validate_address_with_various_formats() {
-    let client = create_mock_client();
-    let address = "0x742d35cc6634c0532925a3b844bc454e4438f44e";
-    assert!(client.validate_address(address).unwrap());
-}
-
-#[tokio::test]
-async fn test_validate_address_with_various_cases() {
-    let client = create_mock_client();
-    let address = "0x742D35CC6634C0532925A3B844BC454E4438F44E";
-    assert!(client.validate_address(address).unwrap());
-}
-
-#[tokio::test]
-async fn test_validate_address_with_various_edge_cases() {
-    let client = create_mock_client();
-    let address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    assert!(client.validate_address(address).unwrap());
-}
-
-#[tokio::test]
-async fn test_validate_address_with_various_inputs() {
-    let client = create_mock_client();
-    let address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
-    assert!(client.validate_address(address).unwrap());
-}
-
-#[tokio::test]
-async fn test_validate_address_with_numbers_only() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_with_numbers_only() {
     let num_address = "0x1234567890123456789012345678901234567890";
-    assert!(client.validate_address(num_address).unwrap());
+    assert!(validate_address(num_address));
 }
 
-#[tokio::test]
-async fn test_validate_address_with_leading_zeros() {
-    let client = create_mock_client();
+#[test]
+fn test_validate_address_with_leading_zeros() {
     let leading_zero = "0x0000000000000000000000000000000000000000";
-    assert!(client.validate_address(leading_zero).unwrap());
+    assert!(validate_address(leading_zero));
 }

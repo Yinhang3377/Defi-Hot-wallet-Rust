@@ -1,4 +1,4 @@
-﻿pub mod bridge;
+pub mod bridge;
 pub mod client;
 pub mod ethereum;
 pub mod solana;

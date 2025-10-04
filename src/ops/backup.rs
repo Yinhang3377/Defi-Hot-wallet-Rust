@@ -1,4 +1,4 @@
-﻿//! src/ops/backup.rs
+//! src/ops/backup.rs
 //!
 //! Handles wallet data backup and restoration logic.
 

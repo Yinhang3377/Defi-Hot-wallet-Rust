@@ -1,4 +1,4 @@
-﻿pub mod config;
+pub mod config;
 pub mod domain;
 pub mod errors;
 pub mod key_management;

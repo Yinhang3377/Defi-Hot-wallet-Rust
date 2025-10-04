@@ -1,4 +1,4 @@
-﻿use crate::core::domain::{Tx, Wallet};
+use crate::core::domain::{Tx, Wallet};
 use anyhow::Result;
 
 /// Wallet service layer.

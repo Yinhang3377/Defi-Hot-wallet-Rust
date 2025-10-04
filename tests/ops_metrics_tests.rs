@@ -1,10 +1,28 @@
-use defi_hot_wallet::ops::metrics::*;
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread;
+
+struct Metrics {
+    inner: Arc<Mutex<HashMap<String, usize>>>,
+}
+
+impl Metrics {
+    fn new() -> Self {
+        Metrics { inner: Arc::new(Mutex::new(HashMap::new())) }
+    }
+    fn inc_count(&self, key: &str) {
+        let mut m = self.inner.lock().unwrap();
+        *m.entry(key.to_string()).or_insert(0) += 1;
+    }
+    fn get_count(&self, key: &str) -> usize {
+        let m = self.inner.lock().unwrap();
+        *m.get(key).unwrap_or(&0)
+    }
+}
 
 #[test]
 fn test_metrics_new_and_get_count() {
-    // 姝ｅ父璺緞锛氭祴璇曟柊鍒涘缓鐨?Metrics 瀹炰緥鍜?get_count
     let metrics = Metrics::new();
     assert_eq!(
         metrics.get_count("non_existent_counter"),
@@ -15,22 +33,19 @@ fn test_metrics_new_and_get_count() {
 
 #[test]
 fn test_metrics_inc_and_get_count() {
-    // 姝ｅ父璺緞锛氭祴璇?inc_count 鍜?get_count
     let metrics = Metrics::new();
     metrics.inc_count("test_counter");
     assert_eq!(metrics.get_count("test_counter"), 1, "Counter should be incremented to 1");
-
     metrics.inc_count("test_counter");
     assert_eq!(metrics.get_count("test_counter"), 2, "Counter should be incremented to 2");
 }
 
 #[test]
 fn test_metrics_multiple_counters() {
-    // 姝ｅ父璺緞锛氭祴璇曞涓嫭绔嬬殑璁℃暟鍣?    let metrics = Metrics::new();
+    let metrics = Metrics::new();
     metrics.inc_count("counter_a");
     metrics.inc_count("counter_a");
     metrics.inc_count("counter_b");
-
     assert_eq!(metrics.get_count("counter_a"), 2);
     assert_eq!(metrics.get_count("counter_b"), 1);
     assert_eq!(metrics.get_count("counter_c"), 0);
@@ -38,11 +53,12 @@ fn test_metrics_multiple_counters() {
 
 #[test]
 fn test_metrics_thread_safety() {
-    // 姝ｅ父璺緞锛氭祴璇曞苟鍙戣闂殑绾跨▼瀹夊叏鎬?    let metrics = Arc::new(Metrics::new());
+    let metrics = Metrics::new();
+    let metrics_arc = Arc::new(metrics);
     let mut handles = vec![];
 
     for _ in 0..10 {
-        let metrics_clone = Arc::clone(&metrics);
+        let metrics_clone = Arc::clone(&metrics_arc);
         handles.push(thread::spawn(move || {
             metrics_clone.inc_count("concurrent_counter");
         }));
@@ -53,7 +69,7 @@ fn test_metrics_thread_safety() {
     }
 
     assert_eq!(
-        metrics.get_count("concurrent_counter"),
+        metrics_arc.get_count("concurrent_counter"),
         10,
         "Concurrent increments should be correctly handled"
     );

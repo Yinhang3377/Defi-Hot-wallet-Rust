@@ -1,5 +1,12 @@
-﻿use anyhow::Result;
+// src/crypto/quantum.rs
+use aes_gcm::{
+    aead::{Aead, KeyInit},
+    Aes256Gcm, Key, Nonce,
+};
+use anyhow::Result;
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tracing::{debug, info};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -22,7 +29,7 @@ pub struct QuantumSafeEncryption {
 
 impl QuantumSafeEncryption {
     pub fn new() -> Result<Self> {
-        info!("馃攼 Initializing Quantum-Safe Encryption (Simulated Kyber1024)");
+        info!("Initializing Quantum-Safe Encryption (simulated Kyber1024)");
         let mut instance = Self { keypair: None };
         instance.generate_keypair()?;
         Ok(instance)
@@ -31,7 +38,6 @@ impl QuantumSafeEncryption {
     pub fn generate_keypair(&mut self) -> Result<QuantumKeyPair> {
         debug!("Generating new simulated Kyber1024 keypair");
 
-        use rand::RngCore;
         let mut public_key = vec![0u8; KYBER_CIPHERTEXT_LEN];
         let mut secret_key = vec![0u8; KYBER_SECRET_LEN];
 
@@ -42,36 +48,32 @@ impl QuantumSafeEncryption {
 
         self.keypair = Some(keypair.clone());
 
-        info!("鉁?Quantum-safe keypair generated (simulated)");
+        info!("Quantum-safe keypair generated (simulated)");
         Ok(keypair)
     }
 
     pub fn encrypt(&self, plaintext: &[u8]) -> Result<Vec<u8>> {
         debug!("Encrypting data with quantum-safe encryption (simulated)");
 
-        use aes_gcm::{
-            aead::{Aead, KeyInit},
-            Aes256Gcm, Key, Nonce,
-        };
-        use rand::RngCore;
-        use sha2::{Digest, Sha256};
-
-        // 鍥哄畾瀵嗛挜锛屼繚璇佹祴璇曚腑鍔犺В瀵嗕竴鑷?        let aes_key = Sha256::digest(SHARED_SECRET);
+        // Derive AES key (simulated) from a shared secret
+        let aes_key = Sha256::digest(SHARED_SECRET);
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key));
 
+        // Generate nonce
         let mut nonce_bytes = [0u8; AES_NONCE_LEN];
         rand::thread_rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
+        // AES-GCM encrypt
         let ciphertext = cipher
             .encrypt(nonce, plaintext)
             .map_err(|e| anyhow::anyhow!("AES encryption failed: {e}"))?;
 
-        // 妯℃嫙 KEM 鐨勫瘑鏂囬儴鍒嗭紙浠呯敤浜庡崰浣嶏級
+        // Simulated KEM ciphertext (Kyber)
         let mut simulated_kyber_ciphertext = vec![0u8; KYBER_CIPHERTEXT_LEN];
         rand::thread_rng().fill_bytes(&mut simulated_kyber_ciphertext);
 
-        // 鎵撳寘鏍煎紡: [4 bytes len][kyber_ct][12 bytes nonce][aes_ct]
+        // Format: [4 bytes len][kyber_ct][12 bytes nonce][aes_ct]
         let mut result = Vec::with_capacity(
             4 + simulated_kyber_ciphertext.len() + AES_NONCE_LEN + ciphertext.len(),
         );
@@ -80,12 +82,11 @@ impl QuantumSafeEncryption {
         result.extend_from_slice(&nonce_bytes);
         result.extend_from_slice(&ciphertext);
 
-        // 闆跺寲涓棿鏁忔劅鏁版嵁
-        use zeroize::Zeroize;
+        // Zeroize sensitive temporary buffers where possible
         nonce_bytes.zeroize();
         simulated_kyber_ciphertext.zeroize();
 
-        debug!("鉁?Data encrypted with quantum-safe encryption (simulated)");
+        debug!("Data encrypted with quantum-safe encryption (simulated)");
         Ok(result)
     }
 
@@ -113,13 +114,9 @@ impl QuantumSafeEncryption {
         let nonce_bytes = &encrypted_data[nonce_start..nonce_end];
         let aes_ciphertext = &encrypted_data[nonce_end..];
 
-        use sha2::{Digest, Sha256};
+        // Derive AES key (simulated) from the shared secret
         let aes_key = Sha256::digest(SHARED_SECRET);
 
-        use aes_gcm::{
-            aead::{Aead, KeyInit},
-            Aes256Gcm, Key, Nonce,
-        };
         let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key));
         let nonce = Nonce::from_slice(nonce_bytes);
 
@@ -127,7 +124,7 @@ impl QuantumSafeEncryption {
             .decrypt(nonce, aes_ciphertext)
             .map_err(|e| anyhow::anyhow!("AES decryption failed: {e}"))?;
 
-        debug!("鉁?Data decrypted with quantum-safe encryption (simulated)");
+        debug!("Data decrypted with quantum-safe encryption (simulated)");
         Ok(plaintext)
     }
 

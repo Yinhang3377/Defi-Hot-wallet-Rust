@@ -1,4 +1,4 @@
-﻿use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result};
 use elliptic_curve::group::{Group, GroupEncoding};
 use serde::{Deserialize, Serialize};
 

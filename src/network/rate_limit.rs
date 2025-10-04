@@ -1,4 +1,4 @@
-﻿//! src/network/rate_limit.rs
+//! src/network/rate_limit.rs
 //!
 //! Provides rate limiting functionality for network requests.
 

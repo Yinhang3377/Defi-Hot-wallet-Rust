@@ -1,4 +1,4 @@
-﻿// src/core/wallet_info.rs
+// src/core/wallet_info.rs
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop};

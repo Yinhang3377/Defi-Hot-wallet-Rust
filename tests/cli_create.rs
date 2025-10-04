@@ -24,7 +24,8 @@ fn cli_create_generates_wallet_file() {
         ])
         // Run cargo from the repository root so the binary target can be found.
         .current_dir(env!("CARGO_MANIFEST_DIR"))
-        .env("DATABASE_URL", "sqlite::memory:") // 浣跨敤鍐呭瓨鏁版嵁搴撻伩鍏嶆枃浠惰矾寰勯棶棰?        .output()
+        .env("DATABASE_URL", "sqlite::memory:")
+        .output()
         .expect("Failed to execute command");
 
     assert!(output.status.success(), "Command failed: {}", String::from_utf8_lossy(&output.stderr));

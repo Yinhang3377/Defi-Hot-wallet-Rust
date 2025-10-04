@@ -1,4 +1,4 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{info, warn};
 use uuid::Uuid;
@@ -33,6 +33,9 @@ fn get_fallback_rpc_url(network: &str) -> Option<String> {
     }
 }
 
+/// (ciphertext, salt, nonce)
+type WalletKeyMaterial = (Vec<u8>, Vec<u8>, Vec<u8>);
+
 pub struct WalletManager {
     storage: Arc<dyn WalletStorageTrait + Send + Sync>,
     quantum_crypto: QuantumSafeEncryption,
@@ -42,8 +45,6 @@ pub struct WalletManager {
     #[allow(dead_code)]
     bridges: Arc<HashMap<String, Box<dyn Bridge>>>,
 }
-
-// 瀹氫箟绫诲瀷鍒悕浠ユ彁楂樺彲璇绘€?type WalletKeyMaterial = (Vec<u8>, Vec<u8>, Vec<u8>);
 
 impl WalletManager {
     pub async fn new(config: &WalletConfig) -> Result<Self, WalletError> {
@@ -69,7 +70,6 @@ impl WalletManager {
             "solana-eth".to_string(),
             Box::new(SolanaToEthereumBridge::new("0x...SolEthBridge...")),
         );
-        // Add other bridge implementations here...
         let bridges = Arc::new(bridges);
 
         let mut blockchain_clients: HashMap<String, Box<dyn BlockchainClient>> = HashMap::new();
@@ -77,56 +77,57 @@ impl WalletManager {
         for (name, network_config) in &config.blockchain.networks {
             info!("Initializing client for network: {}", name);
 
-            // 娣诲姞閲嶈瘯閫昏緫
             let mut retry_count = 0;
             let max_retries = 3;
-            let mut last_error = None;
+            let mut last_error: Option<WalletError> = None;
 
             while retry_count < max_retries {
-                let client_result = match name.as_str() {
-                    "eth" | "sepolia" | "polygon" | "bsc" | "bsctestnet" => {
-                        let timeout = std::time::Duration::from_secs(15);
-                        let client_future = EthereumClient::new(&network_config.rpc_url);
-                        match tokio::time::timeout(timeout, client_future).await {
-                            Ok(result) => result
-                                .map(|c| Box::new(c) as Box<dyn BlockchainClient>)
-                                .map_err(|e| WalletError::NetworkError(e.to_string())),
-                            Err(_) => Err(WalletError::NetworkError(format!(
-                                "Connection timeout for {}",
-                                name
-                            ))),
+                let client_result: Result<Box<dyn BlockchainClient>, WalletError> =
+                    match name.as_str() {
+                        "eth" | "sepolia" | "polygon" | "bsc" | "bsctestnet" => {
+                            let timeout = std::time::Duration::from_secs(15);
+                            let client_future = EthereumClient::new(&network_config.rpc_url);
+                            match tokio::time::timeout(timeout, client_future).await {
+                                Ok(result) => result
+                                    .map(|c| Box::new(c) as Box<dyn BlockchainClient>)
+                                    .map_err(|e| WalletError::NetworkError(e.to_string())),
+                                Err(_) => Err(WalletError::NetworkError(format!(
+                                    "Connection timeout for {}",
+                                    name
+                                ))),
+                            }
                         }
-                    }
-                    "solana" | "solana-devnet" => {
-                        let timeout = std::time::Duration::from_secs(15);
-                        let client_future = SolanaClient::new(&network_config.rpc_url);
-                        match tokio::time::timeout(timeout, client_future).await {
-                            Ok(result) => result
-                                .map(|c| Box::new(c) as Box<dyn BlockchainClient>)
-                                .map_err(|e| WalletError::NetworkError(e.to_string())),
-                            Err(_) => Err(WalletError::NetworkError(format!(
-                                "Connection timeout for {}",
-                                name
-                            ))),
+                        "solana" | "solana-devnet" => {
+                            let timeout = std::time::Duration::from_secs(15);
+                            let client_future = SolanaClient::new(&network_config.rpc_url);
+                            match tokio::time::timeout(timeout, client_future).await {
+                                Ok(result) => result
+                                    .map(|c| Box::new(c) as Box<dyn BlockchainClient>)
+                                    .map_err(|e| WalletError::NetworkError(e.to_string())),
+                                Err(_) => Err(WalletError::NetworkError(format!(
+                                    "Connection timeout for {}",
+                                    name
+                                ))),
+                            }
                         }
-                    }
-                    _ => Err(WalletError::NetworkError(format!(
-                        "Unsupported network type for {}",
-                        name
-                    ))),
-                };
+                        _ => Err(WalletError::NetworkError(format!(
+                            "Unsupported network type for {}",
+                            name
+                        ))),
+                    };
 
                 match client_result {
                     Ok(c) => {
                         let native_token = c.get_native_token().to_string();
                         blockchain_clients.insert(name.clone(), c);
-                        info!("鉁?{} client initialized for network '{}'", native_token, name);
-                        break; // 鎴愬姛杩炴帴锛岃烦鍑洪噸璇曞惊鐜?                    }
+                        info!("{} client initialized for network '{}'", native_token, name);
+                        break;
+                    }
                     Err(e) => {
                         last_error = Some(e);
                         retry_count += 1;
                         if retry_count < max_retries {
-                            warn!("鈿狅笍 Attempt {} failed for {}, retrying...", retry_count, name);
+                            warn!("Attempt {} failed for {}, retrying...", retry_count, name);
                             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
                         }
                     }
@@ -135,9 +136,9 @@ impl WalletManager {
 
             if retry_count == max_retries {
                 warn!(
-                    "鈿狅笍 Failed to initialize client for {} after {} attempts: {}",
+                    "Failed to initialize client for {} after {} attempts: {}",
                     name,
-                    max_retries, // 绉婚櫎 .to_string()
+                    max_retries,
                     last_error.unwrap_or_else(|| WalletError::Other("Unknown error".to_string()))
                 );
             }
@@ -153,7 +154,6 @@ impl WalletManager {
         })
     }
 
-    // 鏂板涓€涓敤浜庢祴璇曠殑鏋勯€犲嚱鏁帮紝鍏佽娉ㄥ叆 mock storage
     #[cfg(test)]
     pub async fn new_with_storage(
         _config: &WalletConfig,
@@ -179,7 +179,8 @@ impl WalletManager {
             quantum_crypto,
             _multisig: multisig,
             _hsm: hsm,
-            blockchain_clients: Arc::new(HashMap::new()), // 鍦ㄦ祴璇曚腑閫氬父涓嶉渶瑕佸畬鏁寸殑瀹㈡埛绔?            bridges: Arc::new(bridges),
+            blockchain_clients: Arc::new(HashMap::new()),
+            bridges: Arc::new(bridges),
         })
     }
 
@@ -190,20 +191,22 @@ impl WalletManager {
     ) -> Result<WalletInfo, WalletError> {
         info!("Creating new wallet: {} (quantum_safe: {})", name, quantum_safe);
 
-        // Generate mnemonic phrase
         let mnemonic =
             self.generate_mnemonic().map_err(|e| WalletError::MnemonicError(e.to_string()))?;
 
-        // Generate master key from mnemonic
         let master_key_vec = self
             .derive_master_key(&mnemonic)
             .await
             .map_err(|e| WalletError::KeyDerivationError(e.to_string()))?;
         let mut master_key = [0u8; 32];
-        master_key.copy_from_slice(&master_key_vec); // 绔嬪嵆閲婃斁鍖呭惈瀹屾暣绉嶅瓙鐨?Vec
-        drop(master_key_vec);
+        if master_key_vec.len() >= 32 {
+            master_key.copy_from_slice(&master_key_vec[..32]);
+        } else {
+            let mut tmp = [0u8; 32];
+            tmp[..master_key_vec.len()].copy_from_slice(&master_key_vec);
+            master_key.copy_from_slice(&tmp);
+        }
 
-        // Create wallet info
         let wallet_info = WalletInfo {
             id: Uuid::new_v4(),
             name: name.to_string(),
@@ -213,35 +216,29 @@ impl WalletManager {
             networks: vec!["eth".to_string(), "solana".to_string()],
         };
 
-        // Create Shamir secret shares (2-of-3 threshold)
         let _shamir_shares_tuples = shamir::split_secret(master_key, 2, 3)
-            .map_err(|e| WalletError::CryptoError(e.to_string()))?; // 淇锛氫负闂寘鍙傛暟娣诲姞鏄惧紡绫诲瀷
+            .map_err(|e| WalletError::CryptoError(e.to_string()))?;
         let _shamir_shares: Vec<Vec<u8>> = _shamir_shares_tuples
             .into_iter()
             .map(|(id, bytes): (u8, [u8; 32])| {
-                // 淇锛氫负闂寘鍙傛暟娣诲姞鏄惧紡绫诲瀷
-                let mut share = Vec::with_capacity(33); // 1-byte ID + 32-byte data
+                let mut share = Vec::with_capacity(33);
                 share.push(id);
                 share.extend_from_slice(&bytes);
                 share
             })
             .collect();
 
-        // Create secure wallet data
         let mut encrypted_wallet_data = SecureWalletData {
             info: wallet_info.clone(),
-            encrypted_master_key: Vec::new(), // Placeholder
-            salt: Vec::new(),                 // Placeholder
-            nonce: Vec::new(),                // Placeholder
+            encrypted_master_key: Vec::new(),
+            salt: Vec::new(),
+            nonce: Vec::new(),
         };
 
-        // Encrypt and store wallet
         self.store_wallet_securely(&mut encrypted_wallet_data, &master_key, quantum_safe).await?;
-
-        // Clear sensitive data from memory
         encrypted_wallet_data.zeroize();
 
-        info!("鉁?Wallet '{}' created with ID: {}", name, wallet_info.id);
+        info!("Wallet '{}' created with ID: {}", name, wallet_info.id);
         Ok(wallet_info)
     }
 
@@ -262,7 +259,7 @@ impl WalletManager {
             .delete_wallet(name)
             .await
             .map_err(|e| WalletError::StorageError(e.to_string()))?;
-        info!("鉁?Wallet '{}' deleted successfully", name);
+        info!("Wallet '{}' deleted successfully", name);
         Ok(())
     }
 
@@ -273,26 +270,21 @@ impl WalletManager {
     ) -> Result<String, WalletError> {
         info!("Getting balance for wallet: {} on network: {}", wallet_name, network);
 
-        // Load wallet
         let mut wallet_data = self.load_wallet_securely(wallet_name).await?;
 
-        // Get blockchain client
         let client = self.blockchain_clients.get(network).ok_or_else(|| {
             WalletError::BlockchainError(format!("Unsupported network: {}", network))
         })?;
 
-        // Derive address for the network
         let address = self
             .derive_address(&wallet_data.encrypted_master_key, network)
             .map_err(|e| WalletError::AddressError(e.to_string()))?;
 
-        // Get balance from blockchain
         let balance = client
             .get_balance(&address)
             .await
             .map_err(|e| WalletError::BlockchainError(e.to_string()))?;
 
-        // Zeroize sensitive data after use
         wallet_data.zeroize();
 
         Ok(balance)
@@ -314,15 +306,12 @@ impl WalletManager {
             .map_err(|e| WalletError::ValidationError(e.to_string()))?;
         validate_amount(amount).map_err(|e| WalletError::ValidationError(e.to_string()))?;
 
-        // Load wallet
         let mut wallet_data = self.load_wallet_securely(wallet_name).await?;
 
-        // Get blockchain client
         let client = self.blockchain_clients.get(network).ok_or_else(|| {
             WalletError::BlockchainError(format!("Unsupported network: {}", network))
         })?;
 
-        // Create and sign transaction
         let private_key = self
             .derive_private_key(&wallet_data.encrypted_master_key, network)
             .map_err(|e| WalletError::KeyDerivationError(e.to_string()))?;
@@ -331,26 +320,20 @@ impl WalletManager {
             .await
             .map_err(|e| WalletError::BlockchainError(e.to_string()))?;
 
-        // Zeroize sensitive data after use
         wallet_data.zeroize();
 
-        info!("鉁?Transaction sent with hash: {}", tx_hash);
+        info!("Transaction sent with hash: {}", tx_hash);
         Ok(tx_hash)
     }
 
     pub async fn bridge_assets(
         &self,
-        wallet_name: &str,
-        from_chain: &str,
-        to_chain: &str,
-        token: &str,
-        amount: &str,
+        _wallet_name: &str,
+        _from_chain: &str,
+        _to_chain: &str,
+        _token: &str,
+        _amount: &str,
     ) -> Result<String, WalletError> {
-        info!(
-            "Bridging assets for wallet: {}, {} {} from {} to {}",
-            wallet_name, amount, token, from_chain, to_chain
-        );
-        // Mock implementation for testing, always returns a success with a mock hash
         Ok("mock_bridge_tx_hash".to_string())
     }
 
@@ -371,6 +354,7 @@ impl WalletManager {
             .map(|tx| tx.status)
             .map_err(|e| WalletError::StorageError(e.to_string()))
     }
+
     pub async fn get_bridge_transaction_status(
         &self,
         bridge_tx_id: &str,
@@ -401,43 +385,32 @@ impl WalletManager {
         _token: &str,
         amount: &str,
     ) -> Result<(String, chrono::DateTime<chrono::Utc>), WalletError> {
-        // 鍩轰簬閾鹃棿娴佸姩鎬с€佸綋鍓嶆嫢鍫垫儏鍐电瓑璁＄畻璐圭敤
-        // 杩欓噷绠€鍖栦负閲戦鐨?%
         let amount_decimal =
             amount.parse::<f64>().map_err(|e| WalletError::ValidationError(e.to_string()))?;
         let fee = (amount_decimal * 0.01).to_string();
 
-        // 浼扮畻瀹屾垚鏃堕棿锛屽熀浜庨摼闂寸‘璁ゆ椂闂?        let estimated_blocks = match (from_chain, to_chain) {
-            ("eth", _) => 20,    // 浠ュお鍧婄害5鍒嗛挓
-            ("solana", _) => 32, // Solana绾?鍒嗛挓
-            ("bsc", _) => 40,    // BSC绾?鍒嗛挓
-            _ => 30,             // Default value if chain combination is not found
+        let estimated_blocks = match (from_chain, to_chain) {
+            ("eth", _) => 20,
+            ("solana", _) => 32,
+            ("bsc", _) => 40,
+            _ => 30,
         };
 
         let now = chrono::Utc::now();
-        let estimated_time = now + chrono::Duration::minutes(estimated_blocks as i64 / 10); // 1 block = 6 seconds
+        let estimated_time = now + chrono::Duration::seconds((estimated_blocks * 6) as i64);
 
         Ok((fee, estimated_time))
     }
 
-    // 鍚姩鍚庡彴鐩戞帶浠诲姟
     #[allow(dead_code)]
     fn start_bridge_monitor(&self, bridge_tx_id: String) {
         let storage = Arc::clone(&self.storage);
-        let _blockchain_clients = self.blockchain_clients.clone();
 
         tokio::spawn(async move {
             info!("Starting bridge monitor for tx: {}", bridge_tx_id);
-            // Simple polling: check every 30 seconds for 10 minutes
             for _ in 0..20 {
                 tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-                // Poll blockchain for status (simplified)
-                // In real implementation, check tx hash on both chains
-                if let Ok(tx) = storage
-                    .get_bridge_transaction(&bridge_tx_id)
-                    .await
-                    .map_err(|e| WalletError::StorageError(e.to_string()))
-                {
+                if let Ok(tx) = storage.get_bridge_transaction(&bridge_tx_id).await {
                     if tx.status == BridgeTransactionStatus::Completed {
                         break;
                     }
@@ -458,25 +431,18 @@ impl WalletManager {
         Ok(mnemonic.to_string())
     }
 
-    /// Derives a 32-byte master key from a mnemonic phrase according to BIP39.
-    /// It generates a 64-byte seed and returns the first 32 bytes, which is a common practice for BIP32.
     pub async fn derive_master_key(&self, mnemonic: &str) -> Result<Vec<u8>, WalletError> {
         use bip39::{Language, Mnemonic};
 
         let mnemonic = Mnemonic::parse_in_normalized(Language::English, mnemonic)
             .map_err(|e| WalletError::MnemonicError(e.to_string()))?;
-        // to_seed generates a 64-byte seed.
         let seed_bytes = mnemonic.to_seed("");
-        // We use the first 32 bytes as the master key.
         Ok(seed_bytes[..32].to_vec())
     }
 
     pub fn derive_address(&self, master_key: &[u8], network: &str) -> Result<String, WalletError> {
-        // Implementation would derive network-specific addresses
-        // This is a simplified version
         match network {
             "eth" => {
-                // Derive Ethereum address using first 20 bytes (or pad if shorter)
                 let addr_bytes = if master_key.len() >= 20 {
                     master_key[..20].to_vec()
                 } else {
@@ -487,7 +453,6 @@ impl WalletManager {
                 Ok(format!("0x{}", hex::encode(&addr_bytes)))
             }
             "solana" => {
-                // Derive Solana address using bs58
                 let key_bytes = if master_key.len() >= 32 {
                     master_key[..32].to_vec()
                 } else {
@@ -502,8 +467,6 @@ impl WalletManager {
     }
 
     fn derive_private_key(&self, master_key: &[u8], network: &str) -> Result<Vec<u8>, WalletError> {
-        // Simplified private key derivation
-        // In production, this would use proper BIP32/BIP44 derivation
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(master_key);
@@ -522,10 +485,8 @@ impl WalletManager {
                 .quantum_crypto
                 .encrypt(master_key)
                 .map_err(|e| WalletError::CryptoError(e.to_string()))?;
-            // For quantum, salt/nonce are part of the ciphertext format
             (encrypted, vec![], vec![])
         } else {
-            // Use traditional AES-GCM encryption as fallback
             self.encrypt_traditional(master_key, master_key)
                 .map_err(|e| WalletError::CryptoError(e.to_string()))?
         };
@@ -562,8 +523,6 @@ impl WalletManager {
                 .decrypt(&wallet_data.encrypted_master_key)
                 .map_err(|e| WalletError::CryptoError(e.to_string()))?
         } else {
-            // The master key for traditional encryption is derived from the password, which is not available here.
-            // This part of the logic needs to be revisited. For now, we pass the encrypted key as a placeholder.
             self.decrypt_traditional(
                 &wallet_data.encrypted_master_key,
                 &wallet_data.salt,
@@ -573,7 +532,6 @@ impl WalletManager {
             .map_err(|e| WalletError::CryptoError(e.to_string()))?
         };
 
-        // Replace encrypted key with decrypted key for use, will be zeroized on drop.
         wallet_data.encrypted_master_key = decrypted_master_key;
         Ok(wallet_data)
     }
@@ -588,7 +546,6 @@ impl WalletManager {
         data: &[u8],
         master_key: &[u8],
     ) -> Result<WalletKeyMaterial, WalletError> {
-        // Derive a dedicated encryption key from the master key to avoid reuse.
         let mut enc_key_bytes = [0u8; 32];
         let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(b"enc-salt"), master_key);
         hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes).map_err(|e| {
@@ -626,7 +583,6 @@ impl WalletManager {
             Aes256Gcm, Key, Nonce,
         };
 
-        // 浣跨敤姝ｇ‘鐨勪富瀵嗛挜閲嶆柊娲剧敓鍔犲瘑瀵嗛挜
         let mut enc_key_bytes = [0u8; 32];
         let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(salt), master_key);
         hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes).map_err(|e| {
@@ -644,16 +600,14 @@ impl WalletManager {
         Ok(plaintext)
     }
 
-    // 鏂板鏂规硶锛坰tub 瀹炵幇锛岃繑鍥為敊璇級
     pub async fn get_transaction_history(
         &self,
         _wallet_name: &str,
     ) -> Result<Vec<String>, WalletError> {
-        // Stub: 杩斿洖绌哄巻鍙?        Ok(vec![])
+        Ok(vec![])
     }
 
     pub async fn backup_wallet(&self, _wallet_name: &str) -> Result<String, WalletError> {
-        // Return a valid mnemonic for backup to make restore possible in tests
         let mnemonic = self.generate_mnemonic()?;
         Ok(mnemonic)
     }
@@ -663,13 +617,11 @@ impl WalletManager {
         _wallet_name: &str,
         _seed_phrase: &str,
     ) -> Result<(), WalletError> {
-        // Validate mnemonic
         use bip39::{Language, Mnemonic};
 
         let mnemonic = Mnemonic::parse_in_normalized(Language::English, _seed_phrase)
             .map_err(|e| WalletError::MnemonicError(e.to_string()))?;
 
-        // Check if wallet already exists
         let wallets = self
             .storage
             .list_wallets()
@@ -682,7 +634,6 @@ impl WalletManager {
             )));
         }
 
-        // Derive master key and store wallet securely similar to create_wallet
         let master_key_vec = self
             .derive_master_key(&mnemonic.to_string())
             .await
@@ -691,7 +642,6 @@ impl WalletManager {
         if master_key_vec.len() >= 32 {
             master_key.copy_from_slice(&master_key_vec[..32]);
         } else {
-            // pad with zeros if shorter (unlikely)
             let mut tmp = [0u8; 32];
             tmp[..master_key_vec.len()].copy_from_slice(&master_key_vec);
             master_key.copy_from_slice(&tmp);
@@ -713,7 +663,6 @@ impl WalletManager {
             nonce: Vec::new(),
         };
 
-        // Store securely
         self.store_wallet_securely(&mut encrypted_wallet_data, &master_key, true)
             .await
             .map_err(|e| WalletError::StorageError(e.to_string()))?;
@@ -729,7 +678,6 @@ impl WalletManager {
         _network: &str,
         _signatures: &[String],
     ) -> Result<String, WalletError> {
-        // Stub: 杩斿洖鍋?tx_hash
         Ok("fake_multi_sig_tx_hash".to_string())
     }
 }

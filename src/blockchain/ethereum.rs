@@ -1,4 +1,5 @@
-﻿use anyhow::Result;
+// ...existing code...
+use anyhow::Result;
 use async_trait::async_trait;
 use ethers::{
     prelude::{JsonRpcClient, *},
@@ -20,8 +21,8 @@ pub struct EthereumClient<P: JsonRpcClient + Clone = Http> {
 }
 
 impl EthereumClient<Http> {
-    pub async fn new(rpc_url: &str) -> Result<Self> where {
-        // 娓呮礂涓庢牎楠?URL
+    pub async fn new(rpc_url: &str) -> Result<Self> {
+        // Clean RPC URL
         let rpc_url_clean = rpc_url.trim();
         let parsed_url = reqwest::Url::parse(rpc_url_clean).map_err(|e| {
             anyhow::anyhow!(
@@ -31,8 +32,9 @@ impl EthereumClient<Http> {
             )
         })?;
 
-        info!("馃敆 Connecting to Ethereum network: {}", parsed_url);
-        // 鍒涘缓涓€涓甫瓒呮椂鐨?HTTP 瀹㈡埛绔紙鏀寔鐜浠ｇ悊锛?        let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(10));
+        info!("Connecting to Ethereum network: {}", parsed_url);
+        // Build a reqwest client with a short timeout; allow proxy environment vars.
+        let mut builder = reqwest::Client::builder().timeout(Duration::from_secs(10));
         if let Ok(proxy) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("HTTP_PROXY")) {
             if let Ok(p) = reqwest::Proxy::all(proxy) {
                 builder = builder.proxy(p);
@@ -60,22 +62,20 @@ impl EthereumClient<Http> {
             _ => format!("ethereum-{}", chain_id),
         };
 
-        info!("鉁?Connected to {} (Chain ID: {})", network_name, chain_id);
+        info!("Connected to {} (Chain ID: {})", network_name, chain_id);
 
         Ok(Self { provider, network_name, chain_id })
     }
 
-    pub async fn new_with_chain_id(rpc_url: &str, chain_id: u64) -> Result<Self> where {
-        info!("馃敆 Connecting to Ethereum network: {} (Chain ID: {})", rpc_url, chain_id);
+    pub async fn new_with_chain_id(rpc_url: &str, chain_id: u64) -> Result<Self> {
+        info!("Connecting to Ethereum network: {} (Chain ID: {})", rpc_url, chain_id);
 
-        // 閲嶇敤 `new` 鍑芥暟鐨勯€昏緫鏉ュ垱寤哄甫鏈夎秴鏃剁殑 provider
-        // 杩欐牱鍙互缁熶竴瀹㈡埛绔殑鍒涘缓鏂瑰紡锛屽苟娑堥櫎閲嶅浠ｇ爜
+        // Reuse new() to build provider/client then override chain_id & network name.
         let temp_client = Self::new(rpc_url).await?;
         let provider = temp_client.provider;
 
-        // 楠岃瘉浼犲叆鐨?chain_id 鏄惁涓?RPC 鑺傜偣杩斿洖鐨勪竴鑷?        let network_name = match chain_id {
+        let network_name = match chain_id {
             1 => "ethereum".to_string(),
-            // 淇纭紪鐮乁RL涓殑鎷煎啓閿欒锛歴eepolia -> sepolia
             11155111 => "sepolia".to_string(),
             137 => "polygon".to_string(),
             56 => "bsc".to_string(),
@@ -83,7 +83,7 @@ impl EthereumClient<Http> {
             _ => format!("ethereum-{}", chain_id),
         };
 
-        info!("鉁?Connected to {} (Chain ID: {})", network_name, chain_id);
+        info!("Connected to {} (Chain ID: {})", network_name, chain_id);
 
         Ok(Self { provider, network_name, chain_id })
     }
@@ -104,14 +104,13 @@ where
             chain_id: 1,                      // Default chain ID for testing (Ethereum Mainnet)
         }
     }
+
     fn create_wallet_from_private_key(&self, private_key: &[u8]) -> Result<LocalWallet> {
         // Debug: print to stderr so test runs without initializing tracing still show the info.
-        // Print incoming private key length and a hex preview of the bytes for every call to help diagnose tests.
         eprintln!(
             "create_wallet_from_private_key: incoming private_key.len() = {}",
             private_key.len()
         );
-        // Print up to 32 bytes (full key) in hex for clarity
         eprintln!(
             "create_wallet_from_private_key: bytes = {}",
             hex::encode(&private_key[..std::cmp::min(32, private_key.len())])
@@ -128,7 +127,6 @@ where
     }
 
     pub async fn get_gas_price(&self) -> Result<U256> {
-        // Diagnostic: indicate this RPC is being called (helps verify MockProvider queue usage)
         eprintln!("get_gas_price: called");
         let res = self.provider.get_gas_price().await;
         match res {
@@ -141,7 +139,6 @@ where
     }
 
     pub async fn get_nonce(&self, address: &Address) -> Result<U256> {
-        // Diagnostic: indicate this RPC is being called (helps verify MockProvider queue usage)
         eprintln!("get_nonce: called for address: 0x{}", hex::encode(address));
         let res = self.provider.get_transaction_count(*address, None).await;
         match res {
@@ -176,7 +173,7 @@ where
             .map_err(|e| anyhow::anyhow!("Failed to get balance: {}", e))?;
 
         let balance_eth = ethers::utils::format_ether(balance);
-        debug!("鉁?Balance: {} ETH", balance_eth);
+        debug!("Balance: {} ETH", balance_eth);
 
         Ok(balance_eth)
     }
@@ -187,7 +184,7 @@ where
         to_address: &str,
         amount: &str,
     ) -> Result<String> {
-        info!("馃捀 Sending {} ETH to {}", amount, to_address);
+        info!("Sending {} ETH to {}", amount, to_address);
 
         // Create wallet from private key
         let wallet = self
@@ -204,7 +201,6 @@ where
         // Get current gas price and nonce
         let gas_price = self.get_gas_price().await?;
         let nonce = self.get_nonce(&wallet.address()).await?;
-        // Debug: print obtained gas price and nonce
         eprintln!("send_transaction: gas_price = 0x{:x}", gas_price);
         eprintln!("send_transaction: nonce = 0x{:x}", nonce);
 
@@ -217,7 +213,7 @@ where
             .nonce(nonce);
 
         // Sign and send transaction
-        let client = SignerMiddleware::new(&self.provider, wallet);
+        let client = SignerMiddleware::new(self.provider.clone(), wallet);
 
         let pending_tx = client
             .send_transaction(tx, None)
@@ -226,7 +222,7 @@ where
 
         let tx_hash = format!("{:?}", pending_tx.tx_hash());
 
-        info!("鉁?Transaction sent: {}", tx_hash);
+        info!("Transaction sent: {}", tx_hash);
         Ok(tx_hash)
     }
 
@@ -243,7 +239,7 @@ where
                 } else {
                     TransactionStatus::Failed
                 };
-                debug!("鉁?Transaction status: {:?}", status);
+                debug!("Transaction status: {:?}", status);
                 Ok(status)
             }
             Ok(None) => {
@@ -262,8 +258,6 @@ where
                 }
             }
             Err(e) => {
-                // Propagate provider errors instead of masking them as `Unknown`.
-                // This allows the caller to handle network issues or other provider-level problems.
                 warn!("Failed to get transaction receipt for {}: {}", tx_hash, e);
                 Err(anyhow::anyhow!("Failed to get transaction receipt: {}", e))
             }
@@ -282,14 +276,10 @@ where
         let gas_price = self.get_gas_price().await?;
         let gas_limit = U256::from(21000u64); // Standard ETH transfer
 
-        // For more complex transactions, we could estimate gas:
-        // let tx = TransactionRequest::new().to(to_address).value(amount_wei);
-        // let gas_estimate = self.provider.estimate_gas(&tx, None).await?;
-
         let total_fee = gas_price * gas_limit;
         let fee_eth = ethers::utils::format_ether(total_fee);
 
-        debug!("鉁?Estimated fee: {} ETH", fee_eth);
+        debug!("Estimated fee: {} ETH", fee_eth);
         Ok(fee_eth)
     }
 
@@ -324,7 +314,6 @@ mod tests {
     use super::*;
     use ethers::providers::{Http, Provider};
     use std::convert::TryFrom;
-    use tokio;
 
     // helper to build a client without requiring a live RPC
     fn make_local_client() -> EthereumClient<Http> {
@@ -371,3 +360,4 @@ mod tests {
         assert!(!client.validate_address("not-an-address").unwrap());
     }
 }
+// ...existing code...

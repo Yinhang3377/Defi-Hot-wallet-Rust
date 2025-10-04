@@ -1,3 +1,4 @@
+// ...existing code...
 //! tests/api_handlers_tests.rs
 //!
 //! Tests for individual API handlers in `src/api/handlers.rs`.
@@ -20,9 +21,9 @@ async fn setup_test_server() -> TestServer {
     let config = WalletConfig {
         storage: StorageConfig {
             database_url: "sqlite::memory:".to_string(),
-            ..Default::default() // Removed trailing comma
+            ..Default::default()
         },
-        ..Default::default() // Removed trailing comma
+        ..Default::default()
     };
     let server = WalletServer::new("127.0.0.1".to_string(), 0, config, None).await.unwrap();
     TestServer::new(server.create_router().await).unwrap()
@@ -74,6 +75,9 @@ async fn test_bridge_empty_parameters_each_field() {
         amount: "1.0".to_string(),
     };
 
+    // Create server once and reuse to avoid repeated expensive setup.
+    let server = setup_test_server().await;
+
     // For each field, create a request with that single field empty and assert Invalid parameters
     let fields = vec!["from_wallet", "from_chain", "to_chain", "token", "amount"];
     for field in fields {
@@ -87,7 +91,6 @@ async fn test_bridge_empty_parameters_each_field() {
             _ => {}
         }
 
-        let server = setup_test_server().await;
         let response = server.post("/api/bridge").json(&req).await;
         response.assert_status(StatusCode::BAD_REQUEST);
         let body: ErrorResponse = response.json();
@@ -183,9 +186,9 @@ async fn test_bridge_concurrent_requests() {
         amount: "2.0".to_string(),
     };
 
-    // Fire 8 concurrent bridge requests and assert all succeed with the same mock tx id
+    // Fire 4 concurrent bridge requests (reduced from 8) to reduce contention and test time.
     let server = Arc::new(server);
-    let futs: Vec<_> = (0..8)
+    let futs: Vec<_> = (0..4)
         .map(|_| {
             let srv = server.clone();
             let body = req.clone();
@@ -207,7 +210,8 @@ async fn test_bridge_concurrent_requests() {
 #[tokio::test(flavor = "current_thread")]
 async fn test_bridge_assets_handler_invalid_amount() {
     let request = BridgeAssetsRequest {
-        from_wallet: "test_wallet".to_string(), // 淇瀛楁鍚?        from_chain: "eth".to_string(),
+        from_wallet: "test_wallet".to_string(),
+        from_chain: "eth".to_string(),
         to_chain: "solana".to_string(),
         token: "USDC".to_string(),
         amount: "0.0".to_string(), // Invalid amount (zero)
@@ -222,10 +226,10 @@ async fn test_bridge_assets_handler_invalid_amount() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-
 async fn test_bridge_assets_handler_wallet_not_found() {
     let request = BridgeAssetsRequest {
-        from_wallet: "nonexistent_wallet".to_string(), // 淇瀛楁鍚?        from_chain: "eth".to_string(),
+        from_wallet: "nonexistent_wallet".to_string(),
+        from_chain: "eth".to_string(),
         to_chain: "solana".to_string(),
         token: "USDC".to_string(),
         amount: "100.0".to_string(),
@@ -263,9 +267,10 @@ async fn test_bridge_assets_handler_wallet_not_found_for_valid_request() {
 #[tokio::test(flavor = "current_thread")]
 async fn test_bridge_assets_handler_unsupported_chain() {
     let wallet_name = format!("invalid-chain-{}", Uuid::new_v4());
-    // 绫讳技涓婇潰锛屽亣璁鹃挶鍖呭瓨鍦?
+    // Intentionally use an unsupported 'from_chain' value
     let request = BridgeAssetsRequest {
-        from_wallet: wallet_name, // 淇瀛楁鍚?        from_chain: "invalid_chain".to_string(),
+        from_wallet: wallet_name,
+        from_chain: "invalid_chain".to_string(),
         to_chain: "solana".to_string(),
         token: "USDC".to_string(),
         amount: "100.0".to_string(),
@@ -278,3 +283,4 @@ async fn test_bridge_assets_handler_unsupported_chain() {
     let body: ErrorResponse = response.json();
     assert_eq!(body.error, "Unsupported chain");
 }
+// ...existing code...

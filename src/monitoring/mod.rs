@@ -1,4 +1,4 @@
-﻿use anyhow::Result;
+use anyhow::Result;
 use prometheus::{Counter, Encoder, Gauge, Histogram, HistogramOpts, Registry, TextEncoder};
 use std::sync::Arc;
 use tokio::sync::Mutex;

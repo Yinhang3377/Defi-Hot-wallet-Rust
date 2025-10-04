@@ -1,4 +1,4 @@
-﻿#[derive(Default)]
+#[derive(Default)]
 pub struct DiContainer;
 impl DiContainer {
     pub fn new() -> Self {

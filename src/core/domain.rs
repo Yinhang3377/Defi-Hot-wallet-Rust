@@ -1,4 +1,4 @@
-﻿use anyhow::Result;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use zeroize::Zeroize;

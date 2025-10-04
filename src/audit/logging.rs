@@ -1,4 +1,4 @@
-﻿use tracing::{error, info};
+use tracing::{error, info};
 
 pub fn init_logger() {
     let _ = ();

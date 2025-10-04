@@ -1,4 +1,4 @@
-﻿//! src/ops/health.rs
+//! src/ops/health.rs
 //!
 //! Provides health check functionality for the wallet service.
 

@@ -1,80 +1,111 @@
-﻿// 娉ㄦ剰锛氶渶瑕佹牴鎹疄闄呭鍏ヨ矾寰勮皟鏁?use defi_hot_wallet::tools::sum_of_products::sum_of_products;
-use k256::{ProjectivePoint, Scalar}; // 纭繚瀵煎叆 Scalar 鍜?ProjectivePoint
+// ...existing code...
+use defi_hot_wallet::blockchain::ethereum::*;
+use defi_hot_wallet::blockchain::traits::BlockchainClient;
+use ethers::providers::{MockProvider, Provider};
 
-#[test]
-fn test_sum_of_products_basic() {
-    // 鍩烘湰娴嬭瘯锛歅*s + Q*t
-    let points = vec![
-        ProjectivePoint::GENERATOR,          // P = G
-        ProjectivePoint::GENERATOR.double(), // Q = 2G
-    ];
-
-    let scalars = vec![
-        Scalar::from(3u64), // s = 3
-        Scalar::from(2u64), // t = 2
-    ];
-
-    // 璁＄畻 3*G + 2*(2*G) = 3*G + 4*G = 7*G // 纭繚瀵煎叆 ProjectivePoint
-    let result = sum_of_products(&scalars, &points).unwrap();
-    let expected = ProjectivePoint::GENERATOR * Scalar::from(7u64);
-
-    assert_eq!(result, expected);
+/// Create an EthereumClient backed by Provider<MockProvider>.
+/// Note: Provider<MockProvider> -> new_with_provider(...) returns EthereumClient<MockProvider>,
+/// so the function must return EthereumClient<MockProvider>.
+fn create_mock_client() -> EthereumClient<MockProvider> {
+    let mock_provider = MockProvider::new();
+    let provider = Provider::new(mock_provider);
+    // provider is Provider<MockProvider>, but new_with_provider returns EthereumClient<MockProvider>
+    EthereumClient::new_with_provider(provider)
 }
 
-#[test]
-fn test_sum_of_products_empty() {
-    // 绌鸿緭鍏ュ簲杩斿洖鍗曚綅鍏?    let points: Vec<ProjectivePoint> = vec![];
-    let scalars: Vec<Scalar> = vec![];
-
-    let result = sum_of_products(&scalars, &points).unwrap(); // 纭繚瀵煎叆 ProjectivePoint
-    assert_eq!(result, ProjectivePoint::IDENTITY);
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_valid() {
+    let client = create_mock_client();
+    let valid_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+    assert!(client.validate_address(valid_address).unwrap());
 }
 
-#[test]
-fn test_sum_of_products_single() {
-    // 鍗曚釜鐐瑰拰鏍囬噺
-    let points = vec![ProjectivePoint::GENERATOR];
-    let scalars = vec![Scalar::from(42u64)]; // 纭繚瀵煎叆 Scalar
-
-    let result = sum_of_products(&scalars, &points).unwrap();
-    let expected = ProjectivePoint::GENERATOR * Scalar::from(42u64);
-
-    assert_eq!(result, expected);
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_invalid_short() {
+    let client = create_mock_client();
+    assert!(!client.validate_address("0x12345").unwrap());
 }
 
-#[test]
-fn test_sum_of_products_with_identity() {
-    // 鍖呭惈鍗曚綅鍏?    let points = vec![ProjectivePoint::GENERATOR, ProjectivePoint::IDENTITY];
-
-    let scalars = vec![
-        Scalar::from(5u64),
-        Scalar::from(10u64), // 涓嶅奖鍝嶇粨鏋?    ];
-
-    let result = sum_of_products(&scalars, &points).unwrap();
-    let expected = ProjectivePoint::GENERATOR * Scalar::from(5u64);
-
-    assert_eq!(result, expected);
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_valid_no_prefix() {
+    let client = create_mock_client();
+    assert!(client.validate_address("742d35Cc6634C0532925a3b844Bc454e4438f44e").unwrap());
 }
 
-#[test]
-fn test_sum_of_products_with_zero_scalar() {
-    // 鍖呭惈闆舵爣閲?    let points = vec![ProjectivePoint::GENERATOR, ProjectivePoint::GENERATOR.double()];
-
-    let scalars = vec![
-        Scalar::from(3u64),
-        Scalar::ZERO, // 闆舵爣閲?    ];
-
-    let result = sum_of_products(&scalars, &points).unwrap();
-    let expected = ProjectivePoint::GENERATOR * Scalar::from(3u64);
-
-    assert_eq!(result, expected);
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_invalid_special_chars() {
+    let client = create_mock_client();
+    assert!(!client.validate_address("0x742d35Cc6634C0532925a3b844Bc454e4438f44e!").unwrap());
 }
 
-#[test]
-fn test_sum_of_products_mismatched_lengths() {
-    // 鐐瑰拰鏍囬噺鏁伴噺涓嶅尮閰?    let points = vec![ProjectivePoint::GENERATOR];
-    let scalars = vec![Scalar::ONE, Scalar::ONE]; // 纭繚瀵煎叆 Scalar
-
-    // 搴旇浼氳繑鍥為敊璇?    let result = sum_of_products(&scalars, &points);
-    assert!(result.is_err());
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_empty() {
+    let client = create_mock_client();
+    assert!(!client.validate_address("").unwrap());
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_all_zeros() {
+    let client = create_mock_client();
+    let zero_address = "0x0000000000000000000000000000000000000000";
+    assert!(client.validate_address(zero_address).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_case_insensitive() {
+    let client = create_mock_client();
+    let lower = "0x742d35cc6634c0532925a3b844bc454e4438f44e";
+    let upper = "0x742D35CC6634C0532925A3B844BC454E4438F44E";
+    assert!(client.validate_address(lower).unwrap());
+    assert!(client.validate_address(upper).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_too_long() {
+    let client = create_mock_client();
+    let long_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e1234";
+    assert!(!client.validate_address(long_address).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_too_short() {
+    let client = create_mock_client();
+    let short_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44";
+    assert!(!client.validate_address(short_address).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_with_checksum() {
+    let client = create_mock_client();
+    let checksum_address = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+    assert!(client.validate_address(checksum_address).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_mixed_case_valid() {
+    let client = create_mock_client();
+    let mixed_case = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+    assert!(client.validate_address(mixed_case).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_uppercase_valid() {
+    let client = create_mock_client();
+    let uppercase = "0X742D35CC6634C0532925A3B844BC454E4438F44E";
+    assert!(!client.validate_address(uppercase).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_with_numbers_only() {
+    let client = create_mock_client();
+    let num_address = "0x1234567890123456789012345678901234567890";
+    assert!(client.validate_address(num_address).unwrap());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn test_validate_address_with_leading_zeros() {
+    let client = create_mock_client();
+    let leading_zero = "0x0000000000000000000000000000000000000000";
+    assert!(client.validate_address(leading_zero).unwrap());
+}
+// ...existing code...

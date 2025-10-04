@@ -1,51 +1,42 @@
-﻿use anyhow::Result;
+use anyhow::{anyhow, Result};
 use rand_core::{OsRng, RngCore};
+use std::collections::HashSet;
 
-// 绠€鍗曠増鏈殑 Shamir 绉樺瘑鍒嗕韩瀹炵幇锛岄伩鍏嶅鏉傜殑澶栭儴搴撲緷璧?pub fn split_secret(secret: [u8; 32], threshold: u8, shares: u8) -> Result<Vec<(u8, [u8; 32])>> {
-    // threshold must be at least 1 and no greater than shares
+/// Split a 32-byte secret into `shares` parts with a reconstruction `threshold`.
+/// Each returned tuple is (encoded_id, share_bytes).
+/// encoded_id: high nibble = threshold, low nibble = share index (1..=15)
+pub fn split_secret(secret: [u8; 32], threshold: u8, shares: u8) -> Result<Vec<(u8, [u8; 32])>> {
     if threshold == 0 || threshold > shares {
-        return Err(anyhow::anyhow!("Threshold must be between 1 and shares"));
+        return Err(anyhow!("Threshold must be between 1 and shares"));
     }
-    // We encode threshold in the high nibble of the returned id, so shares must fit in 4 bits
-    if shares > 15 {
-        return Err(anyhow::anyhow!("Maximum supported shares is 15"));
+    if shares == 0 || shares > 15 {
+        return Err(anyhow!("Shares must be between 1 and 15"));
     }
 
     let mut rng = OsRng;
-    let mut result = Vec::with_capacity(shares as usize);
-
-    // 浣跨敤 GF(256) 鏈夐檺鍩熺畻鏈疄鐜?Shamir 绉樺瘑鍒嗕韩
-    // 绯绘暟鏁扮粍锛宎_0 鏄瀵嗭紝鍏朵粬绯绘暟闅忔満鐢熸垚
-    let mut coefficients = vec![secret];
-
-    // 鐢熸垚闅忔満绯绘暟 a_1 鍒?a_{t-1}
+    // coefficients[0] = secret (a0), coefficients[1..] = random coefficients
+    let mut coefficients: Vec<[u8; 32]> = Vec::with_capacity(threshold as usize);
+    coefficients.push(secret);
     for _ in 1..threshold {
         let mut coef = [0u8; 32];
         rng.fill_bytes(&mut coef);
         coefficients.push(coef);
     }
 
-    // 涓烘瘡涓垎浜绠楀€?    for id in 1..=shares {
+    let mut result = Vec::with_capacity(shares as usize);
+    for id in 1u8..=shares {
         let mut share_value = [0u8; 32];
-
-        // 瀵规瘡涓瓧鑺傜嫭绔嬭绠楀椤瑰紡 (Clippy 淇锛氫娇鐢?iter_mut().enumerate())
         for (byte_idx, share_byte) in share_value.iter_mut().enumerate() {
-            // 浠庡父鏁伴」寮€濮嬶紙绉樺瘑鍊硷級
+            // Evaluate polynomial at x = id in GF(256)
             let mut y = coefficients[0][byte_idx];
-
-            // 璁＄畻澶氶」寮?f(x) = a_0 + a_1*x + a_2*x^2 + ... + a_{t-1}*x^{t-1}
             let mut x_pow = id;
-            // (Clippy 淇锛氫娇鐢ㄨ凯浠ｅ櫒)
             for coef in coefficients.iter().skip(1) {
-                // 浣跨敤姝ｇ‘鐨?GF(256) 涔樻硶
                 let term = gf256_mul(coef[byte_idx], x_pow);
-                y = gf256_add(y, term); // GF(256) 鍔犳硶鏄?XOR
-                x_pow = gf256_mul(x_pow, id); // 鏇存柊 x^i 涓?x^(i+1)
+                y = gf256_add(y, term);
+                x_pow = gf256_mul(x_pow, id);
             }
             *share_byte = y;
         }
-
-        // encode threshold in high nibble, share index in low nibble
         let encoded_id = (threshold << 4) | (id & 0x0F);
         result.push((encoded_id, share_value));
     }
@@ -53,68 +44,76 @@ use rand_core::{OsRng, RngCore};
     Ok(result)
 }
 
+/// Combine shares to recover the 32-byte secret.
+/// parts: slice of (encoded_id, share_bytes)
 pub fn combine_secret(parts: &[(u8, [u8; 32])]) -> Result<[u8; 32]> {
     if parts.is_empty() {
-        return Err(anyhow::anyhow!("No shares provided"));
+        return Err(anyhow!("No shares provided"));
     }
 
-    // Decode threshold from high nibble of the first part's id
+    // decode threshold from high nibble
     let first_enc = parts[0].0;
     let threshold = first_enc >> 4;
     if threshold == 0 {
-        return Err(anyhow::anyhow!("Invalid encoded threshold in share ID"));
+        return Err(anyhow!("Invalid encoded threshold in share ID"));
     }
 
-    // Validate all parts share the same encoded threshold and low-nibble IDs are unique
-    let mut ids = std::collections::HashSet::new();
-    for (enc_id, _) in parts {
+    // validate and collect x coordinates (low nibble)
+    let mut ids = HashSet::new();
+    for (enc_id, _) in parts.iter() {
         let t = enc_id >> 4;
         if t != threshold {
-            return Err(anyhow::anyhow!("Mismatched thresholds in shares: {} vs {}", t, threshold));
+            return Err(anyhow!("Mismatched thresholds in shares: {} vs {}", t, threshold));
         }
         let id = enc_id & 0x0F;
         if id == 0 {
-            return Err(anyhow::anyhow!("Share index cannot be zero"));
+            return Err(anyhow!("Share index cannot be zero"));
         }
         if !ids.insert(id) {
-            return Err(anyhow::anyhow!("Duplicate share index: {}", id));
+            return Err(anyhow!("Duplicate share index: {}", id));
         }
     }
 
     if (parts.len() as u8) < threshold {
-        return Err(anyhow::anyhow!("Insufficient shares: need {} got {}", threshold, parts.len()));
+        return Err(anyhow!("Insufficient shares: need {} got {}", threshold, parts.len()));
     }
+
+    // Use exactly `threshold` shares for reconstruction (take first threshold parts)
+    let use_parts = &parts[..(threshold as usize)];
 
     let mut result = [0u8; 32];
 
-    // 瀵规瘡涓瓧鑺傜嫭绔嬩娇鐢ㄦ媺鏍兼湕鏃ユ彃鍊?    for byte_idx in 0..32 {
-        // 浣跨敤鎷夋牸鏈楁棩鎻掑€兼仮澶嶇瀵嗗€硷紙澶氶」寮忓湪x=0澶勭殑鍊硷級
+    // Reconstruct each byte independently using Lagrange interpolation at x=0
+    for byte_idx in 0..32 {
         let mut secret_byte = 0u8;
 
-        for (j, (enc_x_j, share_j)) in parts.iter().enumerate() {
-            let x_j_value = enc_x_j & 0x0F; // low nibble is the x coordinate
-            let y_j_value = share_j[byte_idx];
+        for (j, (enc_x_j, share_j)) in use_parts.iter().enumerate() {
+            let x_j = enc_x_j & 0x0F;
+            let y_j = share_j[byte_idx];
 
-            // 璁＄畻鎷夋牸鏈楁棩鍩哄椤瑰紡 L_j(0)
+            // compute numerator = product_{m != j} x_m
+            // compute denominator = product_{m != j} (x_m - x_j) in GF(256)
             let mut numerator = 1u8;
             let mut denominator = 1u8;
 
-            for (m, (enc_x_m, _)) in parts.iter().enumerate() {
-                if m != j {
-                    let x_m = enc_x_m & 0x0F;
-                    numerator = gf256_mul(numerator, x_m); // L_j(0) 鐨勫垎瀛愯绠?                    let diff = gf256_sub(x_m, x_j_value);
-                    if diff == 0 {
-                        return Err(anyhow::anyhow!(
-                            "Failed to calculate Lagrange basis: Division by zero in GF(256)"
-                        ));
-                    }
-                    // L_j(0) 鐨勫垎姣嶈绠?                    denominator = gf256_mul(denominator, diff);
+            for (m, (enc_x_m, _)) in use_parts.iter().enumerate() {
+                if m == j {
+                    continue;
                 }
+                let x_m = enc_x_m & 0x0F;
+                numerator = gf256_mul(numerator, x_m);
+                let diff = gf256_sub(x_m, x_j);
+                if diff == 0 {
+                    return Err(anyhow!(
+                        "Failed to calculate Lagrange basis: division by zero in GF(256)"
+                    ));
+                }
+                denominator = gf256_mul(denominator, diff);
             }
 
-            // 璁＄畻 y_j * L_j(0) 骞跺姞鍏ョ粨鏋?            let lagrange_basis = gf256_div(numerator, denominator)
-                .map_err(|e| anyhow::anyhow!("Failed to calculate Lagrange basis: {}", e))?;
-            secret_byte ^= gf256_mul(y_j_value, lagrange_basis);
+            let lagrange_basis = gf256_div(numerator, denominator)
+                .map_err(|e| anyhow!("Failed to calculate Lagrange basis: {}", e))?;
+            secret_byte ^= gf256_mul(y_j, lagrange_basis);
         }
 
         result[byte_idx] = secret_byte;
@@ -123,56 +122,49 @@ pub fn combine_secret(parts: &[(u8, [u8; 32])]) -> Result<[u8; 32]> {
     Ok(result)
 }
 
-// GF(256) 鍔犳硶灏辨槸 XOR
+// GF(256) addition/subtraction = XOR
 fn gf256_add(a: u8, b: u8) -> u8 {
     a ^ b
 }
-
-// GF(256) 鍑忔硶涓庡姞娉曠浉鍚岋紙XOR锛?fn gf256_sub(a: u8, b: u8) -> u8 {
+fn gf256_sub(a: u8, b: u8) -> u8 {
     a ^ b
 }
 
-// GF(256) 涔樻硶锛堢畝鍖栫増鏈紝鐢熶骇鐜搴斾娇鐢ㄦ煡琛ㄦ垨鏇撮珮鏁堢殑瀹炵幇锛?// 浣跨敤 AES 鐨勪笉鍙害澶氶」寮?x^8 + x^4 + x^3 + x + 1 (0x11B)
-fn gf256_mul(a: u8, b: u8) -> u8 {
-    if a == 0 || b == 0 {
-        return 0;
-    }
-
-    let mut result = 0u8;
-    let mut a_value = a as u16;
-    let mut b_value = b as u16;
-
-    for _ in 0..8 {
-        if (b_value & 1) != 0 {
-            result ^= a_value as u8;
+// GF(256) multiplication (AES polynomial x^8 + x^4 + x^3 + x + 1)
+fn gf256_mul(mut a: u8, mut b: u8) -> u8 {
+    let mut result: u8 = 0;
+    while b != 0 {
+        if (b & 1) != 0 {
+            result ^= a;
         }
-
-        let high_bit_set = (a_value & 0x80) != 0;
-        a_value <<= 1;
-        if high_bit_set {
-            a_value ^= 0x11B; // AES 涓嶅彲绾﹀椤瑰紡
+        let carry = (a & 0x80) != 0;
+        a <<= 1;
+        if carry {
+            a ^= 0x1B;
         }
-        b_value >>= 1;
+        b >>= 1;
     }
-
     result
 }
 
-// GF(256) 闄ゆ硶锛堢畝鍖栫増鏈級
+// Division using multiplicative inverse
 fn gf256_div(a: u8, b: u8) -> Result<u8> {
+    if b == 0 {
+        return Err(anyhow!("Division by zero in GF(256)"));
+    }
     if a == 0 {
         return Ok(0);
     }
-    let inv_b = gf256_inverse(b).ok_or_else(|| anyhow::anyhow!("Division by zero in GF(256)"))?;
+    let inv_b = gf256_inverse(b).ok_or_else(|| anyhow!("Division by zero in GF(256)"))?;
     Ok(gf256_mul(a, inv_b))
 }
 
-// GF(256) 涔樻硶閫嗗厓 - 浣跨敤绠€鍗曠殑鏌ヨ〃娉?fn gf256_inverse(a: u8) -> Option<u8> {
+/// Multiplicative inverse in GF(256) using lookup table.
+fn gf256_inverse(a: u8) -> Option<u8> {
     if a == 0 {
-        return None; // 0 娌℃湁閫嗗厓
+        return None;
     }
-
-    // 棰勮绠楃殑 GF(256) 閫嗗厓琛?    static INVERSE_TABLE: [u8; 256] = [
+    const INVERSE_TABLE: [u8; 256] = [
         0x00, 0x01, 0x8d, 0xf6, 0xcb, 0x52, 0x7b, 0xd1, 0xe8, 0x4f, 0x29, 0xc0, 0xb0, 0xe1, 0xe5,
         0xc7, 0x74, 0xb4, 0xaa, 0x4b, 0x99, 0x2b, 0x60, 0x5f, 0x58, 0x3f, 0xfd, 0xcc, 0xff, 0x40,
         0xee, 0xb2, 0x3a, 0x6e, 0x5a, 0xf1, 0x55, 0x4d, 0xa8, 0xc9, 0xc1, 0x0a, 0x98, 0x15, 0x30,
@@ -192,13 +184,13 @@ fn gf256_div(a: u8, b: u8) -> Result<u8> {
         0x5b, 0x23, 0x38, 0x34, 0x68, 0x46, 0x03, 0x8c, 0xdd, 0x9c, 0x7d, 0xa0, 0xcd, 0x1a, 0x41,
         0x1c,
     ];
-
     Some(INVERSE_TABLE[a as usize])
 }
 
-// 涓轰簡鍏煎鎬ц€屼繚鐣欑殑缁撴瀯浣?pub struct ShamirSecretSharing {
-    threshold: u8,
-    shares: u8,
+/// Lightweight helper struct wrapping the functions above.
+pub struct ShamirSecretSharing {
+    pub threshold: u8,
+    pub shares: u8,
 }
 
 impl ShamirSecretSharing {

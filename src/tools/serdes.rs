@@ -1,4 +1,4 @@
-﻿use elliptic_curve::{group::GroupEncoding, Group, PrimeField};
+use elliptic_curve::{group::GroupEncoding, Group, PrimeField};
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,

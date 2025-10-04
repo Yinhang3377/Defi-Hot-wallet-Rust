@@ -1,4 +1,4 @@
-﻿use anyhow::Result;
+use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime /* NaiveDate */};
 use sqlx::types::chrono::Utc;
@@ -14,33 +14,33 @@ pub struct WalletStorage {
 
 impl WalletStorage {
     pub async fn new() -> Result<Self> {
-        // 浣跨敤鏍囧噯鍓嶇紑涓?data 鐩綍锛岀‘淇濇枃浠跺彲鍒涘缓
+        // default path (will create directories if needed)
         Self::new_with_url("sqlite://./data/wallet.db?mode=rwc").await
     }
 
     pub async fn new_with_url(database_url: &str) -> Result<Self> {
-        info!("馃敡 Initializing wallet storage: {}", database_url);
+        info!("Initializing wallet storage: {}", database_url);
 
-        // 1) 瑙勮寖鍖?sqlite URL: sqlite: -> sqlite://
+        // normalize sqlite URLs: accept "sqlite:" or "sqlite://"
         let mut db_url = database_url.to_string();
         if db_url.starts_with("sqlite:") && !db_url.starts_with("sqlite://") {
             db_url = db_url.replacen("sqlite:", "sqlite://", 1);
         }
 
-        // 2) 涓哄熀浜庢枃浠剁殑 sqlite 鍒涘缓鐖剁洰褰?        if let Some(path) = db_url.strip_prefix("sqlite://") {
+        // ensure parent directory exists for file-backed sqlite URLs
+        if let Some(path) = db_url.strip_prefix("sqlite://") {
             let (mut path_only, query) = path
                 .split_once('?')
                 .map(|(p, q)| (p.to_string(), Some(q)))
                 .unwrap_or_else(|| (path.to_string(), None));
 
-            // On Windows, urls like sqlite:///C:/path will produce a leading '/' before drive letter.
-            // Normalize by removing the leading slash when present (e.g. "/C:/..." -> "C:/...")
+            // On Windows, urls like sqlite:///C:/path will produce a leading '/'
+            // Normalize by removing leading '/' before drive letter.
             #[cfg(windows)]
             {
                 if path_only.starts_with('/') && path_only.len() > 2 {
                     let bytes = path_only.as_bytes();
                     if bytes[2] == b':' {
-                        // strip leading '/'
                         path_only = path_only[1..].to_string();
                     }
                 }
@@ -49,14 +49,13 @@ impl WalletStorage {
             if path_only != ":memory:" && !path_only.is_empty() {
                 if let Some(parent) = std::path::Path::new(&path_only).parent() {
                     if !parent.as_os_str().is_empty() {
-                        // 蹇界暐宸插瓨鍦ㄧ瓑闈炶嚧鍛介敊璇?                        if let Err(e) = std::fs::create_dir_all(parent) {
+                        if let Err(e) = std::fs::create_dir_all(parent) {
                             warn!("Failed to create database dir {:?}: {}", parent, e);
                         }
                     }
                 }
 
-                // Rebuild db_url to the normalized form so SqlitePool can open it correctly
-                // Preserve query params if any
+                // Rebuild db_url to normalized form; preserve query params
                 let is_windows_abs = cfg!(windows)
                     && path_only.len() > 1
                     && path_only.as_bytes().get(1) == Some(&b':');
@@ -70,7 +69,7 @@ impl WalletStorage {
             }
         }
 
-        // 3) 杩炴帴浣跨敤瑙勮寖鍖栧悗鐨?db_url
+        // connect using normalized db_url
         eprintln!("[storage] connecting to db_url={}", db_url);
         let pool = SqlitePool::connect(&db_url)
             .await
@@ -79,7 +78,7 @@ impl WalletStorage {
         let storage = Self { pool };
         storage.initialize_schema().await?;
 
-        info!("鉁?Wallet storage initialized");
+        info!("Wallet storage initialized");
         Ok(storage)
     }
 
@@ -190,7 +189,7 @@ impl WalletStorage {
         .execute(&self.pool)
         .await?;
 
-        debug!("閴?Database schema initialized");
+        debug!("Database schema initialized");
         Ok(())
     }
 
@@ -231,7 +230,7 @@ impl WalletStorage {
         )
         .await?;
 
-        debug!("鉁?Database schema initialized");
+        debug!("Stored wallet: {}", name);
         Ok(())
     }
 
@@ -261,7 +260,7 @@ impl WalletStorage {
                 )
                 .await?;
 
-                debug!("鉁?Wallet loaded: {}", name);
+                debug!("Wallet loaded: {}", name);
                 Ok((encrypted_data, quantum_safe))
             }
             None => Err(anyhow::anyhow!("Wallet not found: {}", name)),
@@ -271,8 +270,7 @@ impl WalletStorage {
     pub async fn list_wallets(&self) -> Result<Vec<WalletMetadata>> {
         debug!("Listing all wallets");
 
-        let rows = sqlx
-            ::query(
+        let rows = sqlx::query(
                 "SELECT id, name, quantum_safe, created_at, updated_at FROM wallets ORDER BY created_at DESC"
             )
             .fetch_all(&self.pool).await
@@ -289,7 +287,7 @@ impl WalletStorage {
             })
             .collect();
 
-        debug!("鉁?Listed {} wallets", wallets.len());
+        debug!("Listed {} wallets", wallets.len());
         Ok(wallets)
     }
 
@@ -331,15 +329,14 @@ impl WalletStorage {
         )
         .await?;
 
-        warn!("馃棏锔?Wallet deleted: {}", name);
+        warn!("Wallet deleted: {}", name);
         Ok(())
     }
 
     pub async fn store_transaction(&self, tx_data: &TransactionRecord) -> Result<()> {
         debug!("Storing transaction: {}", tx_data.tx_hash);
 
-        sqlx
-            ::query(
+        sqlx::query(
                 r#"
             INSERT INTO transactions (id, wallet_id, tx_hash, network, from_address, to_address, amount, fee, status, created_at, confirmed_at)
             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
@@ -359,15 +356,14 @@ impl WalletStorage {
             .execute(&self.pool).await
             .map_err(|e| anyhow::anyhow!("Failed to store transaction: {}", e))?;
 
-        debug!("閴?Transaction stored: {}", tx_data.tx_hash);
+        debug!("Transaction stored: {}", tx_data.tx_hash);
         Ok(())
     }
 
     pub async fn get_wallet_transactions(&self, wallet_id: &str) -> Result<Vec<TransactionRecord>> {
         debug!("Getting transactions for wallet: {}", wallet_id);
 
-        let rows = sqlx
-            ::query(
+        let rows = sqlx::query(
                 r#"
             SELECT id, wallet_id, tx_hash, network, from_address, to_address, amount, fee, status, created_at, confirmed_at
             FROM transactions 
@@ -396,7 +392,7 @@ impl WalletStorage {
             })
             .collect();
 
-        debug!("鉁?Retrieved {} transactions", transactions.len());
+        debug!("Retrieved {} transactions", transactions.len());
         Ok(transactions)
     }
 
@@ -537,7 +533,8 @@ impl WalletStorage {
 
 impl Clone for WalletStorage {
     fn clone(&self) -> Self {
-        // Clone 鍙厠闅嗚繛鎺ユ睜锛岃€屼笉鏄垱寤烘柊鐨?        Self { pool: self.pool.clone() }
+        // Clone the underlying pool
+        Self { pool: self.pool.clone() }
     }
 }
 
@@ -592,11 +589,10 @@ pub trait WalletStorageTrait {
     ) -> Result<()>;
 }
 
-// 璁?WalletStorage 瀹炵幇杩欎釜 trait
+// Implement the trait for WalletStorage by delegating to methods above
 #[async_trait]
 impl WalletStorageTrait for WalletStorage {
     async fn store_wallet(&self, name: &str, data: &[u8], quantum_safe: bool) -> Result<()> {
-        // The existing implementation is already correct, we just call it.
         self.store_wallet(name, data, quantum_safe).await
     }
 
@@ -637,7 +633,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_wallet_storage_operations() {
-        // 浣跨敤鍐呭瓨鏁版嵁搴撹繘琛屾祴璇曪紝浠ラ伩鍏嶆枃浠舵畫鐣欏苟纭繚娴嬭瘯闅旂
+        // Use in-memory sqlite for tests
         let storage = WalletStorage::new_with_url("sqlite::memory:").await.unwrap();
 
         // Test store wallet
@@ -673,7 +669,7 @@ mod tests {
             to_chain: "solana".to_string(),
             token: "USDC".to_string(),
             amount: "100.0".to_string(),
-            status: BridgeTransactionStatus::Initiated, // 浣跨敤 Initiated 鏇挎崲 Pending
+            status: BridgeTransactionStatus::Initiated,
             source_tx_hash: None,
             destination_tx_hash: None,
             created_at: Utc::now(),

@@ -1,8 +1,8 @@
-﻿// src/security/access_control.rs
+// src/security/access_control.rs
 use crate::tools::error::WalletError;
 use std::collections::HashMap;
 
-/// 瑙掕壊瀹氫箟
+/// Role definitions
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Role {
     Admin,
@@ -22,7 +22,7 @@ impl std::fmt::Display for Role {
     }
 }
 
-/// 鏉冮檺瀹氫箟
+/// Permission definitions
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Permission {
     CreateWallet,
@@ -46,16 +46,18 @@ impl std::fmt::Display for Permission {
     }
 }
 
-/// 璁块棶鎺у埗绠＄悊鍣?pub struct AccessControl {
+/// Access control manager
+pub struct AccessControl {
     user_roles: HashMap<String, Vec<Role>>,
     role_permissions: HashMap<Role, Vec<Permission>>,
 }
 
 impl AccessControl {
-    /// 鍒涘缓鏂扮殑璁块棶鎺у埗绠＄悊鍣?    pub fn new() -> Self {
+    /// Create a new access control manager with default role-permission mapping.
+    pub fn new() -> Self {
         let mut role_permissions = HashMap::new();
 
-        // 瀹氫箟瑙掕壊鏉冮檺
+        // Define permissions for roles
         role_permissions.insert(
             Role::Admin,
             vec![
@@ -81,12 +83,13 @@ impl AccessControl {
         Self { user_roles: HashMap::new(), role_permissions }
     }
 
-    /// 涓虹敤鎴峰垎閰嶈鑹?    pub fn assign_role(&mut self, user_id: &str, role: Role) -> Result<(), WalletError> {
+    /// Assign a role to a user.
+    pub fn assign_role(&mut self, user_id: &str, role: Role) -> Result<(), WalletError> {
         self.user_roles.entry(user_id.to_string()).or_default().push(role);
         Ok(())
     }
 
-    /// 鎾ら攢鐢ㄦ埛瑙掕壊
+    /// Revoke a role from a user.
     pub fn revoke_role(&mut self, user_id: &str, role: &Role) -> Result<(), WalletError> {
         if let Some(roles) = self.user_roles.get_mut(user_id) {
             roles.retain(|r| r != role);
@@ -94,12 +97,12 @@ impl AccessControl {
         Ok(())
     }
 
-    /// 妫€鏌ョ敤鎴锋槸鍚︽湁鎸囧畾瑙掕壊
+    /// Check whether a user has a specific role.
     pub fn has_role(&self, user_id: &str, role: &Role) -> bool {
         self.user_roles.get(user_id).map(|roles| roles.contains(role)).unwrap_or(false)
     }
 
-    /// 妫€鏌ョ敤鎴锋槸鍚︽湁鎸囧畾鏉冮檺
+    /// Check whether a user has a specific permission (via assigned roles).
     pub fn has_permission(&self, user_id: &str, permission: &Permission) -> bool {
         if let Some(user_roles) = self.user_roles.get(user_id) {
             for role in user_roles {
@@ -113,19 +116,23 @@ impl AccessControl {
         false
     }
 
-    /// 鑾峰彇鐢ㄦ埛鐨勬墍鏈夎鑹?    pub fn get_user_roles(&self, user_id: &str) -> Vec<Role> {
+    /// Get roles assigned to a user.
+    pub fn get_user_roles(&self, user_id: &str) -> Vec<Role> {
         self.user_roles.get(user_id).cloned().unwrap_or_default()
     }
 
-    /// 鑾峰彇瑙掕壊鐨勬墍鏈夋潈闄?    pub fn get_role_permissions(&self, role: &Role) -> Vec<Permission> {
+    /// Get permissions associated with a role.
+    pub fn get_role_permissions(&self, role: &Role) -> Vec<Permission> {
         self.role_permissions.get(role).cloned().unwrap_or_default()
     }
 
-    /// 妫€鏌ョ敤鎴锋槸鍚︿负绠＄悊鍛?    pub fn is_admin(&self, user_id: &str) -> bool {
+    /// Check whether a user is an admin.
+    pub fn is_admin(&self, user_id: &str) -> bool {
         self.has_role(user_id, &Role::Admin)
     }
 
-    /// 妫€鏌ョ敤鎴锋槸鍚︿负瀹¤鍛?    pub fn is_auditor(&self, user_id: &str) -> bool {
+    /// Check whether a user is an auditor.
+    pub fn is_auditor(&self, user_id: &str) -> bool {
         self.has_role(user_id, &Role::Auditor)
     }
 }
@@ -145,11 +152,12 @@ mod tests {
         let mut ac = AccessControl::new();
         let user_id = "user123";
 
-        // 鍒嗛厤瑙掕壊
+        // assign role
         ac.assign_role(user_id, Role::User).unwrap();
         assert!(ac.has_role(user_id, &Role::User));
 
-        // 妫€鏌ユ潈闄?        assert!(ac.has_permission(user_id, &Permission::CreateWallet));
+        // permission checks
+        assert!(ac.has_permission(user_id, &Permission::CreateWallet));
         assert!(ac.has_permission(user_id, &Permission::ViewBalance));
         assert!(!ac.has_permission(user_id, &Permission::AuditLogs));
     }
@@ -159,7 +167,7 @@ mod tests {
         let mut ac = AccessControl::new();
         let user_id = "user123";
 
-        // 鍒嗛厤骞舵挙閿€瑙掕壊
+        // assign then revoke admin role
         ac.assign_role(user_id, Role::Admin).unwrap();
         assert!(ac.has_role(user_id, &Role::Admin));
 
@@ -174,11 +182,8 @@ mod tests {
 
         ac.assign_role(user_id, Role::Auditor).unwrap();
 
-        // 瀹¤鍛樺簲璇ユ湁鏌ョ湅浣欓鍜屽璁℃棩蹇楃殑鏉冮檺
         assert!(ac.has_permission(user_id, &Permission::ViewBalance));
         assert!(ac.has_permission(user_id, &Permission::AuditLogs));
-
-        // 浣嗕笉搴旇鏈夌鐞嗙敤鎴风殑鏉冮檺
         assert!(!ac.has_permission(user_id, &Permission::ManageUsers));
     }
 

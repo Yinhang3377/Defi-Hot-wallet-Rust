@@ -72,7 +72,7 @@ async fn test_create_wallet() {
     assert_eq!(response.status_code(), StatusCode::OK);
     let body: serde_json::Value = response.json();
     assert_eq!(body["name"], "test_wallet");
-    assert!(body["quantum_safe"]);
+    assert_eq!(body["quantum_safe"].as_bool(), Some(true));
     assert!(body["id"].is_string());
 }
 

@@ -1,4 +1,4 @@
-﻿// src/security/mod.rs
+// src/security/mod.rs
 //! Security-related functionality for the wallet
 //!
 //! This module contains security features such as anti-debugging,

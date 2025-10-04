@@ -1,4 +1,7 @@
-﻿//! Defines the main application entry point.
+//! Defines the main application entry point.
+
+// ...existing code...
+//! Application-level container for services.
 
 use crate::service::WalletService;
 
@@ -9,12 +12,24 @@ pub struct Application {
 }
 
 impl Application {
-    /// Creates a new `Application`.
+    /// Create a new `Application` using `Default` for contained services.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// 杩斿洖瀵规湇鍔℃敞鍐岃〃鐨勫紩鐢ㄣ€?    pub fn services(&self) -> &WalletService {
+    /// Create an `Application` with an injected `WalletService`.
+    pub fn with_service(services: WalletService) -> Self {
+        Self { services }
+    }
+
+    /// Shared (immutable) access to the wallet service registry.
+    pub fn services(&self) -> &WalletService {
         &self.services
     }
+
+    /// Mutable access to the wallet service registry.
+    pub fn services_mut(&mut self) -> &mut WalletService {
+        &mut self.services
+    }
 }
+// ...existing code...
