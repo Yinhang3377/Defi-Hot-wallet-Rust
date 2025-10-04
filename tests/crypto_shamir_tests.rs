@@ -62,9 +62,7 @@ fn test_shamir_equal_threshold_and_shares() {
 fn test_shamir_reconstruct_exact() {
     let mut secret = [0u8; 32];
     secret.iter_mut().enumerate().for_each(|(i, v)| *v = (i * 7) as u8);
-
     let result = split_secret(secret, 2, 3);
-    assert!(result.is_ok());
 
     let shares = result.unwrap();
     let recovered = combine_secret(&shares[0..2]).unwrap();
@@ -101,8 +99,7 @@ fn test_shamir_all_possible_combinations() {
 
     // test all combinations of `threshold` shares
     for combo in shares.iter().combinations(threshold as usize) {
-        // combo contains references (&&(u8,[u8;32]) from iter()), so dereference to get owned Copy value
-        let selected_shares: Vec<(u8, [u8; 32])> = combo.iter().map(|s| **s).collect();
+        let selected_shares: Vec<_> = combo.into_iter().copied().collect();
         let recovered = combine_secret(&selected_shares).unwrap();
         assert_eq!(recovered, secret);
     }
