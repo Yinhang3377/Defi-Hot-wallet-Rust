@@ -1,16 +1,5 @@
-<<<<<<< HEAD
-*.rs         text eol=lf
-Cargo.*      text eol=lf
-**/*.yml     text eol=lf
-*.sh         text eol=lf
-*.ps1        text eol=crlf
-=======
-# Enforce consistent LF endings for Rust & text files
-*.rs text eol=lf
-Cargo.toml text eol=lf
-Cargo.lock text eol=lf
-*.md text eol=lf
-*.yml text eol=lf
-*.yaml text eol=lf
-*.toml text eol=lf
->>>>>>> be35db3d094cb6edd3c63585f33fdcb299a57158
+# Prefer treating src as Rust source for GitHub Linguist
+src/** linguist-language=Rust
+
+# Mark docs as documentation so they don't count toward language stats
+docs/** linguist-documentation=true
