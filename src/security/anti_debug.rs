@@ -37,21 +37,17 @@ pub fn is_debugger_present() -> bool {
         // If the file can't be opened or read, we can't detect a debugger, so we default to false.
         if let Ok(file) = File::open("/proc/self/status") {
             let reader = BufReader::new(file);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    if line.starts_with("TracerPid:") {
-                        if let Some(pid_str) = line.split_whitespace().nth(1) {
-                            if pid_str != "0" {
-                                warn!(
-                                    "Debugger detected on Linux platform (TracerPid: {})",
-                                    pid_str
-                                );
-                                return true;
-                            }
+            // Use `flatten()` to iterate only over Ok(String) lines, avoiding manual `if let Ok(...)`
+            for line in reader.lines().flatten() {
+                if line.starts_with("TracerPid:") {
+                    if let Some(pid_str) = line.split_whitespace().nth(1) {
+                        if pid_str != "0" {
+                            warn!("Debugger detected on Linux platform (TracerPid: {})", pid_str);
+                            return true;
                         }
-                        // We found the line, no need to continue.
-                        return false;
                     }
+                    // We found the line, no need to continue.
+                    return false;
                 }
             }
         }
