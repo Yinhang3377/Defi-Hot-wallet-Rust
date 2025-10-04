@@ -1,6 +1,7 @@
 // src/security/memory_protection.rs
 //! 鍐呭瓨淇濇姢妯″潡
 //! 鐢ㄤ簬瀹夊叏澶勭悊鏁忔劅鏁版嵁锛岄槻姝㈠唴瀹?
+use crate::core::memory_protection::{lock_memory, unlock_memory};
 
 use crate::tools::error::WalletError;
 use std::alloc::{alloc, dealloc, Layout};
@@ -83,10 +84,6 @@ impl Drop for SecureBuffer {
 impl Clone for SecureBuffer {
     fn clone(&self) -> Self {
         if self.is_empty() {
-            // This path is unlikely given `new` prevents zero-sized buffers,
-            // but it's robust to handle it. We can't create a zero-sized
-            // buffer, so we create a minimal valid one and return it empty.
-            // A better approach would be to allow zero-sized buffers if the design permits.
             return Self::new(1).expect("Failed to create minimal buffer for cloning empty one");
         }
         let new_buf = Self::new(self.len).expect("Failed to clone SecureBuffer");
@@ -157,84 +154,6 @@ impl Drop for SecureString {
     }
 }
 
-/// 尝试锁定内存页，防止被换出（平台相关）
-///
-/// # Safety
-/// - `ptr` 必须指向一个有效的内存区域，长度为 `len`
-pub unsafe fn lock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
-    if ptr.is_null() || len == 0 {
-        return Err(WalletError::InvalidInput(
-            "Invalid pointer/length for lock_memory".to_string(),
-        ));
-    }
-
-    #[cfg(unix)]
-    {
-        use libc::mlock;
-        let res = mlock(ptr as *const std::ffi::c_void, len as libc::size_t);
-        if res != 0 {
-            return Err(WalletError::MemoryError("Failed to lock memory".to_string()));
-        }
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    {
-        use winapi::um::memoryapi::VirtualLock;
-        let res = VirtualLock(ptr as winapi::shared::minwindef::LPVOID, len);
-        if res == 0 {
-            return Err(WalletError::MemoryError("Failed to lock memory".to_string()));
-        }
-        Ok(())
-    }
-
-    #[cfg(not(any(unix, windows)))]
-    {
-        return Err(WalletError::UnsupportedFeature(
-            "Memory locking not supported on this platform".to_string(),
-        ));
-    }
-}
-
-/// 解锁内存页
-///
-/// # Safety
-/// - `ptr` 必须指向先前被 lock_memory 锁定的内存区域
-pub unsafe fn unlock_memory(ptr: *mut u8, len: usize) -> Result<(), WalletError> {
-    if ptr.is_null() || len == 0 {
-        return Err(WalletError::InvalidInput(
-            "Invalid pointer/length for unlock_memory".to_string(),
-        ));
-    }
-
-    #[cfg(unix)]
-    {
-        use libc::munlock;
-        let res = munlock(ptr as *const std::ffi::c_void, len as libc::size_t);
-        if res != 0 {
-            return Err(WalletError::MemoryError("Failed to unlock memory".to_string()));
-        }
-        Ok(())
-    }
-
-    #[cfg(windows)]
-    {
-        use winapi::um::memoryapi::VirtualUnlock;
-        let res = VirtualUnlock(ptr as winapi::shared::minwindef::LPVOID, len);
-        if res == 0 {
-            return Err(WalletError::MemoryError("Failed to unlock memory".to_string()));
-        }
-        Ok(())
-    }
-
-    #[cfg(not(any(unix, windows)))]
-    {
-        return Err(WalletError::UnsupportedFeature(
-            "Memory unlocking not supported on this platform".to_string(),
-        ));
-    }
-}
-
 /// 管理已锁定内存页面的简单分配器（示例实现）
 pub struct SecureAllocator {
     locked_pages: Vec<(usize, usize)>, // (ptr, size)
@@ -247,18 +166,18 @@ impl SecureAllocator {
 
     pub fn alloc_locked(&mut self, size: usize) -> Result<SecureBuffer, WalletError> {
         let buffer = SecureBuffer::new(size)?;
-        unsafe {
-            lock_memory(buffer.ptr, buffer.len())?;
-        }
+        // call lock_memory (safe API) without unnecessary unsafe
+        lock_memory(buffer.ptr, buffer.len())
+            .map_err(|e| WalletError::MemoryError(e.to_string()))?;
         self.locked_pages.push((buffer.ptr as usize, buffer.len));
         Ok(buffer)
     }
 
     pub fn unlock_all(&mut self) -> Result<(), WalletError> {
         for (ptr, size) in &self.locked_pages {
-            unsafe {
-                unlock_memory(*ptr as *mut u8, *size)?;
-            }
+            // call unlock_memory (safe API) without unnecessary unsafe
+            unlock_memory(*ptr as *mut u8, *size)
+                .map_err(|e| WalletError::MemoryError(e.to_string()))?;
         }
         self.locked_pages.clear();
         Ok(())
@@ -273,7 +192,6 @@ impl Default for SecureAllocator {
 
 impl Drop for SecureAllocator {
     fn drop(&mut self) {
-        // 尽量尝试解锁，忽略错误
         let _ = self.unlock_all();
     }
 }
@@ -459,16 +377,25 @@ mod tests {
     #[test]
     fn test_lock_and_unlock_memory_smoke() {
         let mut data = vec![0u8; 64];
-        let ptr = data.as_mut_ptr();
+        let ptr = data.as_mut_ptr() as *const u8;
         let len = data.len();
 
-        let lock_res = unsafe { lock_memory(ptr, len) };
-        match lock_res {
-            Ok(()) => {
-                let unlock_res = unsafe { unlock_memory(ptr, len) };
-                assert!(unlock_res.is_ok());
+        let lock_res = lock_memory(ptr, len);
+
+        if cfg!(feature = "memlock") {
+            match lock_res {
+                Ok(()) => {
+                    let unlock_res = unlock_memory(ptr, len);
+                    assert!(unlock_res.is_ok(), "Unlocking should succeed if locking succeeded.");
+                }
+                Err(e) => {
+                    println!("Note: Memory locking failed with OS error: {}. This is often expected in test environments without special privileges.", e);
+                }
             }
-            Err(_) => assert!(true),
+        } else {
+            assert!(lock_res.is_ok(), "lock_memory should be a no-op and return Ok(())");
+            let unlock_res = unlock_memory(ptr, len);
+            assert!(unlock_res.is_ok(), "unlock_memory should be a no-op and return Ok(())");
         }
     }
 

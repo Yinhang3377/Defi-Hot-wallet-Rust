@@ -11,7 +11,7 @@ static KEY_STORAGE: Lazy<Mutex<HashMap<String, Vec<u8>>>> =
 
 /// Generate a fresh key (here we use a UUID as a 16-byte placeholder).
 pub fn generate_key() -> Result<Vec<u8>> {
-    Ok(Uuid::new_v4().as_bytes().to_vec())
+    Ok(Uuid::new_v4().into_bytes().to_vec())
 }
 
 /// Store a key and return a generated id.
@@ -98,7 +98,8 @@ mod tests {
 
     #[test]
     fn test_multiple_keys() {
-        let keys = vec![generate_key().unwrap(), generate_key().unwrap(), generate_key().unwrap()];
+        let keys =
+            [generate_key().unwrap(), generate_key().unwrap(), generate_key().unwrap()].to_vec();
 
         let ids: Vec<String> = keys.iter().map(|k| store_key(k).unwrap()).collect();
 

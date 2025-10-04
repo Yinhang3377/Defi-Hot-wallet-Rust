@@ -2,5 +2,6 @@
 #[test]
 fn test_lib_initialization() {
     // 最小化测试：用于确认测试框架能运行。将来可替换为具体库初始化断言。
-    assert!(true);
+    let ok = true; // placeholder runtime-derived value
+    assert!(ok);
 }

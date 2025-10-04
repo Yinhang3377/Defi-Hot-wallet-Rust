@@ -29,7 +29,7 @@ impl WalletStorage {
 
         // ensure parent directory exists for file-backed sqlite URLs
         if let Some(path) = db_url.strip_prefix("sqlite://") {
-            let (mut path_only, query) = path
+            let (path_only, query) = path
                 .split_once('?')
                 .map(|(p, q)| (p.to_string(), Some(q)))
                 .unwrap_or_else(|| (path.to_string(), None));
@@ -37,14 +37,18 @@ impl WalletStorage {
             // On Windows, urls like sqlite:///C:/path will produce a leading '/'
             // Normalize by removing leading '/' before drive letter.
             #[cfg(windows)]
-            {
+            let path_only = {
                 if path_only.starts_with('/') && path_only.len() > 2 {
                     let bytes = path_only.as_bytes();
                     if bytes[2] == b':' {
-                        path_only = path_only[1..].to_string();
+                        path_only[1..].to_string()
+                    } else {
+                        path_only
                     }
+                } else {
+                    path_only
                 }
-            }
+            };
 
             if path_only != ":memory:" && !path_only.is_empty() {
                 if let Some(parent) = std::path::Path::new(&path_only).parent() {

@@ -1,7 +1,6 @@
 use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
 use defi_hot_wallet::core::WalletManager;
 use std::collections::HashMap;
-use tokio;
 
 /// 鍒涘缓娴嬭瘯閰嶇疆锛屼娇鐢ㄥ唴瀛樻暟鎹簱
 fn create_test_config() -> WalletConfig {

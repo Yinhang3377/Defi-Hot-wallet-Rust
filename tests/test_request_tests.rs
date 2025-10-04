@@ -262,7 +262,7 @@ mod test_query_params {
     async fn add_query_params() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.get("/").add_query_params(&[("name", "value")]).await;
+        let response = server.get("/").add_query_params([("name", "value")]).await;
 
         assert_eq!(response.status_code(), 200);
     }

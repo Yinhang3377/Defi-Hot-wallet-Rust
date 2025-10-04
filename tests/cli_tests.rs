@@ -5,7 +5,7 @@ use std::process::Command;
 #[test]
 fn test_cli_help_command() {
     let output = Command::new("cargo")
-        .args(&["run", "--bin", "wallet-cli", "--", "--help"])
+        .args(["run", "--bin", "wallet-cli", "--", "--help"])
         .output()
         .expect("Failed to execute command");
 
@@ -18,7 +18,7 @@ fn test_cli_help_command() {
 #[test]
 fn test_cli_create_wallet() {
     let output = Command::new("cargo")
-        .args(&["run", "--bin", "wallet-cli", "--", "create", "--name", "test_wallet"])
+        .args(["run", "--bin", "wallet-cli", "--", "create", "--name", "test_wallet"])
         .output()
         .expect("Failed to execute command");
 
@@ -31,7 +31,7 @@ fn test_cli_create_wallet() {
 #[test]
 fn test_cli_list_wallets() {
     let output = Command::new("cargo")
-        .args(&["run", "--bin", "wallet-cli", "--", "list"])
+        .args(["run", "--bin", "wallet-cli", "--", "list"])
         .output()
         .expect("Failed to execute command");
 
@@ -42,13 +42,13 @@ fn test_cli_list_wallets() {
 #[test]
 fn test_cli_generate_mnemonic() {
     let output = Command::new("cargo")
-        .args(&["run", "--bin", "wallet-cli", "--", "generate-mnemonic"])
+        .args(["run", "--bin", "wallet-cli", "--", "generate-mnemonic"])
         .output()
         .expect("Failed to execute command");
 
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let words: Vec<&str> = stdout.trim().split_whitespace().collect();
+    let words: Vec<&str> = stdout.split_whitespace().collect();
     assert_eq!(words.len(), 12, "Expected 12 words in mnemonic, found {}", words.len());
 }
 

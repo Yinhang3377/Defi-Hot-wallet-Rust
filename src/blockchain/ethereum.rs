@@ -353,10 +353,7 @@ mod tests {
     #[test]
     fn test_address_validation_smoke() {
         let client = make_local_client();
-        assert_eq!(
-            client.validate_address("0x742d35Cc6634C0532925a3b8D400e8B78fFe4860").unwrap(),
-            true
-        );
+        assert!(client.validate_address("0x742d35Cc6634C0532925a3b8D400e8B78fFe4860").unwrap());
         assert!(!client.validate_address("not-an-address").unwrap());
     }
 }

@@ -23,7 +23,7 @@ fn all_variants_display_and_conversions() {
     }
 
     // From<std::io::Error>
-    let io_err = std::io::Error::new(std::io::ErrorKind::Other, "io fail");
+    let io_err = std::io::Error::other("io fail");
     let w: WalletError = io_err.into();
     match w {
         WalletError::StorageError(msg) => assert!(msg.contains("io fail")),
@@ -34,7 +34,7 @@ fn all_variants_display_and_conversions() {
     let sj = serde_json::from_str::<Value>("not json").unwrap_err();
     let w2: WalletError = sj.into();
     match w2 {
-        WalletError::ValidationError(msg) => assert!(msg.len() > 0),
+        WalletError::ValidationError(msg) => assert!(!msg.is_empty()),
         _ => panic!("expected ValidationError"),
     }
 

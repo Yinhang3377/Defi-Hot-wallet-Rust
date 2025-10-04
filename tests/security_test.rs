@@ -74,7 +74,7 @@ async fn test_create_wallet_valid() {
     let body: serde_json::Value = res.json();
     assert!(body["id"].is_string());
     assert_eq!(body["name"].as_str().unwrap_or(""), "test_wallet_valid");
-    assert_eq!(body["quantum_safe"].as_bool().unwrap_or(false), true);
+    assert!(body["quantum_safe"].as_bool().unwrap_or(false));
 }
 
 /// Create wallet - invalid name

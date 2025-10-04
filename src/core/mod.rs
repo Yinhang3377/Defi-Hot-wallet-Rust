@@ -2,6 +2,7 @@ pub mod config;
 pub mod domain;
 pub mod errors;
 pub mod key_management;
+pub mod memory_protection;
 pub mod validation;
 pub mod wallet_info;
 pub mod wallet_manager;

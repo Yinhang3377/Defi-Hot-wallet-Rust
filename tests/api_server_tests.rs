@@ -8,7 +8,7 @@ use serde_json::json;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio;
+// removed redundant 'use tokio;'
 use uuid::Uuid;
 
 fn create_test_config() -> WalletConfig {
@@ -352,7 +352,7 @@ async fn history_and_backup_and_restore_branches() {
         .await;
     assert_eq!(r5.status_code(), StatusCode::OK);
     let b: Value = r5.json();
-    assert!(b["seed_phrase"].as_str().unwrap_or("").len() > 0);
+    assert!(!b["seed_phrase"].as_str().unwrap_or("").is_empty());
 
     // restore
     let payload = json!({ "name": format!("rest_{}", Uuid::new_v4().simple()), "seed_phrase": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" });
@@ -510,7 +510,7 @@ async fn bridge_all_branches_including_concurrent() {
     let r6 = server.post("/api/bridge").json(&ok).add_header("Authorization", "test_api_key").await;
     assert_eq!(r6.status_code(), StatusCode::OK);
     let b: Value = r6.json();
-    assert!(b["bridge_tx_id"].as_str().unwrap_or("").len() > 0);
+    assert!(!b["bridge_tx_id"].as_str().unwrap_or("").is_empty());
 
     // concurrent bridges
     let server_arc = Arc::new(server);
@@ -528,7 +528,7 @@ async fn bridge_all_branches_including_concurrent() {
     for res in results {
         assert_eq!(res.status_code(), StatusCode::OK);
         let br: Value = res.json();
-        assert!(br["bridge_tx_id"].as_str().unwrap_or("").len() > 0);
+        assert!(!br["bridge_tx_id"].as_str().unwrap_or("").is_empty());
     }
 }
 

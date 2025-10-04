@@ -11,7 +11,7 @@ fn cli_create_generates_wallet_file() {
     let file_path = temp_dir.path().join(format!("{}.json", &unique_name));
 
     let output = Command::new("cargo")
-        .args(&[
+        .args([
             "run",
             "--bin",
             "hot_wallet",

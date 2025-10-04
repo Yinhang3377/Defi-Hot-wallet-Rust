@@ -5,7 +5,7 @@ use defi_hot_wallet::api::server::WalletServer;
 use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
 use serde_json::json;
 use std::collections::HashMap;
-use tokio;
+// removed redundant 'use tokio;'
 
 fn create_test_config() -> WalletConfig {
     WalletConfig {

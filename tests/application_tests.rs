@@ -9,8 +9,8 @@ use defi_hot_wallet::service::WalletService;
 fn test_service_initialization() {
     // Test that the service can be created via new() and default()
     let _service1 = WalletService::new();
-    let _service2 = WalletService::default();
-    // The test passes if it doesn't panic.
+    let _service2 = WalletService; // unit struct instantiation (remove .default())
+                                   // The test passes if it doesn't panic.
 }
 
 #[tokio::test]

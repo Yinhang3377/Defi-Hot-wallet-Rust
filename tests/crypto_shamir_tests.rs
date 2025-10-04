@@ -62,9 +62,7 @@ fn test_shamir_equal_threshold_and_shares() {
 #[test]
 fn test_shamir_reconstruct_exact() {
     let mut secret = [0u8; 32];
-    for i in 0..32 {
-        secret[i] = (i * 7) as u8;
-    }
+    secret.iter_mut().enumerate().for_each(|(i, v)| *v = (i * 7) as u8);
 
     let result = split_secret(secret, 2, 3);
     assert!(result.is_ok());
@@ -79,9 +77,7 @@ fn test_shamir_different_share_subsets() {
     let threshold = 3;
     let shares_count = 5;
     let mut secret = [0u8; 32];
-    for i in 0..21 {
-        secret[i] = (i * 13 + 7) as u8;
-    }
+    secret.iter_mut().enumerate().take(21).for_each(|(i, v)| *v = (i * 13 + 7) as u8);
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
@@ -89,7 +85,7 @@ fn test_shamir_different_share_subsets() {
     assert_eq!(recovered, secret);
 
     // test a different subset of shares
-    let combination = vec![shares[0].clone(), shares[2].clone(), shares[4].clone()];
+    let combination = vec![shares[0], shares[2], shares[4]];
 
     let recovered2 = combine_secret(&combination).unwrap();
     assert_eq!(recovered2, secret);
@@ -100,15 +96,14 @@ fn test_shamir_all_possible_combinations() {
     let threshold = 3;
     let shares_count = 5;
     let mut secret = [0u8; 32];
-    for i in 0..18 {
-        secret[i] = (i * 11) as u8;
-    }
+    secret.iter_mut().enumerate().take(18).for_each(|(i, v)| *v = (i * 11) as u8);
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
     // test all combinations of `threshold` shares
     for combo in shares.iter().combinations(threshold as usize) {
-        let selected_shares: Vec<(u8, [u8; 32])> = combo.iter().map(|s| (*s).clone()).collect();
+        // combo contains references (&&(u8,[u8;32]) from iter()), so dereference to get owned Copy value
+        let selected_shares: Vec<(u8, [u8; 32])> = combo.iter().map(|s| **s).collect();
         let recovered = combine_secret(&selected_shares).unwrap();
         assert_eq!(recovered, secret);
     }
@@ -119,9 +114,11 @@ fn test_shamir_tampered_share() {
     let threshold = 3;
     let shares_count = 5;
     let mut secret = [0u8; 32];
-    for i in 0..21 {
-        secret[i] = if i == 0 { 0xAA } else { (i * 5) as u8 };
-    }
+    secret
+        .iter_mut()
+        .enumerate()
+        .take(21)
+        .for_each(|(i, v)| *v = if i == 0 { 0xAA } else { (i * 5) as u8 });
 
     let mut shares = split_secret(secret, threshold, shares_count).unwrap();
 

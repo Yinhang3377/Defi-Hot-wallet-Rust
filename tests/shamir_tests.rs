@@ -37,7 +37,7 @@ fn test_split_and_combine_with_different_subset() {
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
-    let combination = vec![shares[1].clone(), shares[3].clone(), shares[4].clone()];
+    let combination = vec![shares[1], shares[3], shares[4]];
     let recovered_secret = combine_secret(&combination).unwrap();
 
     assert_eq!(secret, recovered_secret);
@@ -95,7 +95,7 @@ fn test_split_with_large_secret() {
 fn test_combine_with_duplicate_shares() {
     let secret = [2u8; 32];
     let shares = split_secret(secret, 3, 5).unwrap();
-    let combination = vec![shares[0].clone(), shares[0].clone(), shares[1].clone()];
+    let combination = vec![shares[0], shares[0], shares[1]];
     let result = combine_secret(&combination);
     assert!(result.is_err());
 }

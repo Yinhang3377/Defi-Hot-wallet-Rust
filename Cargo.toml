@@ -107,10 +107,6 @@ base58 = "0.2.0"
 bs58 = "0.5"
 itertools = "0.13"
 
-# Add winapi because code directly references winapi::shared::minwindef etc.
-# VirtualLock/VirtualUnlock are in winapi::um::memoryapi; select relevant features.
-winapi = { version = "0.3", features = ["memoryapi", "minwindef", "winbase", "winnt"] }
-
 # monitoring / metrics
 prometheus = { version = "0.13.4", default-features = false, features = ["process"] }
 protobuf = "3.5.0"
@@ -127,7 +123,8 @@ default = []
 std = ["alloc", "elliptic-curve-tools/std"]
 alloc = ["elliptic-curve-tools/alloc"]
 strict_security = []
-sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"]
+sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"] # Note: this feature was already present
+memlock = ["dep:libc", "dep:winapi"]
 yaml = []
 msgpack = []
 
@@ -165,9 +162,13 @@ test-case = "3.3.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.57.0", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_System_Diagnostics_Debug"] }
+# Add winapi because code directly references winapi::shared::minwindef etc.
+# VirtualLock/VirtualUnlock are in winapi::um::memoryapi; select relevant features.
+winapi = { version = "0.3", features = ["memoryapi", "minwindef", "winbase", "winnt"], optional = true }
 
-[target.'cfg(target_os = "macos")'.dependencies]
-libc = "0.2.155"
+[dependencies.libc]
+version = "0.2"
+optional = true
 
 [profile.release]
 lto = true
