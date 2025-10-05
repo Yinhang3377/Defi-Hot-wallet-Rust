@@ -1,0 +1,31 @@
+[package]
+authors = ["Michael Lodder <redmike7@gmail.com>"]
+categories = ["compression", "encoding", "no-std"]
+description = """Uint is a convenience wrapper for zig-zag encoding integers to byte sequences.
+
+This allows better compression since the majority of numbers are quite small resulting
+in 1 or 2 bytes in the most common case vs 4 for 32-bit numbers or 8 for 64-bit numbers.
+
+This also permits the user to not have to think about which integer type is the most efficient to compress.
+"""
+documentation = "https://docs.rs/uint-zigzag"
+edition = "2021"
+homepage = "https://github.com/mikelodder7/uint"
+name = "uint-zigzag"
+license = "Apache-2.0 OR MIT"
+readme = "README.md"
+repository = "https://github.com/mikelodder7/uint"
+version = "0.2.1"
+
+[features]
+default = []
+alloc = ["core2/alloc"]
+std = ["core2/std"]
+
+[dependencies]
+core2 = { version = "0.4", default-features = false }
+serde = { version = "1", features = ["serde_derive"], optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

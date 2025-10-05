@@ -1,0 +1,16 @@
+[package]
+name = "reserve-port"
+authors = ["Joseph Lenton <josephlenton@gmail.com>"]
+version = "2.3.0"
+edition = "2021"
+license = "MIT"
+description = "For finding free local ports and reserving them"
+keywords = ["port", "scanner"]
+categories = []
+repository = "https://github.com/JosephLenton/reserve-port"
+documentation = "https://docs.rs/reserve-port/latest/reserve-port"
+readme = "README.md"
+rust-version = "1.80"
+
+[dependencies]
+thiserror = "2.0"

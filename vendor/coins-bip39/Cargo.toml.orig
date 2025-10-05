@@ -1,0 +1,53 @@
+[package]
+name = "coins-bip39"
+version = "0.8.7"
+authors = [
+    "Rohit Narurkar <rohit.narurkar@protonmail.com>",
+    "James Prestwich <james@prestwi.ch>",
+    "0xYYY <0xYYY@pm.me>",
+]
+edition = "2018"
+description = "Bip39 in Rust"
+repository = "https://github.com/summa-tx/coins"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+coins-bip32 = { version = "0.8.3", path = "../bip32" }
+
+bitvec = "1.0"
+hmac = "0.12"
+pbkdf2 = "0.12"
+rand = "0.8"
+sha2 = "0.10"
+thiserror = "1.0"
+
+# used by all wordlists
+once_cell = { version = "1.17", optional = true }
+
+[dev-dependencies]
+hex = "0.4"
+
+[features]
+default = ["all-langs"]
+all-langs = [
+    "chinese-simplified",
+    "chinese-traditional",
+    "czech",
+    "english",
+    "french",
+    "italian",
+    "japanese",
+    "korean",
+    "portuguese",
+    "spanish",
+]
+chinese-simplified = ["dep:once_cell"]
+chinese-traditional = ["dep:once_cell"]
+czech = ["dep:once_cell"]
+english = ["dep:once_cell"]
+french = ["dep:once_cell"]
+italian = ["dep:once_cell"]
+japanese = ["dep:once_cell"]
+korean = ["dep:once_cell"]
+portuguese = ["dep:once_cell"]
+spanish = ["dep:once_cell"]

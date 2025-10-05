@@ -1,2 +1,5 @@
-[http]
-proxy = "http://127.0.0.1:15715"
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"

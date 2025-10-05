@@ -1,0 +1,22 @@
+serde_bare
+
+An implementation of the BARE (https://baremessages.org) encoding format draft.
+
+Mailing list: https://lists.sr.ht/~tdeo/serde_bare
+Ticket tracker: https://todo.sr.ht/~tdeo/serde_bare
+
+To run benchmarks on your system:
+
+    cd benches
+    make bench
+
+Or to run the reference Go benchmarks as well:
+
+    cd benches
+    make bench-all
+
+Licensed under either of Apache License, Version 2.0 or MIT license at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this crate by you, as defined in the Apache-2.0 license, shall
+be dual licensed as above, without any additional terms or conditions.

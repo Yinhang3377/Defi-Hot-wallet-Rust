@@ -1,0 +1,37 @@
+[package]
+name = "futures-locks"
+edition = "2018"
+version = "0.7.1"
+authors = ["Alan Somers <asomers@gmail.com>"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/asomers/futures-locks"
+description = """
+Futures-aware lock primitives
+"""
+categories = ["asynchronous"]
+documentation = "https://docs.rs/futures-locks"
+autotests = false
+include = ["src/**/*", "tests/**/*", "LICENSE-*", "README.md", "CHANGELOG.md"]
+
+[package.metadata.docs.rs]
+features = ["tokio"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+# Enable methods that require a Tokio runtime.
+default = ["tokio"]
+
+[dependencies]
+futures-channel = "0.3.1"
+futures-task = "0.3.1"
+tokio = { version = "1.0", features = ["rt"], optional = true }
+
+[dev-dependencies]
+futures = "0.3.1"
+tokio = { version = "1.0", features = ["sync", "macros", "rt-multi-thread"] }
+tokio-test = { version = "0.4.2" }
+
+[[test]]
+name = "functional"
+path = "tests/test.rs"
