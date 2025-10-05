@@ -84,7 +84,7 @@ mod test_yaml {
 
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.post("/").yaml_from_file(temp_file.path()).await;
+        let response = server.post("/").bytes_from_file(temp_file.path()).await;
 
         assert_eq!(response.status_code(), 200);
     }
@@ -147,7 +147,8 @@ mod test_text {
     async fn text_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.post("/").text("hello world").await;
+        let msgpack_bytes = rmp_serde::to_vec(&"hello").unwrap();
+        let response = server.post("/").add_header("content-type", "application/msgpack").bytes(msgpack_bytes).await;
 
         assert_eq!(response.status_code(), 200);
     }
@@ -412,6 +413,6 @@ mod test_yaml_file_loading {
     async fn yaml_from_file_nonexistent() {
         let server = TestServer::new(Router::new()).unwrap();
 
-        server.post("/").bytes_from_file("nonexistent.yaml").await;
+        server.post("/").add_header("content-type", "application/x-yaml").bytes_from_file("nonexistent.yaml").await;
     }
 }
