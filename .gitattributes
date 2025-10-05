@@ -1,15 +1,12 @@
-# 强制将 src 识别为 Rust
-src/** linguist-language=Rust
+* text=auto
 
-# 将文档标记为文档，不计入语言统计
-docs/** linguist-documentation=true
-README.md linguist-documentation=true
-
-# 将前端/站点构建产物标记为 vendored/generated（排除）
-site/** linguist-vendored=true
-www/** linguist-vendored=true
-dist/** linguist-vendored=true
-public/** linguist-vendored=true
-
-# 如果有大量单独的 HTML 文件，可以单独列出或把目录标记为文档
-*.html linguist-documentation=true
+# Force LF for source / config / test files
+*.rs      text eol=lf
+*.toml    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.md      text eol=lf
+*.sh      text eol=lf
+Cargo.lock text eol=lf
+tests/**  text eol=lf
+src/**    text eol=lf
