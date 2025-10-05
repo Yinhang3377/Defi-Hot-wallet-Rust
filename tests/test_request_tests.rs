@@ -73,10 +73,7 @@ mod test_yaml {
     async fn yaml_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let yaml_body =
-            serde_yaml::to_string(&serde_yaml::Value::String("hello".to_string())).unwrap();
-        let response =
-            server.post("/").header("content-type", "application/x-yaml").text(yaml_body).await;
+        let response = server.post("/").yaml(&serde_yaml::Value::String("hello".to_string())).await;
         assert_eq!(response.status_code(), 200);
     }
 
@@ -97,13 +94,16 @@ mod test_yaml {
 #[cfg(test)]
 mod test_msgpack {
     use super::*;
+    use rmp_serde::to_vec;
 
     #[tokio::test]
     async fn msgpack_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
-
-        let response = server.post("/").msgpack(&"hello").await;
-
+        let msgpack_bytes = to_vec(&"hello").unwrap();
+        let response = server.post("/")
+            .add_header("content-type", "application/msgpack")
+            .bytes(msgpack_bytes)
+            .await;
         assert_eq!(response.status_code(), 200);
     }
 }
@@ -412,6 +412,6 @@ mod test_yaml_file_loading {
     async fn yaml_from_file_nonexistent() {
         let server = TestServer::new(Router::new()).unwrap();
 
-        server.post("/").yaml_from_file("nonexistent.yaml").await;
+        server.post("/").bytes_from_file("nonexistent.yaml").await;
     }
 }
