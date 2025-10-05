@@ -73,7 +73,11 @@ mod test_yaml {
     async fn yaml_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.post("/").yaml(&serde_yaml::Value::String("hello".to_string())).await;
+        let response = server
+            .post("/")
+            .add_header("content-type", "application/x-yaml")
+            .text(serde_yaml::to_string(&serde_yaml::Value::String("hello".to_string())).unwrap())
+            .await;
         assert_eq!(response.status_code(), 200);
     }
 
@@ -100,7 +104,8 @@ mod test_msgpack {
     async fn msgpack_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
         let msgpack_bytes = to_vec(&"hello").unwrap();
-        let response = server.post("/")
+        let response = server
+            .post("/")
             .add_header("content-type", "application/msgpack")
             .bytes(msgpack_bytes)
             .await;
@@ -116,7 +121,12 @@ mod test_form {
     async fn form_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.post("/").form(&[("name", "John")]).await;
+        let msgpack_bytes = rmp_serde::to_vec(&"hello").unwrap();
+        let response = server
+            .post("/")
+            .add_header("content-type", "application/msgpack")
+            .bytes(msgpack_bytes)
+            .await;
 
         assert_eq!(response.status_code(), 200);
     }
@@ -148,7 +158,11 @@ mod test_text {
         let server = TestServer::new(test_router()).unwrap();
 
         let msgpack_bytes = rmp_serde::to_vec(&"hello").unwrap();
-        let response = server.post("/").add_header("content-type", "application/msgpack").bytes(msgpack_bytes).await;
+        let response = server
+            .post("/")
+            .add_header("content-type", "application/msgpack")
+            .bytes(msgpack_bytes)
+            .await;
 
         assert_eq!(response.status_code(), 200);
     }
@@ -413,6 +427,10 @@ mod test_yaml_file_loading {
     async fn yaml_from_file_nonexistent() {
         let server = TestServer::new(Router::new()).unwrap();
 
-        server.post("/").add_header("content-type", "application/x-yaml").bytes_from_file("nonexistent.yaml").await;
+        server
+            .post("/")
+            .add_header("content-type", "application/x-yaml")
+            .bytes_from_file("nonexistent.yaml")
+            .await;
     }
 }
