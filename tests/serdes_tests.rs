@@ -45,7 +45,7 @@ fn identity_and_random_points() {
         point: K256Point::GENERATOR * K256Scalar::from(42u64),
     };
 
-    for test_struct in vec![identity, random] {
+    for test_struct in [identity, random] {
         let json = serde_json::to_string(&test_struct).unwrap();
         let from_json: TestStruct<K256Point> = serde_json::from_str(&json).unwrap();
         assert_eq!(test_struct, from_json);

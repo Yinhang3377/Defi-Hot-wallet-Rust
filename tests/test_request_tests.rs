@@ -73,8 +73,10 @@ mod test_yaml {
     async fn yaml_sets_content_type() {
         let server = TestServer::new(test_router()).unwrap();
 
-        let response = server.post("/").yaml(&serde_yaml::Value::String("hello".to_string())).await;
-
+        let yaml_body =
+            serde_yaml::to_string(&serde_yaml::Value::String("hello".to_string())).unwrap();
+        let response =
+            server.post("/").header("content-type", "application/x-yaml").text(yaml_body).await;
         assert_eq!(response.status_code(), 200);
     }
 
