@@ -1,4 +1,4 @@
-﻿--- 
+﻿---
 name: CI/CD Pipeline
 
 on:
@@ -9,12 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  HTTP_PROXY: ""
-  HTTPS_PROXY: ""
-  http_proxy: ""
-  https_proxy: ""
-  NO_PROXY: index.crates.io,crates.io,github.com
-  no_proxy: index.crates.io,crates.io,github.com
+  DATABASE_URL: sqlite://./wallets.db
 
 jobs:
   test:
@@ -25,14 +20,6 @@ jobs:
       matrix:
         rust: [stable, beta, nightly]
 
-    env:
-      HTTP_PROXY: ""
-      HTTPS_PROXY: ""
-      http_proxy: ""
-      https_proxy: ""
-      NO_PROXY: index.crates.io,crates.io,github.com
-      no_proxy: index.crates.io,crates.io,github.com
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,67 +27,79 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Ensure branch + allow unrelated histories (safe/forgiving)
+      - name: Global unset proxy (run first)
         run: |
-          git fetch --all || true
-          # 尝试合并远程 main（允许 unrelated histories），出错不 fail（后续步骤依然会运行）
-          git merge --allow-unrelated-histories origin/main -X theirs || true
-          # 备选强制同步远端（如果你想直接覆盖本地，请取消注释下一行）
-          # git reset --hard origin/main || true
+          # 确保 git 命令不会使用代理
+          git config --global --unset http.proxy || true
+          git config --global --unset https.proxy || true
+          # 清除环境变量
+          unset http_proxy || true
+          unset https_proxy || true
+          unset HTTP_PROXY || true
+          unset HTTPS_PROXY || true
+          # 确保 GitHub Actions 环境不包含代理
+          echo "http_proxy=" >> $GITHUB_ENV
+          echo "https_proxy=" >> $GITHUB_ENV
+          echo "HTTP_PROXY=" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=" >> $GITHUB_ENV
+          echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
+          echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
+          
+          # 显示环境中的代理变量（调试用）
+          env | grep -i proxy || echo "No proxy variables found"
+
+      - name: Initialize git repository if needed (avoid unrelated histories)
+        run: |
+          if [ ! -d .git ]; then
+            rm -rf .git
+            git init
+            git config --local user.email "ci@github.com"
+            git config --local user.name "GitHub CI"
+            git add .
+            git commit -m "Initial commit from CI"
+          fi
+          
+          # 确保我们有正确的远程设置
+          git remote -v || git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git
+          
+          # 拉取但不合并 (避免历史问题)
+          git fetch origin --depth=1 || true
 
       - name: Remove proxy from cargo config (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
-          unset http_proxy || true
-          unset https_proxy || true
-          unset NO_PROXY || true
-          unset no_proxy || true
-
-          echo "HTTP_PROXY=" >> "$GITHUB_ENV"
-          echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
-          echo "http_proxy=" >> "$GITHUB_ENV"
-          echo "https_proxy=" >> "$GITHUB_ENV"
-          echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-
+          # 处理cargo配置
+          mkdir -p $HOME/.cargo
+          touch $HOME/.cargo/config.toml
+          
+          # 删除任何proxy行
           if [ -f "$HOME/.cargo/config" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
           fi
           if [ -f "$HOME/.cargo/config.toml" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
           fi
+          
+          # 确认代理已删除
+          if [ -f "$HOME/.cargo/config" ]; then echo "--- Cargo config:"; cat "$HOME/.cargo/config"; fi
+          if [ -f "$HOME/.cargo/config.toml" ]; then echo "--- Cargo config.toml:"; cat "$HOME/.cargo/config.toml"; fi
 
       - name: Remove proxy from cargo config (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Remove-Item Env:HTTP_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:NO_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:no_proxy -ErrorAction SilentlyContinue
-
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTP_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTPS_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "http_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "https_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
-          Add-Content -Path $env:GITHUB_ENV -Value "no_proxy=index.crates.io,crates.io,github.com"
-
+          New-Item -Path "$HOME/.cargo" -ItemType Directory -Force | Out-Null
+          New-Item -Path "$HOME/.cargo/config.toml" -ItemType File -Force | Out-Null
+          
           if (Test-Path "$HOME/.cargo/config") {
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.bak"
             (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config"
           }
           if (Test-Path "$HOME/.cargo/config.toml") {
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml.bak"
             (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml"
           }
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
@@ -115,35 +114,63 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
 
-      - name: Format code (apply)
+      - name: Format code
         run: cargo fmt --all
 
-      - name: Fetch dependencies (no cargo proxy)
-        run: cargo fetch --config 'http.proxy=""' --config 'https.proxy=""'
+      - name: Fetch dependencies (explicit no-proxy)
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+        run: |
+          # 显示当前环境中的代理变量
+          env | grep -i proxy || echo "No proxy variables found"
+          cargo fetch --verbose
 
-      - name: Check formatting (verify)
+      - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Lint (clippy)
-        run: cargo clippy --all-targets --config 'http.proxy=""' --config 'https.proxy=""' -- -D warnings
+      - name: Lint with clippy
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Build
-        run: cargo build --config 'http.proxy=""' --config 'https.proxy=""' --verbose
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+        run: cargo build --verbose
 
       - name: Test
-        run: cargo test --config 'http.proxy=""' --config 'https.proxy=""' --verbose
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+          DATABASE_URL: sqlite://./wallets.db
+        run: cargo test --verbose
+
+      # 根据项目 copilot-instructions.md 添加安全审计
+      - name: Security audit
+        if: matrix.rust == 'stable'
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+        run: |
+          cargo install cargo-audit --force || true
+          cargo audit
 
   build:
     name: Build Release
     runs-on: ubuntu-latest
-
-    env:
-      HTTP_PROXY: ""
-      HTTPS_PROXY: ""
-      http_proxy: ""
-      https_proxy: ""
-      NO_PROXY: index.crates.io,crates.io,github.com
-      no_proxy: index.crates.io,crates.io,github.com
 
     steps:
       - name: Checkout
@@ -152,23 +179,38 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Merge origin/main (allow unrelated histories)
+      - name: Global unset proxy
         run: |
-          git fetch --all || true
-          git merge --allow-unrelated-histories origin/main -X theirs || true
-
-      - name: Remove proxy from cargo config (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
+          git config --global --unset http.proxy || true
+          git config --global --unset https.proxy || true
           unset http_proxy || true
           unset https_proxy || true
-          echo "HTTP_PROXY=" >> "$GITHUB_ENV"
-          echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
-          echo "http_proxy=" >> "$GITHUB_ENV"
-          echo "https_proxy=" >> "$GITHUB_ENV"
+          unset HTTP_PROXY || true
+          unset HTTPS_PROXY || true
+          echo "http_proxy=" >> $GITHUB_ENV
+          echo "https_proxy=" >> $GITHUB_ENV
+          echo "HTTP_PROXY=" >> $GITHUB_ENV
+          echo "HTTPS_PROXY=" >> $GITHUB_ENV
+          echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
+          echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
 
+      - name: Initialize git repository if needed
+        run: |
+          if [ ! -d .git ]; then
+            rm -rf .git
+            git init
+            git config --local user.email "ci@github.com"
+            git config --local user.name "GitHub CI"
+            git add .
+            git commit -m "Initial commit from CI"
+          fi
+          git remote -v || git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git
+          git fetch origin --depth=1 || true
+
+      - name: Remove proxy from cargo config
+        run: |
+          mkdir -p $HOME/.cargo
+          touch $HOME/.cargo/config.toml
           if [ -f "$HOME/.cargo/config" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
           fi
@@ -176,13 +218,13 @@ jobs:
             sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
           fi
 
-      - name: Setup Rust toolchain (stable)
-        uses: actions-rs/toolchain@v1
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt
 
-      - name: Cache cargo (build job)
+      - name: Cache cargo
         uses: actions/cache@v4
         with:
           path: |
@@ -193,4 +235,22 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
 
       - name: Build release
-        run: cargo build --config 'http.proxy=""' --config 'https.proxy=""' --release --verbose
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+          DATABASE_URL: sqlite://./wallets.db
+        run: cargo build --release --verbose
+
+      # 根据项目 copilot-instructions.md 添加覆盖率报告
+      - name: Generate coverage report
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
+          DATABASE_URL: sqlite://./wallets.db
+        run: |
+          cargo install cargo-tarpaulin --force || true
+          cargo tarpaulin --out Html
