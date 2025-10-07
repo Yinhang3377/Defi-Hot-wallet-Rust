@@ -10,6 +10,14 @@ on:
 env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
+  # 确保系统级别完全无代理
+  http_proxy: ""
+  https_proxy: ""
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  all_proxy: ""
+  ALL_PROXY: ""
+  NO_PROXY: "crates.io,index.crates.io,github.com,rust-lang.org"
 
 jobs:
   test:
@@ -21,99 +29,86 @@ jobs:
         rust: [stable, beta, nightly]
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          persist-credentials: true
+          fetch-depth: 1  # 浅克隆，避免历史问题
 
-      # 更强硬地处理 git 问题 - 直接禁用 git 安全性检查
-      - name: Configure git to allow unrelated histories
+      # 直接取消任何历史/分支合并，重置状态
+      - name: Fresh Git Setup (avoid history issues)
         run: |
-          git config --global --add safe.directory $(pwd)
-          git config --global pull.rebase false
-          git config --global --add pull.allowUnrelatedHistories true
-          git config --global advice.skippedCherryPicks false
+          # 完全清理 Git 状态并重新初始化
+          rm -rf .git
+          git init
+          git config --local user.name "GitHub CI"
+          git config --local user.email "ci@github.actions"
+          git add .
+          git commit -m "Initial commit from CI"
           
-          # 额外配置防止git使用代理
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+          # 显示当前状态确认
+          git status
 
-      - name: Global unset proxy (run first)
+      # 强力清除所有代理设置
+      - name: Remove all proxy configurations
         run: |
-          # 清除所有代理配置
-          unset http_proxy || true
-          unset https_proxy || true
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
-          unset ALL_PROXY || true
-          unset all_proxy || true
-          unset NO_PROXY || true
-          unset no_proxy || true
+          # 清除系统代理环境变量
+          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY || true
           
-          # 使用空值覆盖 GitHub Actions 环境
+          # 设置空代理环境变量
           echo "http_proxy=" >> $GITHUB_ENV
           echo "https_proxy=" >> $GITHUB_ENV
           echo "HTTP_PROXY=" >> $GITHUB_ENV
           echo "HTTPS_PROXY=" >> $GITHUB_ENV
-          echo "ALL_PROXY=" >> $GITHUB_ENV
           echo "all_proxy=" >> $GITHUB_ENV
-          echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
-          echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
+          echo "ALL_PROXY=" >> $GITHUB_ENV
+          echo "NO_PROXY=crates.io,index.crates.io,github.com,rust-lang.org" >> $GITHUB_ENV
           
-          # 显示环境中的代理变量（调试用）
+          # 清除 Git 代理设置
+          git config --global --unset http.proxy || true
+          git config --global --unset https.proxy || true
+          
+          # 显示环境变量确认
           env | grep -i proxy || echo "No proxy variables found"
 
-      # 改用纯净初始化 - 避免任何历史冲突
-      - name: Reset git repository (clean slate)
+      # 确保 cargo 配置绝对干净并直接连接
+      - name: Setup clean cargo configuration
         run: |
-          rm -rf .git || true
-          git init
-          git config --local user.email "ci@github.com"
-          git config --local user.name "GitHub CI"
-          git add .
-          git commit -m "Initial commit from CI"
-          
-          # 确保远程配置正确但不尝试合并
-          git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git || true
-
-      # 彻底清除系统级、用户级和 cargo 的代理配置
-      - name: Remove all proxy configurations
-        run: |
-          # 创建并确保 cargo 配置干净
+          # 确保目录存在
           mkdir -p $HOME/.cargo
-          echo "[source.crates-io]" > $HOME/.cargo/config.toml
-          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
-          echo "replace-with = 'direct'" >> $HOME/.cargo/config.toml
-          echo "" >> $HOME/.cargo/config.toml
-          echo "[source.direct]" >> $HOME/.cargo/config.toml
-          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
           
-          # 确认代理已删除
-          cat $HOME/.cargo/config.toml
-
-      # 保留 Windows 支持但简化
-      - name: Remove proxy from cargo config (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -Path "$HOME/.cargo" -ItemType Directory -Force | Out-Null
-          @"
+          # 创建新的配置文件
+          cat > $HOME/.cargo/config.toml << 'EOF'
+          # CI cargo config - direct connections only
           [source.crates-io]
-          registry = 'https://github.com/rust-lang/crates.io-index'
-          replace-with = 'direct'
+          registry = "https://github.com/rust-lang/crates.io-index"
+          replace-with = "direct"
           
           [source.direct]
-          registry = 'https://github.com/rust-lang/crates.io-index'
-          "@ | Set-Content "$HOME/.cargo/config.toml"
+          registry = "https://github.com/rust-lang/crates.io-index"
+          
+          [net]
+          git-fetch-with-cli = true
+          
+          [http]
+          # 确保不使用代理
+          check-revoke = false
+          multiplexing = false
+          debug = true
+          EOF
+          
+          # 显示配置确认
+          echo "--- Created clean cargo config:"
+          cat $HOME/.cargo/config.toml
 
+      # 安装 Rust
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
-      - name: Cache cargo registry and target
+      # 缓存 cargo
+      - name: Cache cargo artifacts
         uses: actions/cache@v4
         with:
           path: |
@@ -121,141 +116,157 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
 
+      # 格式化代码
       - name: Format code
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
         run: cargo fmt --all
-
-      # 使用直接源确保不尝试使用代理
-      - name: Fetch dependencies (direct source)
         env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
+          RUSTFLAGS: "-D warnings"
           http_proxy: ""
           https_proxy: ""
-        run: |
-          # 显示 cargo 配置
-          cat $HOME/.cargo/config.toml || true
-          cargo fetch --verbose --locked
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
 
+      # 检查代码格式
       - name: Check formatting
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
         run: cargo fmt --all -- --check
+        env:
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
 
+      # 获取依赖（直接使用 --offline 模式或强制直连）
+      - name: Fetch dependencies
+        run: |
+          # 先尝试无网络更新
+          cargo fetch --locked || true
+          
+          # 如果失败，强制使用直连方式
+          CARGO_NET_GIT_FETCH_WITH_CLI=true cargo fetch --verbose
+        env:
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+
+      # Clippy 检查
       - name: Lint with clippy
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
         run: cargo clippy --all-targets -- -D warnings
+        env:
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
 
+      # 构建项目
       - name: Build
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
         run: cargo build --verbose
-
-      - name: Test
         env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           http_proxy: ""
           https_proxy: ""
-          DATABASE_URL: sqlite://./wallets.db
-        run: cargo test --verbose
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
 
-      # 根据项目指南添加安全审计
+      # 运行测试
+      - name: Test
+        run: cargo test --verbose
+        env:
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          DATABASE_URL: sqlite://./wallets.db
+
+      # 安全审计
       - name: Security audit
         if: matrix.rust == 'stable'
+        run: |
+          # 尝试离线安装
+          cargo install cargo-audit --force || \
+            cargo install --git https://github.com/rustsec/rustsec cargo-audit --force
+          
+          cargo audit
         env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           http_proxy: ""
           https_proxy: ""
-        run: |
-          cargo install cargo-audit --locked --force || true
-          cargo audit
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
 
   build:
     name: Build Release
     runs-on: ubuntu-latest
+    env:
+      http_proxy: ""
+      https_proxy: ""
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          persist-credentials: true
+          fetch-depth: 1  # 浅克隆，避免历史问题
 
-      # 配置 git 允许不相关历史
-      - name: Configure git to allow unrelated histories
+      # 直接取消任何历史/分支合并，重置状态
+      - name: Fresh Git Setup (avoid history issues)
         run: |
-          git config --global --add safe.directory $(pwd)
-          git config --global pull.rebase false
-          git config --global --add pull.allowUnrelatedHistories true
-          git config --global advice.skippedCherryPicks false
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+          rm -rf .git
+          git init
+          git config --local user.name "GitHub CI"
+          git config --local user.email "ci@github.actions"
+          git add .
+          git commit -m "Initial commit from CI"
 
-      - name: Global unset proxy
+      # 强力清除所有代理设置
+      - name: Remove all proxy configurations
         run: |
-          unset http_proxy || true
-          unset https_proxy || true
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
-          unset ALL_PROXY || true
-          unset all_proxy || true
-          
+          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY || true
           echo "http_proxy=" >> $GITHUB_ENV
           echo "https_proxy=" >> $GITHUB_ENV
           echo "HTTP_PROXY=" >> $GITHUB_ENV
           echo "HTTPS_PROXY=" >> $GITHUB_ENV
-          echo "ALL_PROXY=" >> $GITHUB_ENV
           echo "all_proxy=" >> $GITHUB_ENV
-          echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
-          echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
+          echo "ALL_PROXY=" >> $GITHUB_ENV
+          echo "NO_PROXY=crates.io,index.crates.io,github.com,rust-lang.org" >> $GITHUB_ENV
+          
+          git config --global --unset http.proxy || true
+          git config --global --unset https.proxy || true
 
-      # 重置git仓库
-      - name: Reset git repository (clean slate)
-        run: |
-          rm -rf .git || true
-          git init
-          git config --local user.email "ci@github.com"
-          git config --local user.name "GitHub CI"
-          git add .
-          git commit -m "Initial commit from CI"
-          git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git || true
-
-      # 彻底清除 cargo 代理配置
-      - name: Setup clean cargo config
+      # 确保 cargo 配置绝对干净并直接连接
+      - name: Setup clean cargo configuration
         run: |
           mkdir -p $HOME/.cargo
-          echo "[source.crates-io]" > $HOME/.cargo/config.toml
-          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
-          echo "replace-with = 'direct'" >> $HOME/.cargo/config.toml
-          echo "" >> $HOME/.cargo/config.toml
-          echo "[source.direct]" >> $HOME/.cargo/config.toml
-          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
+          cat > $HOME/.cargo/config.toml << 'EOF'
+          # CI cargo config - direct connections only
+          [source.crates-io]
+          registry = "https://github.com/rust-lang/crates.io-index"
+          replace-with = "direct"
+          
+          [source.direct]
+          registry = "https://github.com/rust-lang/crates.io-index"
+          
+          [net]
+          git-fetch-with-cli = true
+          
+          [http]
+          check-revoke = false
+          multiplexing = false
+          debug = true
+          EOF
 
+      # 安装 Rust
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt
 
-      - name: Cache cargo
+      # 缓存 cargo
+      - name: Cache cargo artifacts
         uses: actions/cache@v4
         with:
           path: |
@@ -263,25 +274,31 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
+          key: ${{ runner.os }}-cargo-stable-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-stable-
 
+      # 构建发布版本
       - name: Build release
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
-          DATABASE_URL: sqlite://./wallets.db
         run: cargo build --release --verbose
-
-      # 根据项目指南添加覆盖率报告
-      - name: Generate coverage report
         env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           http_proxy: ""
           https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
           DATABASE_URL: sqlite://./wallets.db
+
+      # 覆盖率报告
+      - name: Generate coverage report
         run: |
-          cargo install cargo-tarpaulin --locked --force || true
+          # 尝试离线安装
+          cargo install cargo-tarpaulin --force || \
+            cargo install --git https://github.com/xd009642/tarpaulin cargo-tarpaulin --force
+          
           cargo tarpaulin --out Html
+        env:
+          http_proxy: ""
+          https_proxy: ""
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          DATABASE_URL: sqlite://./wallets.db
