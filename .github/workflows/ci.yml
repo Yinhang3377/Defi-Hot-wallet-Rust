@@ -9,9 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DATABASE_URL: sqlite://./wallets.db
-  # 不再设置空代理，可能会导致连接问题
-  # 不设置代理变量，让 GitHub Actions 自己决定网络路由
+  DATABASE_URL: sqlite://./wallets.db  # 遵循 copilot-instructions.md 中提到的默认数据库
 
 jobs:
   test:
@@ -28,60 +26,65 @@ jobs:
         with:
           fetch-depth: 1  # 浅克隆，避免历史问题
 
-      # 直接取消任何历史/分支合并，重置状态
-      - name: Fresh Git Setup (avoid history issues)
+      # 完全重置 Git 状态，避免历史合并问题
+      - name: Reset Git repository
         run: |
-          # 完全清理 Git 状态并重新初始化
           rm -rf .git
           git init
           git config --local user.name "GitHub CI"
           git config --local user.email "ci@github.actions"
           git add .
           git commit -m "Initial commit from CI"
-          
-          # 显示当前状态确认
           git status
 
-      # 不再强制清除代理，而是配置使用镜像源
-      - name: Setup cargo with mirror sources
+      # 多源策略：配置多个镜像源，在 CI 中使用
+      - name: Configure Cargo with multiple mirrors
         run: |
-          # 确保目录存在
           mkdir -p $HOME/.cargo
-          
-          # 创建配置文件，使用中国区镜像
           cat > $HOME/.cargo/config.toml << 'EOF'
-          # CI cargo config - use mirrors for better access in restricted regions
+          # CI cargo config with multiple mirrors for reliability
           [source.crates-io]
           registry = "https://github.com/rust-lang/crates.io-index"
-          # 使用 USTC 镜像
-          replace-with = "ustc"
-          
+          # 首选 TUNA 镜像，备选 USTC
+          replace-with = "tuna"
+
+          # 清华大学镜像
+          [source.tuna]
+          registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+
+          # 中科大镜像(备选)
           [source.ustc]
-          registry = "git://mirrors.ustc.edu.cn/crates.io-index"
+          registry = "https://mirrors.ustc.edu.cn/crates.io-index"
           
+          # 字节镜像(备选)
+          [source.bfsu]
+          registry = "https://mirrors.bfsu.edu.cn/git/crates.io-index/"
+
           [net]
           git-fetch-with-cli = true
+          retry = 3
           
           [http]
-          # 调整连接参数，增加稳定性
+          # 增加超时和重试参数
           check-revoke = false
-          timeout = 60
-          low-speed-limit = 10
+          timeout = 120
+          low-speed-limit = 5
+          low-speed-time = 20
+          multiplexing = false
           EOF
           
-          # 显示配置确认
-          echo "--- Created cargo config with mirrors:"
+          echo "=== Configured cargo with multiple mirrors ==="
           cat $HOME/.cargo/config.toml
 
-      # 安装 Rust
+      # 安装 Rust 工具链
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
-      # 缓存 cargo
-      - name: Cache cargo artifacts
+      # 缓存 cargo 构建产物
+      - name: Cache cargo build
         uses: actions/cache@v4
         with:
           path: |
@@ -89,9 +92,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-mirror-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-mirrors-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-mirror-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-mirrors-${{ matrix.rust }}-
 
       # 格式化代码
       - name: Format code
@@ -99,24 +102,35 @@ jobs:
         env:
           RUSTFLAGS: "-D warnings"
 
-      # 检查代码格式
+      # 检查代码格式化
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      # 获取依赖（使用镜像，增加重试次数）
+      # 获取依赖
       - name: Fetch dependencies
         run: |
-          # 增加重试和超时参数，提高成功率
-          CARGO_NET_RETRY=5 cargo fetch --verbose || true
+          # 尝试使用第一个镜像源获取依赖
+          cargo fetch --verbose || true
           
-          # 如果失败，尝试通过 git 直接获取
-          CARGO_NET_GIT_FETCH_WITH_CLI=true cargo fetch --verbose
-      
-      # Clippy 检查
+          # 如果失败，尝试切换到第二个镜像源
+          if [ $? -ne 0 ]; then
+            echo "First mirror failed, trying USTC mirror"
+            sed -i 's/replace-with = "tuna"/replace-with = "ustc"/' $HOME/.cargo/config.toml
+            cargo fetch --verbose || true
+          fi
+          
+          # 如果仍然失败，尝试切换到第三个镜像源
+          if [ $? -ne 0 ]; then
+            echo "Second mirror failed, trying BFSU mirror"
+            sed -i 's/replace-with = "ustc"/replace-with = "bfsu"/' $HOME/.cargo/config.toml
+            CARGO_NET_GIT_FETCH_WITH_CLI=true cargo fetch --verbose
+          fi
+
+      # 代码静态分析
       - name: Lint with clippy
         run: cargo clippy --all-targets -- -D warnings
 
-      # 构建项目
+      # 构建
       - name: Build
         run: cargo build --verbose
 
@@ -126,11 +140,11 @@ jobs:
         env:
           DATABASE_URL: sqlite://./wallets.db
 
-      # 安全审计（使用 git 安装，可能更稳定）
+      # 安全审计
       - name: Security audit
         if: matrix.rust == 'stable'
         run: |
-          # 直接从 git 安装
+          # 尝试直接从 GitHub 安装审计工具（避免中间源）
           cargo install --git https://github.com/rustsec/rustsec cargo-audit --force || true
           
           cargo audit || echo "Security audit completed with warnings"
@@ -143,10 +157,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # 浅克隆，避免历史问题
+          fetch-depth: 1
 
-      # 直接取消任何历史/分支合并，重置状态
-      - name: Fresh Git Setup (avoid history issues)
+      # 重置 Git 仓库
+      - name: Reset Git repository
         run: |
           rm -rf .git
           git init
@@ -155,27 +169,35 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
 
-      # 设置 cargo 使用镜像源
-      - name: Setup cargo with mirror sources
+      # 配置多镜像源
+      - name: Configure Cargo with multiple mirrors
         run: |
           mkdir -p $HOME/.cargo
           cat > $HOME/.cargo/config.toml << 'EOF'
-          # CI cargo config - use mirrors for better access
+          # CI cargo config with multiple mirrors
           [source.crates-io]
           registry = "https://github.com/rust-lang/crates.io-index"
-          # 使用 USTC 镜像
-          replace-with = "ustc"
-          
+          replace-with = "tuna"
+
+          [source.tuna]
+          registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+
           [source.ustc]
-          registry = "git://mirrors.ustc.edu.cn/crates.io-index"
+          registry = "https://mirrors.ustc.edu.cn/crates.io-index"
           
+          [source.bfsu]
+          registry = "https://mirrors.bfsu.edu.cn/git/crates.io-index/"
+
           [net]
           git-fetch-with-cli = true
+          retry = 3
           
           [http]
           check-revoke = false
-          timeout = 60
-          low-speed-limit = 10
+          timeout = 120
+          low-speed-limit = 5
+          low-speed-time = 20
+          multiplexing = false
           EOF
 
       # 安装 Rust
@@ -186,7 +208,7 @@ jobs:
           components: rustfmt
 
       # 缓存 cargo
-      - name: Cache cargo artifacts
+      - name: Cache cargo build
         uses: actions/cache@v4
         with:
           path: |
@@ -194,9 +216,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-mirror-stable-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-mirrors-release-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-mirror-stable-
+            ${{ runner.os }}-cargo-mirrors-release-
 
       # 构建发布版本
       - name: Build release
@@ -204,10 +226,10 @@ jobs:
         env:
           DATABASE_URL: sqlite://./wallets.db
 
-      # 覆盖率报告（从 git 安装更稳定）
+      # 覆盖率报告
       - name: Generate coverage report
         run: |
-          # 直接从 git 安装
+          # 尝试从 GitHub 直接安装
           cargo install --git https://github.com/xd009642/tarpaulin cargo-tarpaulin --force || true
           
           cargo tarpaulin --out Html || echo "Coverage report may be incomplete"
