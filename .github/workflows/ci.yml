@@ -1,17 +1,16 @@
-﻿name: CI/CD Pipeline
+﻿---
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
-  http_proxy: ""
-  https_proxy: ""
   NO_PROXY: index.crates.io,crates.io,github.com
 
 jobs:
@@ -21,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust: [ stable, beta, nightly ]
+        rust: [stable, beta, nightly]
 
     steps:
       - name: Checkout
@@ -46,7 +45,8 @@ jobs:
           Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
           Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
           Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
+          Add-Content -Path $env:GITHUB_ENV `
+            -Value "NO_PROXY=index.crates.io,crates.io,github.com"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -64,25 +64,15 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
 
-      - name: Fetch crates
-        run: cargo fetch
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Test
-        run: cargo test --verbose
+      - run: cargo fetch
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo build --verbose
+      - run: cargo test --verbose
 
   build:
     name: Build Release
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,7 +96,8 @@ jobs:
           Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
           Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
           Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
+          Add-Content -Path $env:GITHUB_ENV `
+            -Value "NO_PROXY=index.crates.io,crates.io,github.com"
 
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@stable
@@ -124,5 +115,4 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
 
-      - name: Build release
-        run: cargo build --release --verbose
+      - run: cargo build --release --verbose
