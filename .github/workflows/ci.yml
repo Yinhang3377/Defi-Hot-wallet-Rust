@@ -1,4 +1,4 @@
-﻿---
+﻿--- 
 name: CI/CD Pipeline
 
 on:
@@ -9,6 +9,12 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  HTTP_PROXY: ""
+  HTTPS_PROXY: ""
+  http_proxy: ""
+  https_proxy: ""
+  NO_PROXY: index.crates.io,crates.io,github.com
+  no_proxy: index.crates.io,crates.io,github.com
 
 jobs:
   test:
@@ -19,20 +25,30 @@ jobs:
       matrix:
         rust: [stable, beta, nightly]
 
+    env:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: index.crates.io,crates.io,github.com
+      no_proxy: index.crates.io,crates.io,github.com
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Merge origin/main (allow unrelated histories)
+      - name: Ensure branch + allow unrelated histories (safe/forgiving)
         run: |
-          git fetch origin main
-          # 尝试 pull（允许 unrelated histories）；失败时回退到手动 merge FETCH_HEAD
-          git pull origin main --allow-unrelated-histories || \
-            git merge --allow-unrelated-histories FETCH_HEAD || true
+          git fetch --all || true
+          # 尝试合并远程 main（允许 unrelated histories），出错不 fail（后续步骤依然会运行）
+          git merge --allow-unrelated-histories origin/main -X theirs || true
+          # 备选强制同步远端（如果你想直接覆盖本地，请取消注释下一行）
+          # git reset --hard origin/main || true
 
-      - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
+      - name: Remove proxy from cargo config (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           unset HTTP_PROXY || true
@@ -56,9 +72,7 @@ jobs:
             sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
           fi
 
-          env | grep -i proxy || true
-
-      - name: Clear proxy env and remove cargo proxy config (Windows)
+      - name: Remove proxy from cargo config (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -104,7 +118,7 @@ jobs:
       - name: Format code (apply)
         run: cargo fmt --all
 
-      - name: Fetch dependencies
+      - name: Fetch dependencies (no cargo proxy)
         run: cargo fetch --config 'http.proxy=""' --config 'https.proxy=""'
 
       - name: Check formatting (verify)
@@ -123,34 +137,37 @@ jobs:
     name: Build Release
     runs-on: ubuntu-latest
 
+    env:
+      HTTP_PROXY: ""
+      HTTPS_PROXY: ""
+      http_proxy: ""
+      https_proxy: ""
+      NO_PROXY: index.crates.io,crates.io,github.com
+      no_proxy: index.crates.io,crates.io,github.com
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Merge origin/main (allow unrelated histories)
         run: |
-          git fetch origin main
-          git pull origin main --allow-unrelated-histories || \
-            git merge --allow-unrelated-histories FETCH_HEAD || true
+          git fetch --all || true
+          git merge --allow-unrelated-histories origin/main -X theirs || true
 
-      - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
+      - name: Remove proxy from cargo config (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           unset HTTP_PROXY || true
           unset HTTPS_PROXY || true
           unset http_proxy || true
           unset https_proxy || true
-          unset NO_PROXY || true
-          unset no_proxy || true
-
           echo "HTTP_PROXY=" >> "$GITHUB_ENV"
           echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
           echo "http_proxy=" >> "$GITHUB_ENV"
           echo "https_proxy=" >> "$GITHUB_ENV"
-          echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
 
           if [ -f "$HOME/.cargo/config" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
@@ -158,24 +175,6 @@ jobs:
           if [ -f "$HOME/.cargo/config.toml" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
           fi
-
-      - name: Clear proxy env and remove cargo proxy config (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Remove-Item Env:HTTP_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:NO_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:no_proxy -ErrorAction SilentlyContinue
-
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTP_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTPS_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "http_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "https_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
-          Add-Content -Path $env:GITHUB_ENV -Value "no_proxy=index.crates.io,crates.io,github.com"
 
       - name: Setup Rust toolchain (stable)
         uses: actions-rs/toolchain@v1
