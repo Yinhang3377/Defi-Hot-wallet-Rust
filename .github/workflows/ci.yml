@@ -34,7 +34,7 @@ jobs:
       - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
-          # 清除环境变量
+          # 清除常见代理环境变量
           unset HTTP_PROXY || true
           unset HTTPS_PROXY || true
           unset http_proxy || true
@@ -42,7 +42,7 @@ jobs:
           unset NO_PROXY || true
           unset no_proxy || true
 
-          # 阻止后续步骤继承代理（写入 GITHUB_ENV）
+          # 防止继承到后续步骤
           echo "HTTP_PROXY=" >> "$GITHUB_ENV"
           echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
           echo "http_proxy=" >> "$GITHUB_ENV"
@@ -50,7 +50,7 @@ jobs:
           echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
           echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
 
-          # 从用户 cargo 配置中删除任何包含 proxy 的行（保留备份）
+          # 删除用户 cargo 配置里的 proxy 设置（保留备份）
           if [ -f "$HOME/.cargo/config" ]; then
             sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
           fi
@@ -58,7 +58,7 @@ jobs:
             sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
           fi
 
-          # 调试输出，确保没有残留代理
+          # 调试输出，确认无残留
           env | grep -i proxy || true
           if [ -f "$HOME/.cargo/config" ]; then echo "---- ~/.cargo/config ----"; cat "$HOME/.cargo/config" || true; fi
           if [ -f "$HOME/.cargo/config.toml" ]; then echo "---- ~/.cargo/config.toml ----"; cat "$HOME/.cargo/config.toml" || true; fi
@@ -82,7 +82,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "no_proxy=index.crates.io,crates.io,github.com"
 
           if (Test-Path "$HOME/.cargo/config") {
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.bak" 
+            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.bak"
             (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config"
           }
           if (Test-Path "$HOME/.cargo/config.toml") {
@@ -91,7 +91,7 @@ jobs:
           }
 
           Get-ChildItem Env: | Where-Object { $_.Name -match 'proxy' } || Write-Output 'no proxy env'
-          if (Test-Path "$HOME/.cargo/config") { Write-Output '---- ~/.cargo/config ----'; Get-Content "$HOME/.cargo/config" } 
+          if (Test-Path "$HOME/.cargo/config") { Write-Output '---- ~/.cargo/config ----'; Get-Content "$HOME/.cargo/config" }
           if (Test-Path "$HOME/.cargo/config.toml") { Write-Output '---- ~/.cargo/config.toml ----'; Get-Content "$HOME/.cargo/config.toml" }
 
       - name: Install Rust toolchain
@@ -110,11 +110,20 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
 
-      - run: cargo fetch --config http.proxy="" --config https.proxy=""
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets --config http.proxy="" --config https.proxy="" -- -D warnings
-      - run: cargo build --config http.proxy="" --config https.proxy="" --verbose
-      - run: cargo test --config http.proxy="" --config https.proxy="" --verbose
+      - name: Fetch dependencies
+        run: cargo fetch --config http.proxy="" --config https.proxy=""
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Lint (clippy)
+        run: cargo clippy --all-targets --config http.proxy="" --config https.proxy="" -- -D warnings
+
+      - name: Build
+        run: cargo build --config http.proxy="" --config https.proxy="" --verbose
+
+      - name: Test
+        run: cargo test --config http.proxy="" --config https.proxy="" --verbose
 
   build:
     name: Build Release
@@ -194,202 +203,5 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
 
-      - run: cargo build --config http.proxy="" --config https.proxy="" --release --verbose
-```// filepath: c:\Users\plant\Desktop\Rust区块链\Defi-Hot-wallet-Rust\.github\workflows\ci.yml
----
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-env:
-  CARGO_TERM_COLOR: always
-  HTTP_PROXY: ""
-  HTTPS_PROXY: ""
-  http_proxy: ""
-  https_proxy: ""
-  NO_PROXY: index.crates.io,crates.io,github.com
-  no_proxy: index.crates.io,crates.io,github.com
-
-jobs:
-  test:
-    name: Test (${{ matrix.rust }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        rust: [stable, beta, nightly]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          # 清除环境变量
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
-          unset http_proxy || true
-          unset https_proxy || true
-          unset NO_PROXY || true
-          unset no_proxy || true
-
-          # 阻止后续步骤继承代理（写入 GITHUB_ENV）
-          echo "HTTP_PROXY=" >> "$GITHUB_ENV"
-          echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
-          echo "http_proxy=" >> "$GITHUB_ENV"
-          echo "https_proxy=" >> "$GITHUB_ENV"
-          echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-
-          # 从用户 cargo 配置中删除任何包含 proxy 的行（保留备份）
-          if [ -f "$HOME/.cargo/config" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
-          fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
-          fi
-
-          # 调试输出，确保没有残留代理
-          env | grep -i proxy || true
-          if [ -f "$HOME/.cargo/config" ]; then echo "---- ~/.cargo/config ----"; cat "$HOME/.cargo/config" || true; fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then echo "---- ~/.cargo/config.toml ----"; cat "$HOME/.cargo/config.toml" || true; fi
-
-      - name: Clear proxy env and remove cargo proxy config (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Remove-Item Env:HTTP_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:NO_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:no_proxy -ErrorAction SilentlyContinue
-
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTP_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTPS_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "http_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "https_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
-          Add-Content -Path $env:GITHUB_ENV -Value "no_proxy=index.crates.io,crates.io,github.com"
-
-          if (Test-Path "$HOME/.cargo/config") {
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.bak" 
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config"
-          }
-          if (Test-Path "$HOME/.cargo/config.toml") {
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml.bak"
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml"
-          }
-
-          Get-ChildItem Env: | Where-Object { $_.Name -match 'proxy' } || Write-Output 'no proxy env'
-          if (Test-Path "$HOME/.cargo/config") { Write-Output '---- ~/.cargo/config ----'; Get-Content "$HOME/.cargo/config" } 
-          if (Test-Path "$HOME/.cargo/config.toml") { Write-Output '---- ~/.cargo/config.toml ----'; Get-Content "$HOME/.cargo/config.toml" }
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
-
-      - name: Cache cargo registry and target
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
-
-      - run: cargo fetch --config http.proxy="" --config https.proxy=""
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --all-targets --config http.proxy="" --config https.proxy="" -- -D warnings
-      - run: cargo build --config http.proxy="" --config https.proxy="" --verbose
-      - run: cargo test --config http.proxy="" --config https.proxy="" --verbose
-
-  build:
-    name: Build Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          unset HTTP_PROXY || true
-          unset HTTPS_PROXY || true
-          unset http_proxy || true
-          unset https_proxy || true
-          unset NO_PROXY || true
-          unset no_proxy || true
-
-          echo "HTTP_PROXY=" >> "$GITHUB_ENV"
-          echo "HTTPS_PROXY=" >> "$GITHUB_ENV"
-          echo "http_proxy=" >> "$GITHUB_ENV"
-          echo "https_proxy=" >> "$GITHUB_ENV"
-          echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
-
-          if [ -f "$HOME/.cargo/config" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
-          fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
-          fi
-
-          env | grep -i proxy || true
-
-      - name: Clear proxy env and remove cargo proxy config (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Remove-Item Env:HTTP_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:HTTPS_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:http_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
-          Remove-Item Env:NO_PROXY -ErrorAction SilentlyContinue
-          Remove-Item Env:no_proxy -ErrorAction SilentlyContinue
-
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTP_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "HTTPS_PROXY="
-          Add-Content -Path $env:GITHUB_ENV -Value "http_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "https_proxy="
-          Add-Content -Path $env:GITHUB_ENV -Value "NO_PROXY=index.crates.io,crates.io,github.com"
-          Add-Content -Path $env:GITHUB_ENV -Value "no_proxy=index.crates.io,crates.io,github.com"
-
-          if (Test-Path "$HOME/.cargo/config") {
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.bak"
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config"
-          }
-          if (Test-Path "$HOME/.cargo/config.toml") {
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml.bak"
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml"
-          }
-
-      - name: Install Rust toolchain (stable)
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          components: rustfmt
-
-      - name: Cache cargo (build job)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
-
-      - run: cargo build --config http.proxy="" --config https.proxy="" --release --verbose
+      - name: Build release
+        run: cargo build --config http.proxy="" --config https.proxy="" --release --verbose
