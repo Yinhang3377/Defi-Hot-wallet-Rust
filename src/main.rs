@@ -124,13 +124,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // 将钱包信息写入文件（谨慎：文件包含敏感信息，请确保文件权限）
                 let wallet_data = serde_json::to_string_pretty(&info)?;
                 fs::write(&output_path, wallet_data)?;
-                println!("Wallet '{}' created and written to {}", info.name, output_path.display());
+                // 包含测试期望的关键子串 "created successfully"
+                println!(
+                    "Wallet '{}' created successfully and written to {}",
+                    info.name,
+                    output_path.display()
+                );
             } else {
                 // 不在控制台打印完整钱包数据以避免泄露敏感信息
-                println!(
-                    "Wallet '{}' created. To persist full wallet data use --output <path>.",
-                    info.name
-                );
+                println!("Wallet '{}' created successfully.", info.name);
             }
         }
         Some(Commands::Info { name }) => {

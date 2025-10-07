@@ -1,0 +1,10 @@
+[package]
+name = "elliptic-curve-tools"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+# Add your dependencies here
+
+[patch.crates-io]
+elliptic-curve-tools = { path = "../path/to/your/local/elliptic-curve-tools" }

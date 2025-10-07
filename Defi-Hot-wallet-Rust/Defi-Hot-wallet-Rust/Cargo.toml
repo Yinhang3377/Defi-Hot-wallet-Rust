@@ -1,0 +1,28 @@
+[package]
+name = "defi-hot-wallet"
+version = "0.1.0"
+edition = "2021"
+
+# Dependencies
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+ethers = { version = "0.6", features = ["abigen", "rustls"] }
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+zeroize = "1.4"
+thiserror = "1.0"
+sqlx = { version = "0.5", features = ["sqlite"] }
+prometheus = "0.11"
+httpmock = "0.5"
+axum = "0.6"
+
+# Features
+[features]
+strict_security = []
+sop_patch_tests = [] 
+
+# Patch for local modifications
+[patch.crates-io]
+elliptic-curve-tools = { path = "patches/elliptic-curve-tools" }
