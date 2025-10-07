@@ -1,4 +1,4 @@
-﻿--- 
+﻿---
 name: CI/CD Pipeline
 
 on:
@@ -28,7 +28,9 @@ jobs:
       - name: Merge origin/main (allow unrelated histories)
         run: |
           git fetch origin main
-          git merge --allow-unrelated-histories origin/main || true
+          # 尝试 pull（允许 unrelated histories）；失败时回退到手动 merge FETCH_HEAD
+          git pull origin main --allow-unrelated-histories || \
+            git merge --allow-unrelated-histories FETCH_HEAD || true
 
       - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
         if: runner.os != 'Windows'
@@ -103,19 +105,19 @@ jobs:
         run: cargo fmt --all
 
       - name: Fetch dependencies
-        run: cargo fetch --config http.proxy="" --config https.proxy=""
+        run: cargo fetch --config 'http.proxy=""' --config 'https.proxy=""'
 
       - name: Check formatting (verify)
         run: cargo fmt --all -- --check
 
       - name: Lint (clippy)
-        run: cargo clippy --all-targets --config http.proxy="" --config https.proxy="" -- -D warnings
+        run: cargo clippy --all-targets --config 'http.proxy=""' --config 'https.proxy=""' -- -D warnings
 
       - name: Build
-        run: cargo build --config http.proxy="" --config https.proxy="" --verbose
+        run: cargo build --config 'http.proxy=""' --config 'https.proxy=""' --verbose
 
       - name: Test
-        run: cargo test --config http.proxy="" --config https.proxy="" --verbose
+        run: cargo test --config 'http.proxy=""' --config 'https.proxy=""' --verbose
 
   build:
     name: Build Release
@@ -130,7 +132,8 @@ jobs:
       - name: Merge origin/main (allow unrelated histories)
         run: |
           git fetch origin main
-          git merge --allow-unrelated-histories origin/main || true
+          git pull origin main --allow-unrelated-histories || \
+            git merge --allow-unrelated-histories FETCH_HEAD || true
 
       - name: Clear proxy env and remove cargo proxy config (Linux/macOS)
         if: runner.os != 'Windows'
@@ -191,4 +194,4 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-build
 
       - name: Build release
-        run: cargo build --config http.proxy="" --config https.proxy="" --release --verbose
+        run: cargo build --config 'http.proxy=""' --config 'https.proxy=""' --release --verbose
