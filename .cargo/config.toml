@@ -1,2 +1,27 @@
+# 本地开发配置 - 多镜像源
+[source.crates-io]
+registry = "https://github.com/rust-lang/crates.io-index"
+replace-with = "tuna"  # 使用清华镜像，可根据网络情况切换
+
+# 清华大学镜像
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+
+# 中科大镜像
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+# 字节镜像
+[source.bfsu]
+registry = "https://mirrors.bfsu.edu.cn/git/crates.io-index/"
+
+[net]
+git-fetch-with-cli = true
+retry = 3
+
 [http]
-proxy = "http://127.0.0.1:15715"
+# 调整连接参数
+timeout = 120
+low-speed-limit = 5
+low-speed-time = 20
+check-revoke = false
