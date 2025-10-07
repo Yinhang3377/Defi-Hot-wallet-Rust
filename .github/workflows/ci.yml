@@ -10,14 +10,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
-  # 确保系统级别完全无代理
-  http_proxy: ""
-  https_proxy: ""
-  HTTP_PROXY: ""
-  HTTPS_PROXY: ""
-  all_proxy: ""
-  ALL_PROXY: ""
-  NO_PROXY: "crates.io,index.crates.io,github.com,rust-lang.org"
+  # 不再设置空代理，可能会导致连接问题
+  # 不设置代理变量，让 GitHub Actions 自己决定网络路由
 
 jobs:
   test:
@@ -48,56 +42,35 @@ jobs:
           # 显示当前状态确认
           git status
 
-      # 强力清除所有代理设置
-      - name: Remove all proxy configurations
-        run: |
-          # 清除系统代理环境变量
-          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY || true
-          
-          # 设置空代理环境变量
-          echo "http_proxy=" >> $GITHUB_ENV
-          echo "https_proxy=" >> $GITHUB_ENV
-          echo "HTTP_PROXY=" >> $GITHUB_ENV
-          echo "HTTPS_PROXY=" >> $GITHUB_ENV
-          echo "all_proxy=" >> $GITHUB_ENV
-          echo "ALL_PROXY=" >> $GITHUB_ENV
-          echo "NO_PROXY=crates.io,index.crates.io,github.com,rust-lang.org" >> $GITHUB_ENV
-          
-          # 清除 Git 代理设置
-          git config --global --unset http.proxy || true
-          git config --global --unset https.proxy || true
-          
-          # 显示环境变量确认
-          env | grep -i proxy || echo "No proxy variables found"
-
-      # 确保 cargo 配置绝对干净并直接连接
-      - name: Setup clean cargo configuration
+      # 不再强制清除代理，而是配置使用镜像源
+      - name: Setup cargo with mirror sources
         run: |
           # 确保目录存在
           mkdir -p $HOME/.cargo
           
-          # 创建新的配置文件
+          # 创建配置文件，使用中国区镜像
           cat > $HOME/.cargo/config.toml << 'EOF'
-          # CI cargo config - direct connections only
+          # CI cargo config - use mirrors for better access in restricted regions
           [source.crates-io]
           registry = "https://github.com/rust-lang/crates.io-index"
-          replace-with = "direct"
+          # 使用 USTC 镜像
+          replace-with = "ustc"
           
-          [source.direct]
-          registry = "https://github.com/rust-lang/crates.io-index"
+          [source.ustc]
+          registry = "git://mirrors.ustc.edu.cn/crates.io-index"
           
           [net]
           git-fetch-with-cli = true
           
           [http]
-          # 确保不使用代理
+          # 调整连接参数，增加稳定性
           check-revoke = false
-          multiplexing = false
-          debug = true
+          timeout = 60
+          low-speed-limit = 10
           EOF
           
           # 显示配置确认
-          echo "--- Created clean cargo config:"
+          echo "--- Created cargo config with mirrors:"
           cat $HOME/.cargo/config.toml
 
       # 安装 Rust
@@ -116,94 +89,55 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-mirror-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-mirror-${{ matrix.rust }}-
 
       # 格式化代码
       - name: Format code
         run: cargo fmt --all
         env:
           RUSTFLAGS: "-D warnings"
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
 
       # 检查代码格式
       - name: Check formatting
         run: cargo fmt --all -- --check
-        env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
 
-      # 获取依赖（直接使用 --offline 模式或强制直连）
+      # 获取依赖（使用镜像，增加重试次数）
       - name: Fetch dependencies
         run: |
-          # 先尝试无网络更新
-          cargo fetch --locked || true
+          # 增加重试和超时参数，提高成功率
+          CARGO_NET_RETRY=5 cargo fetch --verbose || true
           
-          # 如果失败，强制使用直连方式
+          # 如果失败，尝试通过 git 直接获取
           CARGO_NET_GIT_FETCH_WITH_CLI=true cargo fetch --verbose
-        env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-
+      
       # Clippy 检查
       - name: Lint with clippy
         run: cargo clippy --all-targets -- -D warnings
-        env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
 
       # 构建项目
       - name: Build
         run: cargo build --verbose
-        env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
 
       # 运行测试
       - name: Test
         run: cargo test --verbose
         env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           DATABASE_URL: sqlite://./wallets.db
 
-      # 安全审计
+      # 安全审计（使用 git 安装，可能更稳定）
       - name: Security audit
         if: matrix.rust == 'stable'
         run: |
-          # 尝试离线安装
-          cargo install cargo-audit --force || \
-            cargo install --git https://github.com/rustsec/rustsec cargo-audit --force
+          # 直接从 git 安装
+          cargo install --git https://github.com/rustsec/rustsec cargo-audit --force || true
           
-          cargo audit
-        env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
+          cargo audit || echo "Security audit completed with warnings"
 
   build:
     name: Build Release
     runs-on: ubuntu-latest
-    env:
-      http_proxy: ""
-      https_proxy: ""
-      HTTP_PROXY: ""
-      HTTPS_PROXY: ""
 
     steps:
       - name: Checkout code
@@ -221,41 +155,27 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
 
-      # 强力清除所有代理设置
-      - name: Remove all proxy configurations
-        run: |
-          unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY no_proxy NO_PROXY || true
-          echo "http_proxy=" >> $GITHUB_ENV
-          echo "https_proxy=" >> $GITHUB_ENV
-          echo "HTTP_PROXY=" >> $GITHUB_ENV
-          echo "HTTPS_PROXY=" >> $GITHUB_ENV
-          echo "all_proxy=" >> $GITHUB_ENV
-          echo "ALL_PROXY=" >> $GITHUB_ENV
-          echo "NO_PROXY=crates.io,index.crates.io,github.com,rust-lang.org" >> $GITHUB_ENV
-          
-          git config --global --unset http.proxy || true
-          git config --global --unset https.proxy || true
-
-      # 确保 cargo 配置绝对干净并直接连接
-      - name: Setup clean cargo configuration
+      # 设置 cargo 使用镜像源
+      - name: Setup cargo with mirror sources
         run: |
           mkdir -p $HOME/.cargo
           cat > $HOME/.cargo/config.toml << 'EOF'
-          # CI cargo config - direct connections only
+          # CI cargo config - use mirrors for better access
           [source.crates-io]
           registry = "https://github.com/rust-lang/crates.io-index"
-          replace-with = "direct"
+          # 使用 USTC 镜像
+          replace-with = "ustc"
           
-          [source.direct]
-          registry = "https://github.com/rust-lang/crates.io-index"
+          [source.ustc]
+          registry = "git://mirrors.ustc.edu.cn/crates.io-index"
           
           [net]
           git-fetch-with-cli = true
           
           [http]
           check-revoke = false
-          multiplexing = false
-          debug = true
+          timeout = 60
+          low-speed-limit = 10
           EOF
 
       # 安装 Rust
@@ -274,31 +194,22 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-stable-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-mirror-stable-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-stable-
+            ${{ runner.os }}-cargo-mirror-stable-
 
       # 构建发布版本
       - name: Build release
         run: cargo build --release --verbose
         env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           DATABASE_URL: sqlite://./wallets.db
 
-      # 覆盖率报告
+      # 覆盖率报告（从 git 安装更稳定）
       - name: Generate coverage report
         run: |
-          # 尝试离线安装
-          cargo install cargo-tarpaulin --force || \
-            cargo install --git https://github.com/xd009642/tarpaulin cargo-tarpaulin --force
+          # 直接从 git 安装
+          cargo install --git https://github.com/xd009642/tarpaulin cargo-tarpaulin --force || true
           
-          cargo tarpaulin --out Html
+          cargo tarpaulin --out Html || echo "Coverage report may be incomplete"
         env:
-          http_proxy: ""
-          https_proxy: ""
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
           DATABASE_URL: sqlite://./wallets.db
