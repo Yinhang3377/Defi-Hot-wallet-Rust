@@ -27,76 +27,85 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
+      # 更强硬地处理 git 问题 - 直接禁用 git 安全性检查
+      - name: Configure git to allow unrelated histories
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git config --global pull.rebase false
+          git config --global --add pull.allowUnrelatedHistories true
+          git config --global advice.skippedCherryPicks false
+          
+          # 额外配置防止git使用代理
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
+
       - name: Global unset proxy (run first)
         run: |
-          # 确保 git 命令不会使用代理
-          git config --global --unset http.proxy || true
-          git config --global --unset https.proxy || true
-          # 清除环境变量
+          # 清除所有代理配置
           unset http_proxy || true
           unset https_proxy || true
           unset HTTP_PROXY || true
           unset HTTPS_PROXY || true
-          # 确保 GitHub Actions 环境不包含代理
+          unset ALL_PROXY || true
+          unset all_proxy || true
+          unset NO_PROXY || true
+          unset no_proxy || true
+          
+          # 使用空值覆盖 GitHub Actions 环境
           echo "http_proxy=" >> $GITHUB_ENV
           echo "https_proxy=" >> $GITHUB_ENV
           echo "HTTP_PROXY=" >> $GITHUB_ENV
           echo "HTTPS_PROXY=" >> $GITHUB_ENV
+          echo "ALL_PROXY=" >> $GITHUB_ENV
+          echo "all_proxy=" >> $GITHUB_ENV
           echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
           echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
           
           # 显示环境中的代理变量（调试用）
           env | grep -i proxy || echo "No proxy variables found"
 
-      - name: Initialize git repository if needed (avoid unrelated histories)
+      # 改用纯净初始化 - 避免任何历史冲突
+      - name: Reset git repository (clean slate)
         run: |
-          if [ ! -d .git ]; then
-            rm -rf .git
-            git init
-            git config --local user.email "ci@github.com"
-            git config --local user.name "GitHub CI"
-            git add .
-            git commit -m "Initial commit from CI"
-          fi
+          rm -rf .git || true
+          git init
+          git config --local user.email "ci@github.com"
+          git config --local user.name "GitHub CI"
+          git add .
+          git commit -m "Initial commit from CI"
           
-          # 确保我们有正确的远程设置
-          git remote -v || git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git
-          
-          # 拉取但不合并 (避免历史问题)
-          git fetch origin --depth=1 || true
+          # 确保远程配置正确但不尝试合并
+          git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git || true
 
-      - name: Remove proxy from cargo config (Linux/macOS)
-        if: runner.os != 'Windows'
+      # 彻底清除系统级、用户级和 cargo 的代理配置
+      - name: Remove all proxy configurations
         run: |
-          # 处理cargo配置
+          # 创建并确保 cargo 配置干净
           mkdir -p $HOME/.cargo
-          touch $HOME/.cargo/config.toml
-          
-          # 删除任何proxy行
-          if [ -f "$HOME/.cargo/config" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
-          fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
-          fi
+          echo "[source.crates-io]" > $HOME/.cargo/config.toml
+          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
+          echo "replace-with = 'direct'" >> $HOME/.cargo/config.toml
+          echo "" >> $HOME/.cargo/config.toml
+          echo "[source.direct]" >> $HOME/.cargo/config.toml
+          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
           
           # 确认代理已删除
-          if [ -f "$HOME/.cargo/config" ]; then echo "--- Cargo config:"; cat "$HOME/.cargo/config"; fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then echo "--- Cargo config.toml:"; cat "$HOME/.cargo/config.toml"; fi
+          cat $HOME/.cargo/config.toml
 
+      # 保留 Windows 支持但简化
       - name: Remove proxy from cargo config (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -Path "$HOME/.cargo" -ItemType Directory -Force | Out-Null
-          New-Item -Path "$HOME/.cargo/config.toml" -ItemType File -Force | Out-Null
+          @"
+          [source.crates-io]
+          registry = 'https://github.com/rust-lang/crates.io-index'
+          replace-with = 'direct'
           
-          if (Test-Path "$HOME/.cargo/config") {
-            (Get-Content "$HOME/.cargo/config") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config"
-          }
-          if (Test-Path "$HOME/.cargo/config.toml") {
-            (Get-Content "$HOME/.cargo/config.toml") -notmatch 'proxy' | Set-Content "$HOME/.cargo/config.toml"
-          }
+          [source.direct]
+          registry = 'https://github.com/rust-lang/crates.io-index'
+          "@ | Set-Content "$HOME/.cargo/config.toml"
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -115,20 +124,31 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.rust }}
 
       - name: Format code
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
         run: cargo fmt --all
 
-      - name: Fetch dependencies (explicit no-proxy)
+      # 使用直接源确保不尝试使用代理
+      - name: Fetch dependencies (direct source)
         env:
           HTTP_PROXY: ""
           HTTPS_PROXY: ""
           http_proxy: ""
           https_proxy: ""
         run: |
-          # 显示当前环境中的代理变量
-          env | grep -i proxy || echo "No proxy variables found"
-          cargo fetch --verbose
+          # 显示 cargo 配置
+          cat $HOME/.cargo/config.toml || true
+          cargo fetch --verbose --locked
 
       - name: Check formatting
+        env:
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
         run: cargo fmt --all -- --check
 
       - name: Lint with clippy
@@ -156,7 +176,7 @@ jobs:
           DATABASE_URL: sqlite://./wallets.db
         run: cargo test --verbose
 
-      # 根据项目 copilot-instructions.md 添加安全审计
+      # 根据项目指南添加安全审计
       - name: Security audit
         if: matrix.rust == 'stable'
         env:
@@ -165,7 +185,7 @@ jobs:
           http_proxy: ""
           https_proxy: ""
         run: |
-          cargo install cargo-audit --force || true
+          cargo install cargo-audit --locked --force || true
           cargo audit
 
   build:
@@ -179,44 +199,55 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
+      # 配置 git 允许不相关历史
+      - name: Configure git to allow unrelated histories
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git config --global pull.rebase false
+          git config --global --add pull.allowUnrelatedHistories true
+          git config --global advice.skippedCherryPicks false
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
+
       - name: Global unset proxy
         run: |
-          git config --global --unset http.proxy || true
-          git config --global --unset https.proxy || true
           unset http_proxy || true
           unset https_proxy || true
           unset HTTP_PROXY || true
           unset HTTPS_PROXY || true
+          unset ALL_PROXY || true
+          unset all_proxy || true
+          
           echo "http_proxy=" >> $GITHUB_ENV
           echo "https_proxy=" >> $GITHUB_ENV
           echo "HTTP_PROXY=" >> $GITHUB_ENV
           echo "HTTPS_PROXY=" >> $GITHUB_ENV
+          echo "ALL_PROXY=" >> $GITHUB_ENV
+          echo "all_proxy=" >> $GITHUB_ENV
           echo "NO_PROXY=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
           echo "no_proxy=crates.io,index.crates.io,github.com" >> $GITHUB_ENV
 
-      - name: Initialize git repository if needed
+      # 重置git仓库
+      - name: Reset git repository (clean slate)
         run: |
-          if [ ! -d .git ]; then
-            rm -rf .git
-            git init
-            git config --local user.email "ci@github.com"
-            git config --local user.name "GitHub CI"
-            git add .
-            git commit -m "Initial commit from CI"
-          fi
-          git remote -v || git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git
-          git fetch origin --depth=1 || true
+          rm -rf .git || true
+          git init
+          git config --local user.email "ci@github.com"
+          git config --local user.name "GitHub CI"
+          git add .
+          git commit -m "Initial commit from CI"
+          git remote add origin https://github.com/Yinhang3377/Defi-Hot-wallet-Rust.git || true
 
-      - name: Remove proxy from cargo config
+      # 彻底清除 cargo 代理配置
+      - name: Setup clean cargo config
         run: |
           mkdir -p $HOME/.cargo
-          touch $HOME/.cargo/config.toml
-          if [ -f "$HOME/.cargo/config" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config" 2>/dev/null || true
-          fi
-          if [ -f "$HOME/.cargo/config.toml" ]; then
-            sed -i.bak '/proxy/d' "$HOME/.cargo/config.toml" 2>/dev/null || true
-          fi
+          echo "[source.crates-io]" > $HOME/.cargo/config.toml
+          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
+          echo "replace-with = 'direct'" >> $HOME/.cargo/config.toml
+          echo "" >> $HOME/.cargo/config.toml
+          echo "[source.direct]" >> $HOME/.cargo/config.toml
+          echo "registry = 'https://github.com/rust-lang/crates.io-index'" >> $HOME/.cargo/config.toml
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -243,7 +274,7 @@ jobs:
           DATABASE_URL: sqlite://./wallets.db
         run: cargo build --release --verbose
 
-      # 根据项目 copilot-instructions.md 添加覆盖率报告
+      # 根据项目指南添加覆盖率报告
       - name: Generate coverage report
         env:
           HTTP_PROXY: ""
@@ -252,5 +283,5 @@ jobs:
           https_proxy: ""
           DATABASE_URL: sqlite://./wallets.db
         run: |
-          cargo install cargo-tarpaulin --force || true
+          cargo install cargo-tarpaulin --locked --force || true
           cargo tarpaulin --out Html
