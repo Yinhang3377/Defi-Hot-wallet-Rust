@@ -11,7 +11,10 @@ env:
   CARGO_TERM_COLOR: always
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
+  http_proxy: ""
+  https_proxy: ""
   NO_PROXY: index.crates.io,crates.io,github.com
+  no_proxy: index.crates.io,crates.io,github.com
 
 jobs:
   test:
@@ -36,6 +39,7 @@ jobs:
           unset http_proxy || true
           unset https_proxy || true
           echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
+          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
 
       - name: Clear proxy env (Windows)
         if: runner.os == 'Windows'
@@ -47,6 +51,8 @@ jobs:
           Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
           Add-Content -Path $env:GITHUB_ENV `
             -Value "NO_PROXY=index.crates.io,crates.io,github.com"
+          Add-Content -Path $env:GITHUB_ENV `
+            -Value "no_proxy=index.crates.io,crates.io,github.com"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -87,6 +93,7 @@ jobs:
           unset http_proxy || true
           unset https_proxy || true
           echo "NO_PROXY=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
+          echo "no_proxy=index.crates.io,crates.io,github.com" >> "$GITHUB_ENV"
 
       - name: Clear proxy env (Windows)
         if: runner.os == 'Windows'
@@ -98,6 +105,8 @@ jobs:
           Remove-Item Env:https_proxy -ErrorAction SilentlyContinue
           Add-Content -Path $env:GITHUB_ENV `
             -Value "NO_PROXY=index.crates.io,crates.io,github.com"
+          Add-Content -Path $env:GITHUB_ENV `
+            -Value "no_proxy=index.crates.io,crates.io,github.com"
 
       - name: Install Rust toolchain (stable)
         uses: dtolnay/rust-toolchain@stable
