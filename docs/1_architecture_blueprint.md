@@ -22,8 +22,9 @@
 
 <a id="project-layout"></a>
 
+// ...existing code...
 ## 1. 完整项目布局（目录树）
-说明：目录与本地代码库已对齐，已移除编辑器专用跳转占位符（如 vscode content ref）。
+说明：基于实际代码库结构重新生成，已与本地文件对齐。移除理想化占位符，添加实际模块和文件（如区块链客户端、测试文件、CI配置）。若有新增文件，请同步更新。
 
 ```text
 Defi-Hot-wallet-Rust/
@@ -43,11 +44,11 @@ Defi-Hot-wallet-Rust/
 │   ├── 2_security_patch_list.md
 │   ├── 3_priority_table.md
 │   ├── 4_analysis_doc.md
-│   ├── 5_code_review_plan.md         # 若当前为 5_ode_review_plan.md，请重命名
+│   ├── 5_code_review_plan.md
 │   ├── 6_test_matrix.md
-│   ├── 7_threat_model.md             # 新增：威胁模型
-│   ├── 8_key_management_policy.md    # 新增：密钥管理策略
-│   └── 9_incident_response_runbook.md# 新增：事件响应 Runbook
+│   ├── 7_threat_model.md
+│   ├── 8_key_management_policy.md
+│   └── 9_incident_response_runbook.md
 ├── resources/
 ├── examples/
 │   ├── basic_wallet.rs
@@ -55,6 +56,60 @@ Defi-Hot-wallet-Rust/
 ├── src/
 │   ├── lib.rs
 │   ├── main.rs
+│   ├── cli.rs
+│   ├── api/
+│   │   ├── mod.rs
+│   │   ├── server.rs
+│   │   ├── routes.rs
+│   │   └── bridge.rs
+│   ├── application/
+│   │   ├── mod.rs
+│   │   ├── bridge.rs
+│   │   └── transaction.rs
+│   ├── audit/
+│   │   ├── mod.rs
+│   │   ├── logging.rs
+│   │   ├── alert.rs
+│   │   ├── confirmation.rs
+│   │   └── rollback.rs
+│   ├── blockchain/
+│   │   ├── mod.rs
+│   │   ├── ethereum.rs
+│   │   └── solana.rs
+│   ├── config/
+│   │   ├── mod.rs
+│   │   ├── config.rs
+│   │   └── env_config.rs
+│   ├── core/
+│   │   ├── mod.rs
+│   │   ├── wallet_manager.rs
+│   │   ├── errors.rs
+│   │   └── domain.rs
+│   ├── crypto/
+│   │   ├── mod.rs
+│   │   ├── shamir.rs
+│   │   ├── quantum.rs
+│   │   └── kdf.rs
+│   ├── monitoring/
+│   │   ├── mod.rs
+│   │   ├── metrics.rs
+│   │   └── health.rs
+│   ├── mvp/
+│   │   ├── mod.rs
+│   │   ├── wallet.rs
+│   │   ├── balance.rs
+│   │   └── transaction.rs
+│   ├── ops/
+│   │   ├── mod.rs
+│   │   ├── backup.rs
+│   │   ├── metrics.rs
+│   │   └── health.rs
+│   ├── plugin/
+│   │   ├── mod.rs
+│   │   ├── plugin.rs
+│   │   ├── plugin_manager.rs
+│   │   ├── middleware.rs
+│   │   └── event_bus.rs
 │   ├── security/
 │   │   ├── mod.rs
 │   │   ├── encryption.rs
@@ -62,72 +117,55 @@ Defi-Hot-wallet-Rust/
 │   │   ├── anti_debug.rs
 │   │   ├── access_control.rs
 │   │   └── compliance.rs
-│   ├── audit/
-│   │   ├── mod.rs
-│   │   ├── operation_log.rs
-│   │   ├── alert.rs
-│   │   ├── confirmation.rs
-│   │   ├── rollback.rs
-│   │   └── logging.rs
-│   ├── config/
-│   │   ├── mod.rs
-│   │   ├── config.rs
-│   │   └── env_config.rs
 │   ├── service/
 │   │   ├── mod.rs
 │   │   ├── service.rs
 │   │   └── di_container.rs
-│   ├── plugin/
+│   ├── storage/
 │   │   ├── mod.rs
-│   │   ├── plugin.rs
-│   │   ├── plugin_manager.rs
-│   │   ├── middleware.rs
-│   │   └── event_bus.rs
-│   ├── network/
+│   │   ├── database.rs
+│   │   └── migration.rs
+│   ├── tools/
 │   │   ├── mod.rs
-│   │   ├── node_manager.rs
-│   │   └── rate_limit.rs
-│   ├── core/
-│   │   ├── mod.rs
-│   │   └── domain.rs
-│   ├── application/
-│   │   ├── mod.rs
-│   │   └── application.rs
-│   ├── infrastructure/
-│   │   ├── mod.rs
-│   │   └── infrastructure.rs
-│   ├── interface/
-│   │   ├── mod.rs
-│   │   └── interface.rs
-│   ├── adapter/
-│   │   ├── mod.rs
-│   │   └── adapter.rs
-│   ├── ops/
-│   │   ├── mod.rs
-│   │   ├── health.rs
-│   │   ├── metrics.rs
-│   │   └── backup.rs
+│   │   ├── generator.rs
+│   │   ├── async_support.rs
+│   │   └── error.rs
 │   ├── i18n/
 │   │   ├── mod.rs
 │   │   └── localization.rs
-│   └── tools/
+│   └── network/
 │       ├── mod.rs
-│       ├── generator.rs
-│       ├── async_support.rs
-│       └── error.rs
+│       ├── node_manager.rs
+│       └── rate_limit.rs
 ├── tests/
 │   ├── unit/
+│   │   ├── crypto_shamir_tests.rs
+│   │   ├── shamir_tests.rs
+│   │   └── wallet_tests.rs
 │   ├── integration/
+│   │   ├── bridge_tests.rs
+│   │   └── api_tests.rs
 │   ├── e2e/
-│   └── security/                     # 新增：安全/攻击用例
-├── benches/                          # 新增：性能基准（criterion）
-├── ci/
-│   ├── .github/workflows/
-│   │   ├── ci.yml
-│   │   └── cd.yml
-│   └── dockerfile
-└── scripts/                          # 新增：运维/发布/数据脚本
+│   │   └── full_flow_tests.rs
+│   └── security/
+│       └── attack_tests.rs
+├── benches/
+│   └── performance_benches.rs
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       └── cd.yml
+├── scripts/
+│   ├── build.ps1
+│   ├── test.ps1
+│   └── deploy.sh
+└── patches/
+    └── elliptic-curve-tools/
 ```
+
+[↑ 返回目录](#toc)
+---
+// ...existing code...
 
 [↑ 返回目录](#toc)
 ---

@@ -132,6 +132,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Show disk and free space (pre-clean)
+        run: |
+          df -h
+          # free typical caches that consume runner disk
+          sudo rm -rf /home/runner/.cache || true
+          sudo rm -rf /home/runner/.cargo/registry/cache || true
+          sudo rm -rf ~/.cargo/registry/cache || true
+          sudo rm -rf /home/runner/.cargo/git/db || true
+          df -h
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
@@ -141,8 +152,11 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin --locked
-      - name: Generate coverage report with tarpaulin
-        run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml --run-types Tests -- --workspace
+      - name: Generate coverage report with tarpaulin (reduced features)
+        run: |
+          # avoid building all-features (huge dependency graph) to reduce disk / memory pressure
+          # run workspace tests with default features only
+          cargo tarpaulin --verbose --workspace --timeout 120 --out Xml --run-types Tests
 
   build:
     name: Build (${{ matrix.os }})
