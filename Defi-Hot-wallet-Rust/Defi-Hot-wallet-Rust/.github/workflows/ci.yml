@@ -1,3 +1,4 @@
+# ...existing code...
 name: Rust CI
 
 on:
@@ -293,5 +294,4 @@ jobs:
             dist/**/wallet-cli.exe
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+# ...existing code...
