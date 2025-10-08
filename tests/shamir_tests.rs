@@ -1,10 +1,9 @@
-// ...existing code...
-//! tests/shamir_tests.rs
-//!
-//! Tests for `src/crypto/shamir.rs`
-//! - secret splitting and combining
-//! - different subset reconstruction
-//! - error handling for insufficient/invalid shares
+// tests/shamir_tests.rs
+//
+// Tests for src/crypto/shamir.rs
+// - secret splitting and combining
+// - different subset reconstruction
+// - error handling for insufficient/invalid shares
 
 use defi_hot_wallet::crypto::shamir::{combine_shares, split_secret, ShamirError};
 use rand_core::{OsRng, RngCore};
@@ -37,7 +36,7 @@ fn test_split_and_combine_with_different_subset() {
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
-    let combination = vec![shares[1], shares[3], shares[4].clone()];
+    let combination = vec![shares[1], shares[3], shares[4]];
     let recovered_secret = combine_shares(&combination).unwrap();
 
     assert_eq!(secret, recovered_secret);
@@ -86,7 +85,7 @@ fn test_split_with_threshold_one() {
 fn test_combine_with_duplicate_shares() {
     let secret = [2u8; 32];
     let shares = split_secret(secret, 3, 5).unwrap();
-    let combination = vec![shares[0], shares[0].clone(), shares[1]];
+    let combination = vec![shares[0], shares[0], shares[1]];
     let result = combine_shares(&combination);
     assert!(result.is_err());
     if let Err(ShamirError::InvalidParameters(msg)) = result {
