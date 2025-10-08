@@ -1,4 +1,5 @@
-use defi_hot_wallet::crypto::shamir::{combine_secret, split_secret};
+// Update imports: bring combine_shares into scope (tests call it directly)
+use defi_hot_wallet::crypto::shamir::{combine_secret, combine_shares, split_secret};
 use itertools::Itertools;
 
 #[test]
@@ -65,7 +66,7 @@ fn test_shamir_reconstruct_exact() {
     let result = split_secret(secret, 2, 3);
 
     let shares = result.unwrap();
-    let recovered = combine_secret(&shares[0..2]).unwrap();
+    let recovered = combine_shares(&shares[0..2]).unwrap();
     assert_eq!(recovered, secret);
 }
 
@@ -78,13 +79,13 @@ fn test_shamir_different_share_subsets() {
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
-    let recovered = combine_secret(&shares[0..threshold as usize]).unwrap();
+    let recovered = combine_shares(&shares[0..threshold as usize]).unwrap();
     assert_eq!(recovered, secret);
 
     // test a different subset of shares
-    let combination = vec![shares[0], shares[2], shares[4]];
+    let combination = vec![shares[0].clone(), shares[2].clone(), shares[4].clone()];
 
-    let recovered2 = combine_secret(&combination).unwrap();
+    let recovered2 = combine_shares(&combination).unwrap();
     assert_eq!(recovered2, secret);
 }
 
@@ -99,8 +100,8 @@ fn test_shamir_all_possible_combinations() {
 
     // test all combinations of `threshold` shares
     for combo in shares.iter().combinations(threshold as usize) {
-        let selected_shares: Vec<_> = combo.into_iter().copied().collect();
-        let recovered = combine_secret(&selected_shares).unwrap();
+        let selected_shares: Vec<_> = combo.into_iter().cloned().collect();
+        let recovered = combine_shares(&selected_shares).unwrap();
         assert_eq!(recovered, secret);
     }
 }
@@ -120,7 +121,7 @@ fn test_shamir_tampered_share() {
 
     // tamper with one share's first byte
     shares[1].1[0] ^= 0xFF;
-    let result = combine_secret(&shares[0..threshold as usize]);
+    let result = combine_shares(&shares[0..threshold as usize]);
     // Combining may succeed but should not equal original secret
     assert!(result.is_ok());
     assert_ne!(result.unwrap(), secret);

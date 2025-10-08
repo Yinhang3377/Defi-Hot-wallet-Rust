@@ -1,4 +1,4 @@
-﻿use std::num::NonZeroU8;
+﻿﻿﻿﻿use std::num::NonZeroU8;
 
 /// Shamir 绉樺瘑鍒嗕韩鐩稿叧鐨勯敊璇被鍨?
 #[derive(Debug, thiserror::Error)]
@@ -36,7 +36,8 @@ pub fn split_secret(
         ));
     }
 
-    shamir::split_secret(k, n, secret)
+    // shamir 2.0.0+ API: split_secret(threshold, total_shares, secret)
+    shamir::split_secret(k, n, secret) 
         .map_err(|e| ShamirError::SplitFailed(e.to_string()))
 }
 
@@ -65,8 +66,14 @@ pub fn combine_shares(shares: &[Vec<u8>]) -> Result<Vec<u8>, ShamirError> {
 
     let share_slices: Vec<&[u8]> = shares.iter().map(|s| s.as_slice()).collect();
 
-    shamir::combine_shares(&share_slices)
-        .map_err(|e| ShamirError::CombineFailed(e.to_string()))
+    // shamir 2.0.0+ API: recover_secret(shares)
+    ::shamir::recover_secret(&share_slices).map_err(|e| ShamirError::CombineFailed(e.to_string()))
+}
+
+// 为了保持API兼容性，添加一个combine_secret别名函数
+/// Alias for `combine_shares` to maintain API compatibility.
+pub fn combine_secret(shares: &[Vec<u8>]) -> Result<Vec<u8>, ShamirError> {
+    combine_shares(shares)
 }
 
 #[cfg(test)]

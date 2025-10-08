@@ -154,7 +154,7 @@ let encrypted = crypto.encrypt(sensitive_data)?;
 ```rust
 // 2-of-3阈值分片
 let shamir = ShamirSecretSharing::new();
-let shares = shamir.create_shares(master_key, 3, 2)?;
+let shares = shamir.create_shares(master_key, 2, 3)?; // (密钥, 阈值, 份额数)
 let recovered = shamir.reconstruct_secret(&shares[..2])?;
 ```
 
@@ -231,6 +231,44 @@ cargo tarpaulin --out Html
 - ✅ **加密模块**: 90%+
 - ✅ **API接口**: 85%+
 - ✅ **总体覆盖**: 80%+
+
+## 中国区开发者说明
+
+由于网络限制，CI 可能无法执行完整的依赖下载和测试。请在本地环境执行以下步骤来确保代码质量：
+
+### 配置国内镜像源
+
+在 `~/.cargo/config.toml` 中添加：
+
+```toml
+# 本地开发配置 - 多镜像源
+[source.crates-io]
+registry = "https://github.com/rust-lang/crates.io-index"
+replace-with = "tuna"  # 使用清华镜像，可根据网络情况切换
+
+# 清华大学镜像
+[source.tuna]
+registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
+
+# 中科大镜像
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+# 字节镜像
+[source.bfsu]
+registry = "https://mirrors.bfsu.edu.cn/git/crates.io-index/"
+
+[net]
+git-fetch-with-cli = true
+retry = 3
+
+[http]
+# 调整连接参数
+timeout = 120
+low-speed-limit = 5
+low-speed-time = 20
+check-revoke = false
+```
 
 ## 运行测试覆盖率
 

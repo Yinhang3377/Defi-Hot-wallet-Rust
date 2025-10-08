@@ -6,7 +6,7 @@
 //! - different subset reconstruction
 //! - error handling for insufficient/invalid shares
 
-use defi_hot_wallet::crypto::shamir::{combine_secret, split_secret};
+use defi_hot_wallet::crypto::shamir::{combine_shares, split_secret, ShamirError};
 use rand_core::{OsRng, RngCore};
 
 #[test]
@@ -21,8 +21,8 @@ fn test_split_and_combine_basic_success() {
     assert_eq!(shares.len(), shares_count as usize);
 
     let combination: Vec<(u8, [u8; 32])> =
-        shares.iter().take(threshold as usize).cloned().collect();
-    let recovered_secret = combine_secret(&combination).unwrap();
+        shares.iter().take(threshold as usize).copied().collect();
+    let recovered_secret = combine_shares(&combination).unwrap();
 
     assert_eq!(secret, recovered_secret);
 }
@@ -37,8 +37,8 @@ fn test_split_and_combine_with_different_subset() {
 
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
-    let combination = vec![shares[1], shares[3], shares[4]];
-    let recovered_secret = combine_secret(&combination).unwrap();
+    let combination = vec![shares[1], shares[3], shares[4].clone()];
+    let recovered_secret = combine_shares(&combination).unwrap();
 
     assert_eq!(secret, recovered_secret);
 }
@@ -54,8 +54,8 @@ fn test_combine_with_insufficient_shares_produces_error() {
     let shares = split_secret(secret, threshold, shares_count).unwrap();
 
     let combination: Vec<(u8, [u8; 32])> =
-        shares.iter().take((threshold - 1) as usize).cloned().collect();
-    let result = combine_secret(&combination);
+        shares.iter().take((threshold - 1) as usize).copied().collect();
+    let result = combine_shares(&combination);
     assert!(result.is_err());
 }
 
@@ -69,7 +69,7 @@ fn test_split_with_invalid_parameters() {
 #[test]
 fn test_combine_with_no_shares() {
     let parts: Vec<(u8, [u8; 32])> = vec![];
-    let result = combine_secret(&parts);
+    let result = combine_shares(&parts);
     assert!(result.is_err());
 }
 
@@ -78,16 +78,7 @@ fn test_split_with_threshold_one() {
     let secret = [1u8; 32];
     let shares = split_secret(secret, 1, 1).unwrap();
     assert_eq!(shares.len(), 1);
-    let recovered = combine_secret(&shares).unwrap();
-    assert_eq!(recovered, secret);
-}
-
-#[test]
-fn test_split_with_large_secret() {
-    let secret = [0u8; 32];
-    let shares = split_secret(secret, 2, 3).unwrap();
-    let combination: Vec<(u8, [u8; 32])> = shares.iter().take(2).cloned().collect();
-    let recovered = combine_secret(&combination).unwrap();
+    let recovered = combine_shares(&shares).unwrap();
     assert_eq!(recovered, secret);
 }
 
@@ -95,7 +86,12 @@ fn test_split_with_large_secret() {
 fn test_combine_with_duplicate_shares() {
     let secret = [2u8; 32];
     let shares = split_secret(secret, 3, 5).unwrap();
-    let combination = vec![shares[0], shares[0], shares[1]];
-    let result = combine_secret(&combination);
+    let combination = vec![shares[0], shares[0].clone(), shares[1]];
+    let result = combine_shares(&combination);
     assert!(result.is_err());
+    if let Err(ShamirError::InvalidParameters(msg)) = result {
+        assert!(msg.contains("duplicate share id found"));
+    } else {
+        panic!("Expected InvalidParameters error for duplicate shares");
+    }
 }

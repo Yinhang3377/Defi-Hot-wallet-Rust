@@ -9,8 +9,7 @@ use serde::Deserialize;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::limit::RequestBodyLimitLayer;
-// use tower_http::trace::TraceLayer; // clippy: unused import
+use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 
 use crate::api::handlers;
 use crate::api::types::*;
@@ -51,7 +50,9 @@ impl WalletServer {
             .route("/api/bridge", post(bridge_assets))
             .route("/api/metrics", get(metrics))
             .layer(
-                ServiceBuilder::new().layer(RequestBodyLimitLayer::new(1024 * 1024)), // 1MB 璇锋眰浣撻檺鍒讹紙閫熺巼闄愬埗锛?                    .layer(TraceLayer::new_for_http()),
+                ServiceBuilder::new()
+                    .layer(RequestBodyLimitLayer::new(1024 * 1024))
+                    .layer(TraceLayer::new_for_http()), // 1MB 璇锋眰浣撻檺鍒讹紙閫熺巼闄愬埗锛?
             ) // 鏃ュ織
             .with_state(state)
     }

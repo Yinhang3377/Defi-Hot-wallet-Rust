@@ -148,8 +148,9 @@ fn cbor_format() {
     let test_struct =
         TestStruct { scalar: <K256Scalar as Field>::ONE, point: K256Point::GENERATOR };
 
-    let cbor = serde_cbor::to_vec(&test_struct).unwrap();
-    let from_cbor: TestStruct<K256Point> = serde_cbor::from_slice(&cbor).unwrap();
+    let mut cbor = Vec::new();
+    ciborium::into_writer(&test_struct, &mut cbor).unwrap();
+    let from_cbor: TestStruct<K256Point> = ciborium::from_reader(cbor.as_slice()).unwrap();
     assert_eq!(test_struct, from_cbor);
 }
 

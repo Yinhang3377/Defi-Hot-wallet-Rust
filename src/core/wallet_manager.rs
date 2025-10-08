@@ -216,17 +216,8 @@ impl WalletManager {
             networks: vec!["eth".to_string(), "solana".to_string()],
         };
 
-        let _shamir_shares_tuples = shamir::split_secret(master_key, 2, 3)
-            .map_err(|e| WalletError::CryptoError(e.to_string()))?;
-        let _shamir_shares: Vec<Vec<u8>> = _shamir_shares_tuples
-            .into_iter()
-            .map(|(id, bytes): (u8, [u8; 32])| {
-                let mut share = Vec::with_capacity(33);
-                share.push(id);
-                share.extend_from_slice(&bytes);
-                share
-            })
-            .collect();
+        let _shamir_shares = shamir::split_secret(master_key, 2, 3)
+            .map_err(|e| anyhow::anyhow!("shamir split failed: {}", e))?;
 
         let mut encrypted_wallet_data = SecureWalletData {
             info: wallet_info.clone(),

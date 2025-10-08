@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime /* NaiveDate */};
 use sqlx::types::chrono::Utc;
-use sqlx::{sqlite::SqlitePool, types::chrono::NaiveDateTime, Row};
+use sqlx::{sqlite::SqlitePool, types::chrono::NaiveDateTime, FromRow, Row};
 use tracing::{debug, info, warn};
 
 use crate::blockchain::bridge::{BridgeTransaction, BridgeTransactionStatus};
@@ -274,22 +274,12 @@ impl WalletStorage {
     pub async fn list_wallets(&self) -> Result<Vec<WalletMetadata>> {
         debug!("Listing all wallets");
 
-        let rows = sqlx::query(
+        let wallets = sqlx::query_as::<_, WalletMetadata>(
                 "SELECT id, name, quantum_safe, created_at, updated_at FROM wallets ORDER BY created_at DESC"
             )
-            .fetch_all(&self.pool).await
+            .fetch_all(&self.pool)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to list wallets: {}", e))?;
-
-        let wallets: Vec<WalletMetadata> = rows
-            .into_iter()
-            .map(|row| WalletMetadata {
-                id: row.get("id"),
-                name: row.get("name"),
-                quantum_safe: row.get("quantum_safe"),
-                created_at: row.get("created_at"),
-                updated_at: row.get("updated_at"),
-            })
-            .collect();
 
         debug!("Listed {} wallets", wallets.len());
         Ok(wallets)
@@ -367,34 +357,16 @@ impl WalletStorage {
     pub async fn get_wallet_transactions(&self, wallet_id: &str) -> Result<Vec<TransactionRecord>> {
         debug!("Getting transactions for wallet: {}", wallet_id);
 
-        let rows = sqlx::query(
+        let transactions = sqlx::query_as::<_, TransactionRecord>(
                 r#"
             SELECT id, wallet_id, tx_hash, network, from_address, to_address, amount, fee, status, created_at, confirmed_at
             FROM transactions 
             WHERE wallet_id = ?1 
             ORDER BY created_at DESC
             "#
-            )
-            .bind(wallet_id)
+            ).bind(wallet_id)
             .fetch_all(&self.pool).await
             .map_err(|e| anyhow::anyhow!("Failed to get transactions: {}", e))?;
-
-        let transactions: Vec<TransactionRecord> = rows
-            .into_iter()
-            .map(|row| TransactionRecord {
-                id: row.get("id"),
-                wallet_id: row.get("wallet_id"),
-                tx_hash: row.get("tx_hash"),
-                network: row.get("network"),
-                from_address: row.get("from_address"),
-                to_address: row.get("to_address"),
-                amount: row.get("amount"),
-                fee: row.get("fee"),
-                status: row.get("status"),
-                created_at: row.get("created_at"),
-                confirmed_at: row.get("confirmed_at"),
-            })
-            .collect();
 
         debug!("Retrieved {} transactions", transactions.len());
         Ok(transactions)
@@ -440,23 +412,11 @@ impl WalletStorage {
             query_builder = query_builder.bind(param);
         }
 
-        let rows = query_builder
+        let logs = query_builder
+            .try_map(|row: sqlx::sqlite::SqliteRow| AuditLog::from_row(&row))
             .fetch_all(&self.pool)
             .await
             .map_err(|e| anyhow::anyhow!("Failed to get audit logs: {}", e))?;
-
-        let logs = rows
-            .into_iter()
-            .map(|row| AuditLog {
-                id: row.get("id"),
-                wallet_id: row.get("wallet_id"),
-                action: row.get("action"),
-                details: row.get("details"),
-                ip_address: row.get("ip_address"),
-                user_agent: row.get("user_agent"),
-                created_at: row.get("created_at"),
-            })
-            .collect();
 
         Ok(logs)
     }
@@ -542,7 +502,7 @@ impl Clone for WalletStorage {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct WalletMetadata {
     pub id: String,
     pub name: String,
@@ -551,7 +511,7 @@ pub struct WalletMetadata {
     pub updated_at: NaiveDateTime,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct TransactionRecord {
     pub id: String,
     pub wallet_id: String,
@@ -566,7 +526,7 @@ pub struct TransactionRecord {
     pub confirmed_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, FromRow)]
 pub struct AuditLog {
     pub id: i64,
     pub wallet_id: Option<String>,

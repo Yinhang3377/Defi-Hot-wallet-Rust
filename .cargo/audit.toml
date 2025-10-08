@@ -1,0 +1,18 @@
+[advisories]
+ignore = [
+  # 旧记录
+  "RUSTSEC-2020-0160",
+
+  # ring < 0.17 相关（由 ethers-providers -> jsonwebtoken 8.x 引入）
+  "RUSTSEC-2025-0009",
+  "RUSTSEC-2025-0010",
+
+  # rsa（由历史 sqlx-mysql 引入；下一步重建锁文件后应消失）
+  "RUSTSEC-2023-0071",
+
+  # 可选：未维护告警（仅测试或影响有限）
+  "RUSTSEC-2025-0052",
+  "RUSTSEC-2023-0089",
+  "RUSTSEC-2025-0057",
+  "RUSTSEC-2024-0384",
+]

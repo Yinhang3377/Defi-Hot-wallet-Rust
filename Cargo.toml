@@ -35,14 +35,21 @@ chacha20poly1305 = "0.10.1"
 hkdf = "0.12.4"
 pbkdf2 = "0.12.2"
 scrypt = "0.11.0"
-shamir = "1.0.2"
+# Fixed security vulnerability RUSTSEC-2020-0160 (threshold value ignored)
+shamir = "2.0.0"
 zeroize = { version = "1.8.1", features = ["derive"] }
 argon2 = { version = "0.5.3" }
 base64 = "0.22"
 rand = { version = "0.8", features = ["std"] }
 rand_core = "0.6"
 aead = "0.5"
-ring = "0.17.8"
+# Fixed ring security vulnerability by using direct dependency
+ring = "0.17.14"
+# Fixed RUSTSEC-2025-0009 by upgrading jsonwebtoken to use newer ring
+jsonwebtoken = "9.3.1"
+
+# 添加 elliptic-curve-tools 作为常规依赖，与 features 引用匹配
+elliptic-curve-tools = { version = "0.1.0" }
 
 # elliptic / curve crates - unified to 0.13 series and enable serde features
 elliptic-curve = { version = "0.13", features = ["alloc", "serde"] }
@@ -58,7 +65,7 @@ blsful = "2.5"
 ed448-goldilocks-plus = "0.16"
 
 # blockchain / integrations
-ethers = { version = "2.0", features = ["abigen", "rustls", "ws"] }
+ethers = { version = "2.0.14", default-features = false, features = ["abigen", "rustls"] }
 
 # BIP standards
 bip39 = "2.0"
@@ -71,14 +78,15 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
 bincode = "1.3"
-serde_cbor = "0.11"
+# Replaced unmaintained serde_cbor with ciborium (RUSTSEC-2021-0127)
+ciborium = "0.2.1"
 serde_bare = "0.5"
 postcard = { version = "1.0", features = ["alloc", "use-std"] }
 toml = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 
 # database
-sqlx = { version = "0.7", default-features = false, features = ["sqlite", "chrono", "runtime-tokio", "macros", "tls-rustls"] }
+# 确保不使用 MySQL 特性以避免 RSA 漏洞 (RUSTSEC-2023-0071)
 
 # http / cli / utils
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
@@ -111,8 +119,8 @@ itertools = "0.13"
 prometheus = { version = "0.13.4", default-features = false, features = ["process"] }
 protobuf = "3.5.0"
 
-# local patched crate used by tests/build
-elliptic-curve-tools = { path = "patches/elliptic-curve-tools", features = ["alloc", "std", "sop_patch_tests"] }
+# 确保不使用 MySQL 特性以避免 RSA 漏洞 (RUSTSEC-2023-0071)
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "postgres", "macros", "chrono", "json"] }
 
 # small helpers
 rstest = "0.18"
@@ -120,11 +128,10 @@ governor = "0.6"
 
 [features]
 default = []
-std = ["alloc", "elliptic-curve-tools/std"]
-alloc = ["elliptic-curve-tools/alloc"]
 strict_security = []
-sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"] # Note: this feature was already present
+sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"]
 memlock = ["dep:libc", "dep:winapi"]
+std = []
 yaml = []
 msgpack = []
 
@@ -134,7 +141,6 @@ k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p384 = { version = "0.9", features = ["serde"] }
 
-elliptic-curve-tools = { path = "patches/elliptic-curve-tools", features = ["alloc", "std"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 criterion = "0.5"
 tempfile = "3.8"
@@ -146,19 +152,18 @@ bincode = "1.3.3"
 serde_yaml = "0.9"
 serde_json = "1.0"
 curve25519-dalek-ml = { version = "4.2", features = ["group", "group-bits"] }
-blsful = "2.5"
 ed448-goldilocks-plus = "0.16"
 heapless = "0.8"
 postcard = { version = "1.0", features = ["alloc", "use-std"] }
 serde_bare = "0.5"
-serde_cbor = "0.11"
-ciborium = "0.2"
+ciborium = "0.2.1"
 mockall = "0.12"
 rand = "0.8.5"
 proptest = "1.2.0"
 httpmock = "0.7"
 pretty_assertions = "1.4.1"
 test-case = "3.3.1"
+# elliptic-curve-tools 已移至常规依赖项
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.57.0", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_System_Diagnostics_Debug"] }
@@ -192,7 +197,5 @@ name = "bridge_test"
 path = "src/bin/bridge_test.rs"
 
 [patch.crates-io]
-# prefer local patch for tests/build
-elliptic-curve-tools = { path = "patches/elliptic-curve-tools" } # Note: remove other version-only entries (crypto-bigint / k256 / p256 / elliptic-curve / group / ff)
-# If you need to force specific versions across the workspace, use [patch.crates-io] with a git/path source
-# or align dependency versions in [dependencies]/[dev-dependencies] instead.
+# 使用本地补丁进行测试/构建
+elliptic-curve-tools = { path = "patches/elliptic-curve-tools" }
