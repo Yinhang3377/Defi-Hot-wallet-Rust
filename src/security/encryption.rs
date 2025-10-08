@@ -349,12 +349,20 @@ mod tests {
 
     #[test]
     fn test_decrypt_private_key_wrong_aad() {
-        let private_key = b"key";
-        let key = [0u8; 32];
+        use rand::rngs::OsRng;
+        use rand::RngCore;
+
+        // 生成用于测试的随机私钥（避免硬编码秘密）
+        let mut private_key = [0u8; 32];
+        OsRng.fill_bytes(&mut private_key);
+
+        let mut key = [0u8; 32];
+        OsRng.fill_bytes(&mut key);
+
         let aad_encrypt = b"aad1";
         let aad_decrypt = b"aad2";
         let encrypted =
-            WalletSecurity::encrypt_private_key(private_key, &key, aad_encrypt).unwrap();
+            WalletSecurity::encrypt_private_key(&private_key, &key, aad_encrypt).unwrap();
         let result = WalletSecurity::decrypt_private_key(&encrypted, &key, aad_decrypt);
         assert!(result.is_err());
     }

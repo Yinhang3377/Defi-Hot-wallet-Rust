@@ -10,3 +10,4 @@
 Cargo.lock text eol=lf
 tests/**  text eol=lf
 src/**    text eol=lf
+* text=auto eol=lf
