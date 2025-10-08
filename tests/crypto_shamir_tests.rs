@@ -1,4 +1,3 @@
-// Update imports: bring combine_shares into scope (tests call it directly)
 use defi_hot_wallet::crypto::shamir::{combine_secret, combine_shares, split_secret};
 use itertools::Itertools;
 
@@ -83,7 +82,7 @@ fn test_shamir_different_share_subsets() {
     assert_eq!(recovered, secret);
 
     // test a different subset of shares
-    let combination = vec![shares[0].clone(), shares[2].clone(), shares[4].clone()];
+    let combination: Vec<(u8, [u8; 32])> = vec![shares[0], shares[2], shares[4]];
 
     let recovered2 = combine_shares(&combination).unwrap();
     assert_eq!(recovered2, secret);
@@ -100,7 +99,7 @@ fn test_shamir_all_possible_combinations() {
 
     // test all combinations of `threshold` shares
     for combo in shares.iter().combinations(threshold as usize) {
-        let selected_shares: Vec<_> = combo.into_iter().cloned().collect();
+        let selected_shares: Vec<(u8, [u8; 32])> = combo.into_iter().copied().collect();
         let recovered = combine_shares(&selected_shares).unwrap();
         assert_eq!(recovered, secret);
     }
