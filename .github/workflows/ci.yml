@@ -1,4 +1,4 @@
-ï»¿---
+?---
 name: CI/CD Pipeline
 
 on:
@@ -10,8 +10,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
-  # å¼ºåˆ¶ç¦ç”¨æ‰€æœ‰ç½‘ç»œå’Œä»£ç†
-  CARGO_NET_OFFLINE: "true" # å…³é”®è®¾ç½®ï¼šå¼ºåˆ¶ç¦»çº¿æ¨¡å¼
+  # Ç¿ÖÆ½ûÓÃËùÓÐÍøÂçºÍ´úÀí
+  CARGO_NET_OFFLINE: "true" # ¹Ø¼üÉèÖÃ£ºÇ¿ÖÆÀëÏßÄ£Ê½
 
 jobs:
   format-check:
@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      # å®Œå…¨é‡ç½® Git çŠ¶æ€ï¼Œé¿å…åŽ†å²é—®é¢˜
+      # ÍêÈ«ÖØÖÃ Git ×´Ì¬£¬±ÜÃâÀúÊ·ÎÊÌâ
       - name: Reset Git repository
         run: |
           rm -rf .git
@@ -34,7 +34,7 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
       
-      # ä½¿ç”¨ GitHub Actions çš„é¢„å®‰è£… Rust å·¥å…·é“¾ï¼Œé¿å…ä¸‹è½½
+      # Ê¹ÓÃ GitHub Actions µÄÔ¤°²×° Rust ¹¤¾ßÁ´£¬±ÜÃâÏÂÔØ
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -43,7 +43,7 @@ jobs:
           components: rustfmt
           override: true
       
-      # åªè¿è¡Œæ ¼å¼æ£€æŸ¥ - æ— éœ€ç½‘ç»œè¿žæŽ¥
+      # Ö»ÔËÐÐ¸ñÊ½¼ì²é - ÎÞÐèÍøÂçÁ¬½Ó
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
@@ -70,7 +70,7 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
           
-      # åˆ›å»ºç¦»çº¿é¡¹ç›®éªŒè¯æŠ¥å‘Š
+      # ´´½¨ÀëÏßÏîÄ¿ÑéÖ¤±¨¸æ
       - name: Generate project report
         run: |
           echo "# Project Structure Report" > project_report.md
@@ -84,7 +84,7 @@ jobs:
           echo "## Project report generated successfully"
           
       - name: Upload project report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: project-report
           path: project_report.md
@@ -92,7 +92,7 @@ jobs:
       - name: Success notification
         run: echo "Basic code checks completed successfully"
 
-  # å‡è£…å®Œæ•´çš„æµ‹è¯•è¿è¡Œ - å®žé™…ä¸Šåªæ˜¯æ ‡è®°æˆåŠŸ
+  # ¼Ù×°ÍêÕûµÄ²âÊÔÔËÐÐ - Êµ¼ÊÉÏÖ»ÊÇ±ê¼Ç³É¹¦
   test-placeholder:
     name: Test (Simplified)
     runs-on: ubuntu-latest
@@ -113,7 +113,7 @@ jobs:
           echo "=================================="
           echo "CI STATUS: PASSED (LIMITED MODE)"
           
-          # åˆ›å»ºå‡çš„æµ‹è¯•æ¦‚è¦æŠ¥å‘Š
+          # ´´½¨¼ÙµÄ²âÊÔ¸ÅÒª±¨¸æ
           mkdir -p test-results
           cat > test-results/summary.txt << EOF
           Tests: SKIPPED (LIMITED CI MODE)
@@ -127,7 +127,7 @@ jobs:
           EOF
           
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: test-results

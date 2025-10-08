@@ -18,4 +18,7 @@ sop_patch_tests = []
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_bytes = "0.11"
+# 为序列化测试启用 serde 特性
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
+elliptic-curve = { version = "0.13", features = ["alloc", "serde"] }
+p256 = { version = "0.13", features = ["arithmetic", "serde"] }
