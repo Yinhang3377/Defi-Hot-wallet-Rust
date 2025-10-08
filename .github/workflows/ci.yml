@@ -1,4 +1,4 @@
-?---
+
 name: CI/CD Pipeline
 
 on:
@@ -10,8 +10,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
-  # Ç¿ÖÆ½ûÓÃËùÓÐÍøÂçºÍ´úÀí
-  CARGO_NET_OFFLINE: "true" # ¹Ø¼üÉèÖÃ£ºÇ¿ÖÆÀëÏßÄ£Ê½
+  # Ç¿ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í´ï¿½ï¿½ï¿½
+  CARGO_NET_OFFLINE: "true" # ï¿½Ø¼ï¿½ï¿½ï¿½ï¿½Ã£ï¿½Ç¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
 
 jobs:
   format-check:
@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      # ÍêÈ«ÖØÖÃ Git ×´Ì¬£¬±ÜÃâÀúÊ·ÎÊÌâ
+      # ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ Git ×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê·ï¿½ï¿½ï¿½ï¿½
       - name: Reset Git repository
         run: |
           rm -rf .git
@@ -34,7 +34,7 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
       
-      # Ê¹ÓÃ GitHub Actions µÄÔ¤°²×° Rust ¹¤¾ßÁ´£¬±ÜÃâÏÂÔØ
+      # Ê¹ï¿½ï¿½ GitHub Actions ï¿½ï¿½Ô¤ï¿½ï¿½×° Rust ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -43,7 +43,7 @@ jobs:
           components: rustfmt
           override: true
       
-      # Ö»ÔËÐÐ¸ñÊ½¼ì²é - ÎÞÐèÍøÂçÁ¬½Ó
+      # Ö»ï¿½ï¿½ï¿½Ð¸ï¿½Ê½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
@@ -70,7 +70,7 @@ jobs:
           git add .
           git commit -m "Initial commit from CI"
           
-      # ´´½¨ÀëÏßÏîÄ¿ÑéÖ¤±¨¸æ
+      # ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½
       - name: Generate project report
         run: |
           echo "# Project Structure Report" > project_report.md
@@ -92,7 +92,7 @@ jobs:
       - name: Success notification
         run: echo "Basic code checks completed successfully"
 
-  # ¼Ù×°ÍêÕûµÄ²âÊÔÔËÐÐ - Êµ¼ÊÉÏÖ»ÊÇ±ê¼Ç³É¹¦
+  # ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½ï¿½Ä²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - Êµï¿½ï¿½ï¿½ï¿½Ö»ï¿½Ç±ï¿½Ç³É¹ï¿½
   test-placeholder:
     name: Test (Simplified)
     runs-on: ubuntu-latest
@@ -113,7 +113,7 @@ jobs:
           echo "=================================="
           echo "CI STATUS: PASSED (LIMITED MODE)"
           
-          # ´´½¨¼ÙµÄ²âÊÔ¸ÅÒª±¨¸æ
+          # ï¿½ï¿½ï¿½ï¿½ï¿½ÙµÄ²ï¿½ï¿½Ô¸ï¿½Òªï¿½ï¿½ï¿½ï¿½
           mkdir -p test-results
           cat > test-results/summary.txt << EOF
           Tests: SKIPPED (LIMITED CI MODE)
