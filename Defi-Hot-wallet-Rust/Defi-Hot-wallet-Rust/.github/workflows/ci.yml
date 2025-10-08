@@ -142,12 +142,6 @@ jobs:
         run: cargo install cargo-tarpaulin --locked
       - name: Generate coverage report with tarpaulin
         run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out Xml --run-types Tests -- --workspace
-      # Optional: Upload to Codecov (uncomment if configured)
-      # - name: Upload to Codecov
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     fail_ci_if_error: true
 
   build:
     name: Build (${{ matrix.os }})
