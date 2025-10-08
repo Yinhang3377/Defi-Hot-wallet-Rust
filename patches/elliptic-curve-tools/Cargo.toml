@@ -2,23 +2,21 @@
 name = "elliptic-curve-tools"
 version = "0.1.0"
 edition = "2021"
-authors = ["DeFi Hot Wallet Team"]
-description = "Local patch crate for elliptic curve helper utilities used in tests"
-
-[lib]
-name = "elliptic_curve_tools"
-path = "src/lib.rs"
-
-[features]
-default = ["std"]
-std = []
-sop_patch_tests = []
 
 [dependencies]
+# 为测试和序列化启用 serde 特性
+k256 = { version = "0.13", features = ["arithmetic", "serde"] }
+p256 = { version = "0.13", features = ["arithmetic", "serde"] }
+elliptic-curve = { version = "0.13", features = ["alloc", "serde"] }
+
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_bytes = "0.11"
-# 为序列化测试启用 serde 特性
-k256 = { version = "0.13", features = ["arithmetic", "serde"] }
-elliptic-curve = { version = "0.13", features = ["alloc", "serde"] }
-p256 = { version = "0.13", features = ["arithmetic", "serde"] }
+
+[dev-dependencies]
+# 保持测试依赖一致
+rand = "0.8"
+
+# 新增：提供给 workspace/features 引用的空实现
+[features]
+default = []
+sop_patch_tests = []

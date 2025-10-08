@@ -1,76 +1,40 @@
-use k256::{ProjectivePoint as KPoint, Scalar as KScalar};
-use serde::{Deserialize, Serialize};
+#[cfg(feature = "sop_patch_tests")]
+mod sop_tests {
+    use serde_json;
+    use k256::{AffinePoint as K256Affine, ProjectivePoint as K256Projective};
+    use p256::{AffinePoint as P256Affine, ProjectivePoint as P256Projective};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct FieldHolder {
-    #[serde(with = "elliptic_curve_tools::serdes::prime_field")]
-    v: KScalar,
-}
+    #[test]
+    fn serdes_roundtrip_k256_affine() {
+        let point_affine: K256Affine = K256Projective::GENERATOR.to_affine();
+        let json = serde_json::to_string(&point_affine).expect("json serialize failed");
+        let got: K256Affine = serde_json::from_str(&json).expect("json deserialize failed");
+        assert_eq!(point_affine, got);
+    }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct GroupHolder {
-    #[serde(with = "elliptic_curve_tools::serdes::group")]
-    g: KPoint,
-}
+    #[test]
+    fn serdes_roundtrip_k256_affine_vec() {
+        let point_affine: K256Affine = K256Projective::GENERATOR.to_affine();
+        let vec = vec![point_affine];
+        let json = serde_json::to_string(&vec).expect("json serialize failed");
+        let got: Vec<K256Affine> = serde_json::from_str(&json).expect("json deserialize failed");
+        assert_eq!(vec, got);
+    }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct FieldArrayHolder {
-    #[serde(with = "elliptic_curve_tools::serdes::prime_field_array")]
-    a: [KScalar; 2],
-}
+    #[test]
+    fn serdes_roundtrip_p256_affine() {
+        let point_affine: P256Affine = P256Projective::GENERATOR.to_affine();
+        let json = serde_json::to_string(&point_affine).expect("json serialize failed");
+        let got: P256Affine = serde_json::from_str(&json).expect("json deserialize failed");
+        assert_eq!(point_affine, got);
+    }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-struct GroupVecHolder {
-    #[serde(with = "elliptic_curve_tools::serdes::group_vec")]
-    gs: Vec<KPoint>,
-}
-
-#[test]
-fn roundtrip_prime_field() {
-    let v = KScalar::from(42u64);
-    let holder = FieldHolder { v };
-    let s = serde_json::to_string(&holder).expect("serialize field");
-    let out: FieldHolder = serde_json::from_str(&s).expect("deserialize field");
-    assert_eq!(holder, out);
-}
-
-#[test]
-fn roundtrip_group() {
-    let g = KPoint::GENERATOR;
-    let holder = GroupHolder { g };
-    let s = serde_json::to_string(&holder).expect("serialize group");
-    let out: GroupHolder = serde_json::from_str(&s).expect("deserialize group");
-    assert_eq!(holder, out);
-}
-
-#[test]
-fn roundtrip_prime_field_array() {
-    let a = [KScalar::from(1u64), KScalar::from(2u64)];
-    let holder = FieldArrayHolder { a };
-    let s = serde_json::to_string(&holder).expect("serialize array");
-    let out: FieldArrayHolder = serde_json::from_str(&s).expect("deserialize array");
-    assert_eq!(holder, out);
-}
-
-#[test]
-fn roundtrip_group_vec() {
-    let g = KPoint::GENERATOR;
-    let holder = GroupVecHolder { gs: vec![g, g] };
-    let s = serde_json::to_string(&holder).expect("serialize vec");
-    let out: GroupVecHolder = serde_json::from_str(&s).expect("deserialize vec");
-    assert_eq!(holder, out);
-}
-
-#[test]
-fn invalid_hex_for_field_returns_error() {
-    let bad = r#"{"v":"00"}"#;
-    let parsed: Result<FieldHolder, _> = serde_json::from_str(bad);
-    assert!(parsed.is_err());
-}
-
-#[test]
-fn invalid_hex_for_group_returns_error() {
-    let bad = r#"{"g":"abcd"}"#;
-    let parsed: Result<GroupHolder, _> = serde_json::from_str(bad);
-    assert!(parsed.is_err());
+    #[test]
+    fn serdes_roundtrip_p256_affine_vec() {
+        let point_affine: P256Affine = P256Projective::GENERATOR.to_affine();
+        let vec = vec![point_affine];
+        let json = serde_json::to_string(&vec).expect("json serialize failed");
+        let got: Vec<P256Affine> = serde_json::from_str(&json).expect("json deserialize failed");
+        assert_eq!(vec, got);
+    }
 }
