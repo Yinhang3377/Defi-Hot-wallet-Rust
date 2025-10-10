@@ -159,7 +159,7 @@ heapless = "0.8"
 postcard = { version = "1.0", features = ["alloc", "use-std"] }
 serde_bare = "0.5"
 ciborium = "0.2.1"
-mockall = "0.12"
+mockall = "0.12.1"
 rand = "0.8.5"
 proptest = "1.2.0"
 httpmock = "0.7"

@@ -8,7 +8,6 @@ use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfi
 use defi_hot_wallet::core::wallet::create;
 use defi_hot_wallet::core::wallet_manager::WalletManager;
 use std::collections::HashMap;
-use std::env;
 
 use uuid::Uuid;
 

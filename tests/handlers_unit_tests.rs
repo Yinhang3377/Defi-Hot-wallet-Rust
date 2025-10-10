@@ -4,7 +4,6 @@ use axum::Json;
 use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
 use base64::Engine as _;
 use serde_json::Value;
-use std::env;
 use std::sync::Arc;
 
 use defi_hot_wallet::api::handlers::{bridge_assets, health_check, metrics_handler};

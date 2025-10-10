@@ -5,10 +5,10 @@ use axum::http::StatusCode;
 use axum_test::TestServer;
 use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
 use base64::Engine as _; // for .decode()
+use ctor::ctor;
 use defi_hot_wallet::api::server::WalletServer;
 use defi_hot_wallet::core::config::{BlockchainConfig, NetworkConfig, StorageConfig, WalletConfig};
 use futures::future::join_all;
-use hex;
 use serde_json::json;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -30,6 +30,14 @@ fn set_test_env() {
     std::env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
 }
 
+// 在模块加载时执行一次，确保 WALLET_ENC_KEY / TEST_SKIP_DECRYPT / BRIDGE_MOCK_FORCE_SUCCESS
+// 在任何 WalletServer/WalletManager 被初始化前就已设置。
+#[ctor]
+fn init_test_env_once() {
+    // 调用一次，确保 WALLET_ENC_KEY / TEST_SKIP_DECRYPT / BRIDGE_MOCK_FORCE_SUCCESS
+    // 在任何 WalletServer/WalletManager 被初始化前就已设置。
+    set_test_env();
+}
 fn create_test_config() -> WalletConfig {
     WalletConfig {
         storage: StorageConfig {

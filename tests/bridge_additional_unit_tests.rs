@@ -3,7 +3,6 @@
 //! mock bridge implementations and the transfer/relay helpers directly.
 
 use std::collections::HashSet;
-use std::env;
 
 use tokio::task;
 

@@ -14,7 +14,6 @@ use futures::future::join_all;
 use serde_json::json;
 use serde_json::Value;
 use serial_test::serial;
-use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
