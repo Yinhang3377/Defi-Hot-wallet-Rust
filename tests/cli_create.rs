@@ -13,8 +13,8 @@ fn cli_create_generates_wallet_file() {
     let output = Command::new("cargo")
         .args([
             "run",
-            "--bin",
-            "hot_wallet",
+            "--bin", // Use the correct CLI binary
+            "wallet-cli",
             "--",
             "create",
             "--name",
