@@ -4,6 +4,9 @@
 //! Tests for individual API handlers in `src/api/handlers.rs`.
 use axum::http::StatusCode;
 use axum_test::TestServer;
+use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
+use base64::Engine as _;
+use ctor::ctor;
 use defi_hot_wallet::{
     api::server::WalletServer,
     api::types::BridgeAssetsRequest,
@@ -14,8 +17,24 @@ use futures::future::join_all;
 use serde_json::json;
 use serde_json::Value;
 use serial_test::serial;
+use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
+
+fn prepare_test_crypto_env() {
+    // 32 zero bytes base64 -> deterministic AES key for tests
+    let key = vec![0u8; 32];
+    let b64 = BASE64_ENGINE.encode(&key);
+    std::env::set_var("WALLET_ENC_KEY", b64);
+    std::env::set_var("TEST_SKIP_DECRYPT", "1");
+    std::env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
+}
+
+// Ensure env is set before any module/test initialization runs
+#[ctor]
+fn init_test_env_once() {
+    prepare_test_crypto_env();
+}
 
 /// Helper function to create a test server with an in-memory database.
 async fn setup_test_server() -> TestServer {

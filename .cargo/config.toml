@@ -1,2 +1,3 @@
 [build]
 rustflags = ["-A warnings"]
+target-dir = "C:/defi-target"
