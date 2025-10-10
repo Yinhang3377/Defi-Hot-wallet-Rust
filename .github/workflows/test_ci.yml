@@ -78,12 +78,14 @@ jobs:
       - name: Run full test suite (allow warnings)
         run: |
           # Run workspace tests; do not fail on warnings because RUSTFLAGS allows them
-          cargo test --workspace --jobs 2
+          # Enable test-env feature to set up test environment variables
+          cargo test --workspace --features test-env --jobs 2
 
       - name: Re-run the previously failing test with logs
         run: |
           # run the specific test file to gather logs and ensure the error reproduces (if present)
-          cargo test --test api_handlers_tests -- --nocapture || true
+          # Also enable test-env feature for this specific test run
+          cargo test --test api_handlers_tests --features test-env -- --nocapture || true
 
       - name: Upload test logs (if any)
         if: failure()

@@ -17,3 +17,7 @@ pub mod audit;
 pub mod service;
 // Add i18n export for tests
 pub mod i18n;
+
+// Conditionally compile the test environment setup.
+#[cfg(feature = "test-env")]
+mod test_env; // This will run the ctor when the feature is enabled.

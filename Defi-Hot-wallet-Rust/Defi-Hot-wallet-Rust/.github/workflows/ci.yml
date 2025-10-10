@@ -12,6 +12,9 @@ env:
   HTTP_PROXY: ""
   HTTPS_PROXY: ""
   NO_PROXY: "127.0.0.1,localhost"
+  # Use a relative, cross-platform target dir to avoid runner-specific expressions
+  CARGO_TARGET_DIR: "defi-target"
+
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
