@@ -125,6 +125,7 @@ sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio
 # small helpers
 rstest = "0.18"
 governor = "0.6"
+ctor = { version = "0.2.9", optional = true }
 
 [features]
 default = []
@@ -134,10 +135,10 @@ memlock = ["dep:libc", "dep:winapi"]
 std = []
 yaml = []
 msgpack = []
+test-env = ["dep:ctor"]
 
 [dev-dependencies]
 # dev/test environment should use same curve versions (serde enabled)
-ctor = "0.2" # For global test setup hooks
 base64 = "0.22" # For encoding test keys in setup hooks
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
