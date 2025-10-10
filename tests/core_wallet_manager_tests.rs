@@ -205,6 +205,7 @@ async fn test_restore_wallet() {
         .restore_wallet(
             "restored",
             "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            false,
         )
         .await;
     assert!(result.is_ok());
@@ -224,6 +225,7 @@ async fn test_restore_wallet_already_exists() {
         .restore_wallet(
             "existing",
             "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            false,
         )
         .await;
     assert!(result.is_err());
@@ -234,7 +236,7 @@ async fn test_restore_wallet_invalid_mnemonic() {
     let config = in_memory_config();
     let manager = WalletManager::new(&config).await.unwrap();
 
-    let result = manager.restore_wallet("invalid_restore", "invalid mnemonic").await;
+    let result = manager.restore_wallet("invalid_restore", "invalid mnemonic", false).await;
     assert!(result.is_err());
 }
 
@@ -251,7 +253,7 @@ async fn test_backup_restore_flow() {
 
     manager.delete_wallet("backup_test").await.unwrap();
 
-    let restore_result = manager.restore_wallet("restored_backup", &mnemonic).await;
+    let restore_result = manager.restore_wallet("restored_backup", &mnemonic, false).await;
     assert!(restore_result.is_ok());
 }
 

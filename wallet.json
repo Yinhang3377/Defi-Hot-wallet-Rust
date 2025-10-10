@@ -1,0 +1,11 @@
+{
+  "id": "b02d1e9e-3b3f-418f-ae83-3b4fd6943732",
+  "name": "mywallet",
+  "created_at": "2025-09-25T17:29:34.075263900Z",
+  "quantum_safe": true,
+  "multi_sig_threshold": 2,
+  "networks": [
+    "eth",
+    "solana"
+  ]
+}

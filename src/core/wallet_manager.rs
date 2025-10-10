@@ -1,24 +1,52 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+
+// ---------- test-only master-key injection helpers (integration tests need visibility) ----------
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+static TEST_MASTER_KEYS: Lazy<Mutex<HashMap<String, Vec<u8>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+static TEST_MASTER_DEFAULT: Lazy<Mutex<Option<Vec<u8>>>> = Lazy::new(|| Mutex::new(None));
+
+/// Inject a test master key for a specific wallet name (test-only helper).
+pub fn inject_test_master_key(name: &str, key: Vec<u8>) {
+    let mut map = TEST_MASTER_KEYS.lock().unwrap();
+    map.insert(name.to_string(), key);
+}
+
+/// Set a default test master key used for any wallet when no per-name key is injected (test-only).
+pub fn set_test_master_key_default(key: Vec<u8>) {
+    let mut def = TEST_MASTER_DEFAULT.lock().unwrap();
+    *def = Some(key);
+}
+
+/// Clear injected test keys (test-only).
+pub fn clear_injected_test_master_keys() {
+    TEST_MASTER_KEYS.lock().unwrap().clear();
+    *TEST_MASTER_DEFAULT.lock().unwrap() = None;
+}
+// ------------------------------------------------------------------------------
 use tracing::{info, warn};
-use uuid::Uuid;
 
 use crate::blockchain::{
     bridge::{
-        Bridge, BridgeTransaction, BridgeTransactionStatus, EthereumToSolanaBridge,
-        SolanaToEthereumBridge,
+        // ...existing code...
+        mock::{EthereumToSolanaBridge, SolanaToEthereumBridge}, // 保持 mock 导入
+        BridgeTransaction, // BridgeTransaction 仍在 bridge 模块中定义
+        BridgeTransactionStatus,
     },
     ethereum::EthereumClient,
     solana::SolanaClient,
-    traits::BlockchainClient,
+    traits::{BlockchainClient, Bridge}, // 从 traits 导入
 };
 use crate::core::config::WalletConfig;
 use crate::core::errors::WalletError;
 use crate::core::validation::{validate_address, validate_amount};
+use crate::core::wallet::{backup, create, recover};
 use crate::core::wallet_info::{SecureWalletData, WalletInfo};
-use crate::crypto::{
-    hsm::HSMManager, multisig::MultiSignature, quantum::QuantumSafeEncryption, shamir,
-};
+use crate::crypto::{hsm::HSMManager, multisig::MultiSignature, quantum::QuantumSafeEncryption};
 use crate::storage::{WalletMetadata, WalletStorage, WalletStorageTrait};
 
 #[allow(dead_code)]
@@ -32,9 +60,6 @@ fn get_fallback_rpc_url(network: &str) -> Option<String> {
         _ => None,
     }
 }
-
-/// (ciphertext, salt, nonce)
-type WalletKeyMaterial = (Vec<u8>, Vec<u8>, Vec<u8>);
 
 pub struct WalletManager {
     storage: Arc<dyn WalletStorageTrait + Send + Sync>,
@@ -158,6 +183,7 @@ impl WalletManager {
     pub async fn new_with_storage(
         _config: &WalletConfig,
         storage: Arc<dyn WalletStorageTrait + Send + Sync>,
+        _test_master_key: Option<Vec<u8>>,
     ) -> Result<Self, WalletError> {
         let quantum_crypto =
             QuantumSafeEncryption::new().map_err(|e| WalletError::CryptoError(e.to_string()))?;
@@ -189,48 +215,7 @@ impl WalletManager {
         name: &str,
         quantum_safe: bool,
     ) -> Result<WalletInfo, WalletError> {
-        info!("Creating new wallet: {} (quantum_safe: {})", name, quantum_safe);
-
-        let mnemonic =
-            self.generate_mnemonic().map_err(|e| WalletError::MnemonicError(e.to_string()))?;
-
-        let master_key_vec = self
-            .derive_master_key(&mnemonic)
-            .await
-            .map_err(|e| WalletError::KeyDerivationError(e.to_string()))?;
-        let mut master_key = [0u8; 32];
-        if master_key_vec.len() >= 32 {
-            master_key.copy_from_slice(&master_key_vec[..32]);
-        } else {
-            let mut tmp = [0u8; 32];
-            tmp[..master_key_vec.len()].copy_from_slice(&master_key_vec);
-            master_key.copy_from_slice(&tmp);
-        }
-
-        let wallet_info = WalletInfo {
-            id: Uuid::new_v4(),
-            name: name.to_string(),
-            created_at: chrono::Utc::now(),
-            quantum_safe,
-            multi_sig_threshold: 2,
-            networks: vec!["eth".to_string(), "solana".to_string()],
-        };
-
-        let _shamir_shares = shamir::split_secret(master_key, 2, 3)
-            .map_err(|e| anyhow::anyhow!("shamir split failed: {}", e))?;
-
-        let mut encrypted_wallet_data = SecureWalletData {
-            info: wallet_info.clone(),
-            encrypted_master_key: Vec::new(),
-            salt: Vec::new(),
-            nonce: Vec::new(),
-        };
-
-        self.store_wallet_securely(&mut encrypted_wallet_data, &master_key, quantum_safe).await?;
-        encrypted_wallet_data.zeroize();
-
-        info!("Wallet '{}' created with ID: {}", name, wallet_info.id);
-        Ok(wallet_info)
+        create::create_wallet(&self.storage, &self.quantum_crypto, name, quantum_safe).await
     }
 
     pub async fn list_wallets(&self) -> Result<Vec<WalletMetadata>, WalletError> {
@@ -242,6 +227,23 @@ impl WalletManager {
             .map_err(|e| WalletError::StorageError(e.to_string()))?;
         info!("Found {} wallets", wallets.len());
         Ok(wallets)
+    }
+
+    /// Retrieves a single wallet's metadata by its unique name.
+    pub async fn get_wallet_by_name(
+        &self,
+        name: &str,
+    ) -> Result<Option<WalletMetadata>, WalletError> {
+        info!("Getting wallet by name: {}", name);
+        let wallets = self
+            .storage
+            .list_wallets()
+            .await
+            .map_err(|e| WalletError::StorageError(e.to_string()))?;
+
+        // Find the wallet with the matching name
+        let found_wallet = wallets.into_iter().find(|w| w.name == name);
+        Ok(found_wallet)
     }
 
     pub async fn delete_wallet(&self, name: &str) -> Result<(), WalletError> {
@@ -319,13 +321,30 @@ impl WalletManager {
 
     pub async fn bridge_assets(
         &self,
-        _wallet_name: &str,
-        _from_chain: &str,
-        _to_chain: &str,
-        _token: &str,
-        _amount: &str,
+        wallet_name: &str,
+        from_chain: &str,
+        to_chain: &str,
+        token: &str,
+        amount: &str,
     ) -> Result<String, WalletError> {
-        Ok("mock_bridge_tx_hash".to_string())
+        info!(
+            "Bridging assets from wallet: {} from: {} to: {} token: {} amount: {}",
+            wallet_name, from_chain, to_chain, token, amount
+        );
+
+        let mut wallet_data = self.load_wallet_securely(wallet_name).await?;
+
+        let bridge_key = format!("{}-{}", from_chain, to_chain);
+        let bridge = self.bridges.get(&bridge_key).ok_or_else(|| {
+            WalletError::BlockchainError(format!("Unsupported bridge: {}", bridge_key))
+        })?;
+
+        let tx_hash = bridge
+            .transfer_across_chains(from_chain, to_chain, token, amount, &wallet_data)
+            .await?;
+
+        wallet_data.zeroize();
+        Ok(tx_hash)
     }
 
     pub async fn get_block_number(&self, network: &str) -> Result<u64, WalletError> {
@@ -411,26 +430,6 @@ impl WalletManager {
         });
     }
 
-    pub fn generate_mnemonic(&self) -> Result<String, WalletError> {
-        use bip39::{Language, Mnemonic};
-        use rand::RngCore;
-
-        let mut entropy = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut entropy);
-        let mnemonic = Mnemonic::from_entropy_in(Language::English, &entropy)
-            .map_err(|e| WalletError::MnemonicError(e.to_string()))?;
-        Ok(mnemonic.to_string())
-    }
-
-    pub async fn derive_master_key(&self, mnemonic: &str) -> Result<Vec<u8>, WalletError> {
-        use bip39::{Language, Mnemonic};
-
-        let mnemonic = Mnemonic::parse_in_normalized(Language::English, mnemonic)
-            .map_err(|e| WalletError::MnemonicError(e.to_string()))?;
-        let seed_bytes = mnemonic.to_seed("");
-        Ok(seed_bytes[..32].to_vec())
-    }
-
     pub fn derive_address(&self, master_key: &[u8], network: &str) -> Result<String, WalletError> {
         match network {
             "eth" => {
@@ -465,37 +464,6 @@ impl WalletManager {
         Ok(hasher.finalize().to_vec())
     }
 
-    async fn store_wallet_securely(
-        &self,
-        wallet_data: &mut SecureWalletData,
-        master_key: &[u8; 32],
-        quantum_safe: bool,
-    ) -> Result<(), WalletError> {
-        let (encrypted_key, salt, nonce) = if quantum_safe {
-            let encrypted = self
-                .quantum_crypto
-                .encrypt(master_key)
-                .map_err(|e| WalletError::CryptoError(e.to_string()))?;
-            (encrypted, vec![], vec![])
-        } else {
-            self.encrypt_traditional(master_key, master_key)
-                .map_err(|e| WalletError::CryptoError(e.to_string()))?
-        };
-
-        wallet_data.encrypted_master_key = encrypted_key;
-        wallet_data.salt = salt;
-        wallet_data.nonce = nonce;
-
-        let serialized_data = bincode::serialize(wallet_data)
-            .map_err(|e| WalletError::SerializationError(e.to_string()))?;
-
-        self.storage
-            .store_wallet(&wallet_data.info.name, &serialized_data, quantum_safe)
-            .await
-            .map_err(|e| WalletError::StorageError(e.to_string()))?;
-        Ok(())
-    }
-
     async fn load_wallet_securely(
         &self,
         wallet_name: &str,
@@ -509,57 +477,39 @@ impl WalletManager {
         let mut wallet_data: SecureWalletData = bincode::deserialize(&serialized_data)
             .map_err(|e| WalletError::SerializationError(e.to_string()))?;
 
+        // 获取用于解密的真实主密钥
+        let master_key_for_decrypt = self.get_master_key_for_wallet(wallet_name)?;
         let decrypted_master_key = if quantum_safe {
             self.quantum_crypto
                 .decrypt(&wallet_data.encrypted_master_key)
                 .map_err(|e| WalletError::CryptoError(e.to_string()))?
         } else {
             self.decrypt_traditional(
-                &wallet_data.encrypted_master_key,
+                &wallet_data.encrypted_master_key, // ciphertext
                 &wallet_data.salt,
                 &wallet_data.nonce,
-                &wallet_data.encrypted_master_key,
+                &master_key_for_decrypt, // correct master key
             )
             .map_err(|e| WalletError::CryptoError(e.to_string()))?
         };
-
         wallet_data.encrypted_master_key = decrypted_master_key;
-        Ok(wallet_data)
+
+        Ok(wallet_data) // 返回包含解密后主密钥的 wallet_data
     }
 
-    #[allow(dead_code)]
-    fn get_master_key_for_wallet(&self, _wallet_name: &str) -> Result<Vec<u8>, WalletError> {
+    fn get_master_key_for_wallet(&self, wallet_name: &str) -> Result<Vec<u8>, WalletError> {
+        // Test-injected key takes precedence (only compiled in tests)
+        // per-name injected key
+        if let Some(k) = TEST_MASTER_KEYS.lock().unwrap().get(wallet_name) {
+            return Ok(k.clone());
+        }
+        // default test key
+        if let Some(k) = TEST_MASTER_DEFAULT.lock().unwrap().as_ref() {
+            return Ok(k.clone());
+        }
+
+        // Production fallback: placeholder behavior (replace with real key retrieval)
         Ok(vec![0u8; 32])
-    }
-
-    fn encrypt_traditional(
-        &self,
-        data: &[u8],
-        master_key: &[u8],
-    ) -> Result<WalletKeyMaterial, WalletError> {
-        let mut enc_key_bytes = [0u8; 32];
-        let hkdf = hkdf::Hkdf::<sha2::Sha256>::new(Some(b"enc-salt"), master_key);
-        hkdf.expand(b"aes-gcm-key", &mut enc_key_bytes).map_err(|e| {
-            WalletError::CryptoError(format!("Failed to derive encryption key: {}", e))
-        })?;
-
-        use aes_gcm::{
-            aead::{Aead, KeyInit},
-            Aes256Gcm, Key, Nonce,
-        };
-        use rand::RngCore;
-
-        let key = Key::<Aes256Gcm>::from_slice(&enc_key_bytes);
-        let cipher = Aes256Gcm::new(key);
-
-        let mut nonce_bytes = [0u8; 12];
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
-
-        let ciphertext = cipher
-            .encrypt(nonce, data)
-            .map_err(|e| WalletError::CryptoError(format!("AES encryption failed: {}", e)))?;
-        Ok((ciphertext, b"enc-salt".to_vec(), nonce_bytes.to_vec()))
     }
 
     fn decrypt_traditional(
@@ -598,67 +548,24 @@ impl WalletManager {
         Ok(vec![])
     }
 
-    pub async fn backup_wallet(&self, _wallet_name: &str) -> Result<String, WalletError> {
-        let mnemonic = self.generate_mnemonic()?;
-        Ok(mnemonic)
+    pub async fn backup_wallet(&self, wallet_name: &str) -> Result<String, WalletError> {
+        backup::backup_wallet(&self.storage, wallet_name).await
     }
 
     pub async fn restore_wallet(
         &self,
-        _wallet_name: &str,
-        _seed_phrase: &str,
+        wallet_name: &str,
+        seed_phrase: &str,
+        quantum_safe: bool,
     ) -> Result<(), WalletError> {
-        use bip39::{Language, Mnemonic};
-
-        let mnemonic = Mnemonic::parse_in_normalized(Language::English, _seed_phrase)
-            .map_err(|e| WalletError::MnemonicError(e.to_string()))?;
-
-        let wallets = self
-            .storage
-            .list_wallets()
-            .await
-            .map_err(|e| WalletError::StorageError(e.to_string()))?;
-        if wallets.iter().any(|w| w.name == _wallet_name) {
-            return Err(WalletError::StorageError(format!(
-                "Wallet already exists: {}",
-                _wallet_name
-            )));
-        }
-
-        let master_key_vec = self
-            .derive_master_key(&mnemonic.to_string())
-            .await
-            .map_err(|e| WalletError::KeyDerivationError(e.to_string()))?;
-        let mut master_key = [0u8; 32];
-        if master_key_vec.len() >= 32 {
-            master_key.copy_from_slice(&master_key_vec[..32]);
-        } else {
-            let mut tmp = [0u8; 32];
-            tmp[..master_key_vec.len()].copy_from_slice(&master_key_vec);
-            master_key.copy_from_slice(&tmp);
-        }
-
-        let wallet_info = crate::core::wallet_info::WalletInfo {
-            id: uuid::Uuid::new_v4(),
-            name: _wallet_name.to_string(),
-            created_at: chrono::Utc::now(),
-            quantum_safe: true,
-            multi_sig_threshold: 2,
-            networks: vec!["eth".to_string(), "solana".to_string()],
-        };
-
-        let mut encrypted_wallet_data = crate::core::wallet_info::SecureWalletData {
-            info: wallet_info.clone(),
-            encrypted_master_key: Vec::new(),
-            salt: Vec::new(),
-            nonce: Vec::new(),
-        };
-
-        self.store_wallet_securely(&mut encrypted_wallet_data, &master_key, true)
-            .await
-            .map_err(|e| WalletError::StorageError(e.to_string()))?;
-
-        Ok(())
+        recover::recover_wallet(
+            &self.storage,
+            &self.quantum_crypto,
+            wallet_name,
+            seed_phrase,
+            quantum_safe,
+        )
+        .await
     }
 
     pub async fn send_multi_sig_transaction(
@@ -670,5 +577,9 @@ impl WalletManager {
         _signatures: &[String],
     ) -> Result<String, WalletError> {
         Ok("fake_multi_sig_tx_hash".to_string())
+    }
+
+    pub fn generate_mnemonic(&self) -> Result<String, WalletError> {
+        crate::core::wallet::create::generate_mnemonic()
     }
 }

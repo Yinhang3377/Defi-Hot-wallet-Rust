@@ -1,8 +1,9 @@
-﻿// src/core/bridge_test.rs
+﻿﻿// src/core/bridge_test.rs
 use defi_hot_wallet::blockchain::bridge::{ // 浣跨敤姝ｇ‘鐨勬ā鍧楄矾寰?
-    Bridge, BridgeTransactionStatus, EthereumToBSCBridge, EthereumToSolanaBridge,
-    SolanaToEthereumBridge,
+    mock::{EthereumToBSCBridge, EthereumToSolanaBridge, SolanaToEthereumBridge},
+    BridgeTransactionStatus,
 };
+use defi_hot_wallet::blockchain::traits::Bridge;
 use defi_hot_wallet::core::wallet::{SecureWalletData, WalletInfo};
 use std::str::FromStr;
 use uuid::Uuid;

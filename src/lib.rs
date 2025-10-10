@@ -5,22 +5,22 @@
 //! blockchain interactions, and security features.
 
 // Re-export modules to make them accessible from the outside.
-pub mod api;
+pub mod api; // API server logic
 pub mod application;
 pub mod audit;
-pub mod blockchain;
+pub mod blockchain; // Blockchain interaction clients (Ethereum, Solana)
 pub mod cli;
 pub mod config;
-pub mod core;
-pub mod crypto;
+pub mod core; // Core business logic (WalletManager, domain models)
+pub mod crypto; // Cryptographic functions (Shamir, quantum-safe stubs)
 pub mod i18n;
-pub mod monitoring;
+pub mod monitoring; // Monitoring and metrics
 pub mod mvp;
 pub mod network;
 pub mod ops;
 pub mod security;
 pub mod service;
-pub mod storage;
+pub mod storage; // Database and storage logic
 pub mod tools;
 pub mod utils;
 

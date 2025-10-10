@@ -2,8 +2,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use tracing::{debug, info};
 
-use super::traits::{BlockchainClient, TransactionStatus};
+use crate::core::errors::WalletError;
 
+use super::traits::{BlockchainClient, TransactionStatus};
 #[derive(Clone)]
 pub struct SolanaClient {
     _rpc_url: String,
@@ -45,48 +46,54 @@ impl BlockchainClient for SolanaClient {
         Box::new(self.clone())
     }
 
-    async fn get_balance(&self, address: &str) -> Result<String> {
+    async fn get_balance(&self, address: &str) -> Result<String, WalletError> {
         debug!("Getting SOL balance for address: {}", address);
 
         if !SolanaClient::validate_solana_address(address) {
-            return Err(anyhow::anyhow!("Invalid Solana address: {}", address));
+            return Err(WalletError::AddressError(format!("Invalid Solana address: {}", address)));
         }
 
         // Simulated balance - in a real implementation, this would call the Solana RPC
         let balance_sol = "1.234567890";
 
-        debug!("鉁?Balance: {} SOL (simulated)", balance_sol);
+        debug!("✔ Balance: {} SOL (simulated)", balance_sol);
         Ok(balance_sol.to_string())
     }
 
     async fn send_transaction(
         &self,
         private_key: &[u8],
-        to_address: &str,
+        to: &str,
         amount: &str,
-    ) -> Result<String> {
-        info!("馃捀 Sending {} SOL to {} (simulated)", amount, to_address);
+    ) -> Result<String, WalletError> {
+        info!("💸 Sending {} SOL to {} (simulated)", amount, to);
 
         if private_key.len() != 32 {
-            return Err(anyhow::anyhow!("Private key must be 32 bytes for Solana"));
+            return Err(WalletError::KeyDerivationError(
+                "Private key must be 32 bytes for Solana".to_string(),
+            ));
         }
 
-        if !SolanaClient::validate_solana_address(to_address) {
-            return Err(anyhow::anyhow!("Invalid recipient address: {}", to_address));
+        if !SolanaClient::validate_solana_address(to) {
+            return Err(WalletError::AddressError(format!("Invalid recipient address: {}", to)));
         }
 
         // Parse amount
-        let _amount_f64: f64 =
-            amount.parse().map_err(|e| anyhow::anyhow!("Invalid amount: {}", e))?;
+        let _amount_f64: f64 = amount
+            .parse()
+            .map_err(|e| WalletError::ValidationError(format!("Invalid amount: {}", e)))?;
 
         // Simulated transaction hash
         let tx_hash = format!("simulated_solana_tx_{}", chrono::Utc::now().timestamp());
 
-        info!("鉁?Transaction sent (simulated): {}", tx_hash);
+        info!("✔ Transaction sent (simulated): {}", tx_hash);
         Ok(tx_hash)
     }
 
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus> {
+    async fn get_transaction_status(
+        &self,
+        tx_hash: &str,
+    ) -> Result<TransactionStatus, WalletError> {
         debug!("Getting transaction status for: {} (simulated)", tx_hash);
 
         // Simulate confirmed status for transactions that look like ours
@@ -97,23 +104,23 @@ impl BlockchainClient for SolanaClient {
         }
     }
 
-    async fn estimate_fee(&self, _to_address: &str, _amount: &str) -> Result<String> {
+    async fn estimate_fee(&self, _to_address: &str, _amount: &str) -> Result<String, WalletError> {
         debug!("Estimating Solana transaction fee (simulated)");
 
         // Solana typically has very low fees (around 0.000005 SOL)
         let fee_sol = "0.000005000";
 
-        debug!("鉁?Estimated fee: {} SOL (simulated)", fee_sol);
+        debug!("✔ Estimated fee: {} SOL (simulated)", fee_sol);
         Ok(fee_sol.to_string())
     }
 
-    async fn get_block_number(&self) -> Result<u64> {
+    async fn get_block_number(&self) -> Result<u64, WalletError> {
         // Simulate current slot number
         let slot = chrono::Utc::now().timestamp() as u64;
         Ok(slot)
     }
 
-    fn validate_address(&self, address: &str) -> Result<bool> {
+    fn validate_address(&self, address: &str) -> anyhow::Result<bool> {
         Ok(SolanaClient::validate_solana_address(address))
     }
 

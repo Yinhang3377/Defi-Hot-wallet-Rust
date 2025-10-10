@@ -141,7 +141,7 @@ k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p384 = { version = "0.9", features = ["serde"] }
 
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 criterion = "0.5"
 tempfile = "3.8"
 test-log = "0.2"
@@ -190,7 +190,7 @@ path = "src/main.rs"
 
 [[bin]]
 name = "wallet-cli"
-path = "src/cli.rs"
+path = "src/bin/wallet-cli.rs"
 
 [[bin]]
 name = "bridge_test"

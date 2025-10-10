@@ -12,6 +12,7 @@ use std::{str::FromStr, time::Duration};
 use tracing::{debug, info, warn};
 
 use super::traits::{BlockchainClient, TransactionStatus};
+use crate::core::errors::WalletError;
 
 #[derive(Clone)]
 pub struct EthereumClient<P: JsonRpcClient + Clone = Http> {
@@ -160,17 +161,16 @@ where
         Box::new(self.clone())
     }
 
-    async fn get_balance(&self, address: &str) -> Result<String> {
+    async fn get_balance(&self, address: &str) -> Result<String, WalletError> {
         debug!("Getting ETH balance for address: {}", address);
 
         let address = Address::from_str(address)
-            .map_err(|e| anyhow::anyhow!("Invalid Ethereum address: {}", e))?;
+            .map_err(|e| WalletError::AddressError(format!("Invalid Ethereum address: {}", e)))?;
 
-        let balance = self
-            .provider
-            .get_balance(address, None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to get balance: {}", e))?;
+        let balance =
+            self.provider.get_balance(address, None).await.map_err(|e| {
+                WalletError::BlockchainError(format!("Failed to get balance: {}", e))
+            })?;
 
         let balance_eth = ethers::utils::format_ether(balance);
         debug!("Balance: {} ETH", balance_eth);
@@ -181,22 +181,25 @@ where
     async fn send_transaction(
         &self,
         private_key: &[u8],
-        to_address: &str,
+        to: &str,
         amount: &str,
-    ) -> Result<String> {
-        info!("Sending {} ETH to {}", amount, to_address);
+    ) -> Result<String, WalletError> {
+        info!("Sending {} ETH to {}", amount, to);
 
         // Create wallet from private key
-        let wallet = self
-            .create_wallet_from_private_key(private_key)
-            .map_err(|e| anyhow::anyhow!("Failed to create wallet from private key: {}", e))?;
+        let wallet = self.create_wallet_from_private_key(private_key).map_err(|e| {
+            WalletError::KeyDerivationError(format!(
+                "Failed to create wallet from private key: {}",
+                e
+            ))
+        })?;
 
         // Parse addresses and amount
-        let to_address = Address::from_str(to_address)
-            .map_err(|e| anyhow::anyhow!("Invalid recipient address: {}", e))?;
+        let to_address = Address::from_str(to)
+            .map_err(|e| WalletError::AddressError(format!("Invalid recipient address: {}", e)))?;
 
-        let amount_wei =
-            parse_ether(amount).map_err(|e| anyhow::anyhow!("Invalid amount: {}", e))?;
+        let amount_wei = parse_ether(amount)
+            .map_err(|e| WalletError::ValidationError(format!("Invalid amount: {}", e)))?;
 
         // Get current gas price and nonce
         let gas_price = self.get_gas_price().await?;
@@ -215,10 +218,9 @@ where
         // Sign and send transaction
         let client = SignerMiddleware::new(self.provider.clone(), wallet);
 
-        let pending_tx = client
-            .send_transaction(tx, None)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to send transaction: {}", e))?;
+        let pending_tx = client.send_transaction(tx, None).await.map_err(|e| {
+            WalletError::BlockchainError(format!("Failed to send transaction: {}", e))
+        })?;
 
         let tx_hash = format!("{:?}", pending_tx.tx_hash());
 
@@ -226,11 +228,15 @@ where
         Ok(tx_hash)
     }
 
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus> {
+    async fn get_transaction_status(
+        &self,
+        tx_hash: &str,
+    ) -> Result<TransactionStatus, WalletError> {
         debug!("Getting transaction status for: {}", tx_hash);
 
-        let tx_hash = H256::from_str(tx_hash)
-            .map_err(|e| anyhow::anyhow!("Invalid transaction hash: {}", e))?;
+        let tx_hash = H256::from_str(tx_hash).map_err(|e| {
+            WalletError::ValidationError(format!("Invalid transaction hash: {}", e))
+        })?;
 
         match self.provider.get_transaction_receipt(tx_hash).await {
             Ok(Some(receipt)) => {
@@ -250,30 +256,33 @@ where
                         // If both receipt and transaction are not found, the transaction is unknown.
                         Ok(TransactionStatus::Unknown)
                     }
-                    Err(e) => Err(anyhow::anyhow!(
+                    Err(e) => Err(WalletError::BlockchainError(format!(
                         "Failed to get transaction details for {}: {}",
-                        tx_hash,
-                        e
-                    )),
+                        tx_hash, e
+                    ))),
                 }
             }
             Err(e) => {
                 warn!("Failed to get transaction receipt for {}: {}", tx_hash, e);
-                Err(anyhow::anyhow!("Failed to get transaction receipt: {}", e))
+                Err(WalletError::BlockchainError(format!(
+                    "Failed to get transaction receipt: {}",
+                    e
+                )))
             }
         }
     }
 
-    async fn estimate_fee(&self, to_address: &str, amount: &str) -> Result<String> {
+    async fn estimate_fee(&self, to_address: &str, amount: &str) -> Result<String, WalletError> {
         debug!("Estimating fee for {} ETH to {}", amount, to_address);
 
         let _to_address = Address::from_str(to_address)
-            .map_err(|e| anyhow::anyhow!("Invalid recipient address: {}", e))?;
+            .map_err(|e| WalletError::AddressError(format!("Invalid recipient address: {}", e)))?;
 
-        let _amount_wei =
-            parse_ether(amount).map_err(|e| anyhow::anyhow!("Invalid amount: {}", e))?;
+        let _amount_wei = parse_ether(amount)
+            .map_err(|e| WalletError::ValidationError(format!("Invalid amount: {}", e)))?;
 
-        let gas_price = self.get_gas_price().await?;
+        let gas_price =
+            self.get_gas_price().await.map_err(|e| WalletError::BlockchainError(e.to_string()))?;
         let gas_limit = U256::from(21000u64); // Standard ETH transfer
 
         let total_fee = gas_price * gas_limit;
@@ -283,17 +292,15 @@ where
         Ok(fee_eth)
     }
 
-    async fn get_block_number(&self) -> Result<u64> {
-        let block_number = self
-            .provider
-            .get_block_number()
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to get block number: {}", e))?;
+    async fn get_block_number(&self) -> Result<u64, WalletError> {
+        let block_number = self.provider.get_block_number().await.map_err(|e| {
+            WalletError::BlockchainError(format!("Failed to get block number: {}", e))
+        })?;
 
         Ok(block_number.as_u64())
     }
 
-    fn validate_address(&self, address: &str) -> Result<bool> {
+    fn validate_address(&self, address: &str) -> anyhow::Result<bool> {
         match Address::from_str(address) {
             Ok(_) => Ok(true),
             Err(_) => Ok(false),

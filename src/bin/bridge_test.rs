@@ -2,9 +2,10 @@
 use chrono::Utc;
 use clap::{Parser, Subcommand};
 use defi_hot_wallet::blockchain::bridge::{
-    Bridge, BridgeTransactionStatus, EthereumToBSCBridge, EthereumToSolanaBridge,
-    SolanaToEthereumBridge,
+    mock::{EthereumToBSCBridge, EthereumToSolanaBridge, SolanaToEthereumBridge},
+    BridgeTransactionStatus,
 };
+use defi_hot_wallet::blockchain::traits::Bridge;
 use defi_hot_wallet::core::{SecureWalletData, WalletInfo};
 use std::str::FromStr;
 use uuid::Uuid;

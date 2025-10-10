@@ -61,6 +61,8 @@ pub struct BackupResponse {
 pub struct RestoreWalletRequest {
     pub name: String,
     pub seed_phrase: String,
+    #[serde(default)]
+    pub quantum_safe: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]

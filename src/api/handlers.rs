@@ -48,29 +48,6 @@ pub async fn bridge_assets(
         ));
     }
 
-    match wallet_manager.list_wallets().await {
-        Ok(wallets) => {
-            if !wallets.iter().any(|w| w.name == request.from_wallet) {
-                return Err((
-                    StatusCode::NOT_FOUND,
-                    Json(ErrorResponse {
-                        error: "Wallet not found".to_string(),
-                        code: "BRIDGE_FAILED".to_string(),
-                    }),
-                ));
-            }
-        }
-        Err(_) => {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse {
-                    error: "Failed to check wallet".to_string(),
-                    code: "BRIDGE_FAILED".to_string(),
-                }),
-            ))
-        }
-    }
-
     match wallet_manager
         .bridge_assets(
             &request.from_wallet,
@@ -82,13 +59,19 @@ pub async fn bridge_assets(
         .await
     {
         Ok(bridge_tx_id) => Ok(Json(BridgeResponse { bridge_tx_id })),
-        Err(_) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Failed to bridge assets".to_string(),
-                code: "BRIDGE_FAILED".to_string(),
-            }),
-        )),
+        Err(err) => {
+            // 在返回 500 错误前，记录详细的底层错误信息和请求内容
+            // 直接打印到 stderr，确保在测试输出里能看到底层错误（临时调试）
+            eprintln!("DEBUG_BRIDGE_ERROR: {:?}", err);
+            tracing::error!(error = %err, request = ?request, "bridge_assets handler failed");
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: "Failed to bridge assets".to_string(),
+                    code: "BRIDGE_FAILED".to_string(),
+                }),
+            ))
+        }
     }
 }
 

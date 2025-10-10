@@ -1,42 +1,27 @@
-use anyhow::Result;
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 
+use crate::{
+    blockchain::bridge::BridgeTransactionStatus, core::errors::WalletError,
+    core::wallet_info::SecureWalletData,
+};
+
+/// Defines the interface for a cross-chain bridge.
 #[async_trait]
-pub trait BlockchainClient: Send + Sync {
-    /// Creates a boxed clone of the client.
-    fn clone_box(&self) -> Box<dyn BlockchainClient>;
-
-    /// Get the balance of an address
-    async fn get_balance(&self, address: &str) -> Result<String>;
-
-    /// Send a transaction
-    async fn send_transaction(
+pub trait Bridge: Send + Sync {
+    async fn check_transfer_status(&self, tx_id: &str) -> anyhow::Result<BridgeTransactionStatus>;
+    async fn transfer_across_chains(
         &self,
-        private_key: &[u8],
-        to_address: &str,
+        from_chain: &str,
+        to_chain: &str,
+        token: &str,
         amount: &str,
-    ) -> Result<String>;
-
-    /// Get transaction status
-    async fn get_transaction_status(&self, tx_hash: &str) -> Result<TransactionStatus>;
-
-    /// Estimate transaction fee
-    async fn estimate_fee(&self, to_address: &str, amount: &str) -> Result<String>;
-
-    /// Get current block number
-    async fn get_block_number(&self) -> Result<u64>;
-
-    /// Validate an address
-    fn validate_address(&self, address: &str) -> Result<bool>;
-
-    /// Get network name
-    fn get_network_name(&self) -> &str;
-
-    /// Get native token symbol
-    fn get_native_token(&self) -> &str;
+        wallet_data: &SecureWalletData,
+    ) -> anyhow::Result<String>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+/// Represents the status of a standard blockchain transaction.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TransactionStatus {
     Pending,
     Confirmed,
@@ -44,15 +29,48 @@ pub enum TransactionStatus {
     Unknown,
 }
 
-#[derive(Debug, Clone)]
+/// Defines the standard interface for interacting with a blockchain.
+#[async_trait]
+pub trait BlockchainClient: Send + Sync {
+    /// Clones the client into a boxed trait object.
+    fn clone_box(&self) -> Box<dyn BlockchainClient>;
+
+    /// Retrieves the balance of a given address.
+    async fn get_balance(&self, address: &str) -> Result<String, WalletError>;
+
+    /// Sends a transaction from a private key to a recipient address.
+    async fn send_transaction(
+        &self,
+        private_key: &[u8],
+        to_address: &str,
+        amount: &str,
+    ) -> Result<String, WalletError>;
+
+    /// Retrieves the status of a transaction given its hash.
+    async fn get_transaction_status(&self, tx_hash: &str)
+        -> Result<TransactionStatus, WalletError>;
+
+    /// Estimates the fee for a transaction.
+    async fn estimate_fee(&self, to_address: &str, amount: &str) -> Result<String, WalletError>;
+
+    /// Gets the latest block number.
+    async fn get_block_number(&self) -> Result<u64, WalletError>;
+
+    /// Validates if a given address string is valid for the blockchain.
+    fn validate_address(&self, address: &str) -> anyhow::Result<bool>;
+
+    /// Returns the name of the network (e.g., "ethereum", "solana-devnet").
+    fn get_network_name(&self) -> &str;
+
+    /// Returns the symbol of the native token (e.g., "ETH", "SOL").
+    fn get_native_token(&self) -> &str;
+}
+
+/// Basic information about a transaction.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInfo {
     pub hash: String,
     pub from: String,
     pub to: String,
     pub amount: String,
-    pub fee: String,
-    pub block_number: Option<u64>,
-    pub confirmations: u64,
-    pub status: TransactionStatus,
-    pub timestamp: Option<chrono::DateTime<chrono::Utc>>,
 }

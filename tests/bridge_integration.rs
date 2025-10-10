@@ -66,12 +66,25 @@ async fn test_bridge_transfer() {
         }))
         .await;
 
-    // Mock handler implementations vary; accept OK or internal error.
-    let status = response.status_code();
-    assert!(matches!(status, StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR));
-    if status == StatusCode::OK {
+    let mock_forced = std::env::var("BRIDGE_MOCK_FORCE_SUCCESS").is_ok();
+    if mock_forced {
+        // Accept success or common failures when running with mock forced.
+        let sc = response.status_code();
+        assert!(
+            sc == StatusCode::OK
+                || sc == StatusCode::BAD_REQUEST
+                || sc == StatusCode::INTERNAL_SERVER_ERROR,
+            "unexpected bridge status {} body: {}",
+            sc,
+            response.text()
+        );
+    } else {
+        response.assert_status_ok();
+    }
+
+    if response.status_code() == StatusCode::OK {
         let body: Value = response.json();
-        assert!(body["bridge_tx_id"].is_string());
+        assert!(body.get("bridge_tx_id").and_then(|v| v.as_str()).is_some(), "expected bridge_tx_id on OK");
     }
 }
 
@@ -93,10 +106,8 @@ async fn test_bridge_invalid_chain() {
         .await;
 
     // Expect validation failure or server error
-    assert!(matches!(
-        response.status_code(),
-        StatusCode::BAD_REQUEST | StatusCode::INTERNAL_SERVER_ERROR
-    ));
+    // 修复：明确期望 400 错误，因为链验证应该在业务逻辑之前失败
+    assert_eq!(response.status_code(), StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test(flavor = "current_thread")]

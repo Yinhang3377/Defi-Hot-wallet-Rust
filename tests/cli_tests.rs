@@ -1,5 +1,5 @@
 use clap::Parser;
-use defi_hot_wallet::cli::{Cli, Commands};
+use defi_hot_wallet::cli::{Cli, Commands}; // This path is now correct after the lib change
 use std::process::Command;
 
 #[test]
@@ -55,7 +55,7 @@ fn test_cli_generate_mnemonic() {
 #[test]
 fn test_cli_parse_create() {
     // Unit test for Create command parsing
-    let args = vec!["hot_wallet", "create", "--name", "test_wallet"];
+    let args = vec!["wallet-cli", "create", "--name", "test_wallet"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Create { name, output } => {
@@ -69,7 +69,7 @@ fn test_cli_parse_create() {
 #[test]
 fn test_cli_parse_create_with_output() {
     // Test Create with output path
-    let args = vec!["hot_wallet", "create", "--name", "test_wallet", "--output", "/tmp/test.json"];
+    let args = vec!["wallet-cli", "create", "--name", "test_wallet", "--output", "/tmp/test.json"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Create { name, output } => {
@@ -83,7 +83,7 @@ fn test_cli_parse_create_with_output() {
 #[test]
 fn test_cli_parse_info() {
     // Unit test for Info command parsing
-    let args = vec!["hot_wallet", "info", "--name", "test_wallet"];
+    let args = vec!["wallet-cli", "info", "--name", "test_wallet"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Info { name } => {
@@ -97,7 +97,7 @@ fn test_cli_parse_info() {
 fn test_cli_parse_transfer() {
     // Unit test for Transfer command parsing
     let args =
-        vec!["hot_wallet", "transfer", "--name", "test_wallet", "--to", "0x123", "--amount", "1.0"];
+        vec!["wallet-cli", "transfer", "--name", "test_wallet", "--to", "0x123", "--amount", "1.0"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
         Commands::Transfer { name, to, amount } => {
@@ -112,11 +112,12 @@ fn test_cli_parse_transfer() {
 #[test]
 fn test_cli_parse_balance() {
     // Unit test for Balance command parsing
-    let args = vec!["hot_wallet", "balance", "--name", "test_wallet"];
+    let args = vec!["wallet-cli", "balance", "--name", "test_wallet", "--network", "eth"];
     let cli = Cli::try_parse_from(args).unwrap();
     match cli.command {
-        Commands::Balance { name } => {
+        Commands::Balance { name, network } => {
             assert_eq!(name, "test_wallet");
+            assert_eq!(network, Some("eth".to_string()));
         }
         _ => panic!("Expected Balance command"),
     }
@@ -126,7 +127,7 @@ fn test_cli_parse_balance() {
 fn test_cli_parse_bridge() {
     // Unit test for Bridge command parsing
     let args = vec![
-        "hot_wallet",
+        "wallet-cli",
         "bridge",
         "--name",
         "test_wallet",
@@ -155,7 +156,7 @@ fn test_cli_parse_bridge() {
 #[test]
 fn test_cli_parse_no_command() {
     // Test parsing without subcommand (should fail)
-    let args = vec!["hot_wallet"];
+    let args = vec!["wallet-cli"];
     let result = Cli::try_parse_from(args);
     assert!(result.is_err());
 }
@@ -163,7 +164,7 @@ fn test_cli_parse_no_command() {
 #[test]
 fn test_cli_parse_invalid_command() {
     // Test invalid command (should fail)
-    let args = vec!["hot_wallet", "invalid"];
+    let args = vec!["wallet-cli", "invalid"];
     let result = Cli::try_parse_from(args);
     assert!(result.is_err());
 }
@@ -171,7 +172,7 @@ fn test_cli_parse_invalid_command() {
 #[test]
 fn test_cli_parse_missing_required_arg() {
     // Test missing required argument for Create
-    let args = vec!["hot_wallet", "create"];
+    let args = vec!["wallet-cli", "create"];
     let result = Cli::try_parse_from(args);
     assert!(result.is_err());
 }

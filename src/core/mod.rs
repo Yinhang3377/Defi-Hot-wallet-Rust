@@ -4,6 +4,7 @@ pub mod errors;
 pub mod key_management;
 pub mod memory_protection;
 pub mod validation;
+pub mod wallet;
 pub mod wallet_info;
 pub mod wallet_manager;
 

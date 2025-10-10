@@ -3,6 +3,7 @@
 //! 使用内存 SQLite（sqlite::memory:）以保证测试快速且无副作用。
 
 use defi_hot_wallet::core::config::{BlockchainConfig, StorageConfig, WalletConfig};
+use defi_hot_wallet::core::wallet::create;
 use defi_hot_wallet::core::wallet_manager::WalletManager;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -165,7 +166,7 @@ async fn test_backup_and_restore_flow_stubs() {
     let seed = wm.backup_wallet("backup_wallet").await.unwrap();
     assert!(seed.split_whitespace().count() >= 12); // 至少 12 词，兼容不同实现
                                                     // restore 使用同样的助记词（stub 实现可能总是成功）
-    let res = wm.restore_wallet("restored_wallet", seed.as_str()).await;
+    let res = wm.restore_wallet("restored_wallet", seed.as_str(), false).await;
     assert!(res.is_ok());
     cleanup(wm).await;
 }
@@ -188,8 +189,9 @@ async fn test_generate_and_derive_helpers() {
     let wm = create_test_wallet_manager().await;
     let mnemonic = wm.generate_mnemonic().unwrap();
     assert!(!mnemonic.is_empty());
-    let key = wm
-        .derive_master_key("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about")
+    let key = create::derive_master_key(
+        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    )
         .await
         .unwrap();
     assert_eq!(key.len(), 32);
