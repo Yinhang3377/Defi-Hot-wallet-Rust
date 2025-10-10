@@ -650,7 +650,7 @@ async fn bridge_assets(
         || !state.config.blockchain.networks.contains_key(&payload.to_chain)
     {
         return Err((
-            StatusCode::BAD_REQUEST,
+            StatusCode::NOT_FOUND,
             Json(ErrorResponse {
                 error: "Unsupported chain".to_string(),
                 code: "BRIDGE_FAILED".to_string(),

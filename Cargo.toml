@@ -137,6 +137,7 @@ msgpack = []
 
 [dev-dependencies]
 # dev/test environment should use same curve versions (serde enabled)
+ctor = "0.2"
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p384 = { version = "0.9", features = ["serde"] }
