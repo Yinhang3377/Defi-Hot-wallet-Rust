@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 /// DeFi Hot Wallet CLI (library-facing definitions)
 #[derive(Debug, Parser)]
-#[command(name = "wallet-cli", about = "DeFi Hot Wallet CLI")]
+#[command(name = "wallet-cli", about = "DeFi Hot Wallet CLI", disable_help_subcommand = true)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,

@@ -618,8 +618,8 @@ async fn bridge_assets(
         )
     })?;
 
-    // --- Validate request first (return 400 for bad params) ---
-    if payload.from_wallet.is_empty() // 1) 基本参数校验
+    // 1) Basic parameter validation
+    if payload.from_wallet.is_empty()
         || payload.from_chain.is_empty()
         || payload.to_chain.is_empty()
         || payload.token.is_empty()
@@ -634,7 +634,6 @@ async fn bridge_assets(
         ));
     }
 
-    // amount must be numeric and positive
     if payload.amount.parse::<f64>().unwrap_or(-1.0) <= 0.0 {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -645,10 +644,17 @@ async fn bridge_assets(
         ));
     }
 
-    // 2) 始终先做链支持校验（满足 tests 对 400 的期望）
+    // 2) 检查链是否受支持，统一返回 404 NOT_FOUND
     if !state.config.blockchain.networks.contains_key(&payload.from_chain)
         || !state.config.blockchain.networks.contains_key(&payload.to_chain)
     {
+        // 调试信息：在测试失败时打印请求的链名与当前已配置网络，方便定位为何链不存在
+        eprintln!(
+            "DEBUG: unsupported chain check: from='{}' to='{}' known_networks={:?}",
+            payload.from_chain,
+            payload.to_chain,
+            state.config.blockchain.networks.keys().collect::<Vec<_>>()
+        );
         return Err((
             StatusCode::NOT_FOUND,
             Json(ErrorResponse {
@@ -658,7 +664,7 @@ async fn bridge_assets(
         ));
     }
 
-    // 3) 再检查钱包是否存在（满足 tests 对 404 的期望）
+    // 3) Then check if the wallet exists (to meet test expectations for 404)
     if state.wallet_manager.get_wallet_by_name(&payload.from_wallet).await.unwrap_or(None).is_none()
     {
         return Err((
@@ -670,13 +676,13 @@ async fn bridge_assets(
         ));
     }
 
-    // 4) 测试/模拟环境直接返回固定 txid，避免解密（满足 tests 期望 "mock_bridge_tx_hash"）
+    // 4) In a test/mock environment, return a fixed txid directly to avoid decryption (fulfills test expectation for "mock_bridge_tx_hash")
     let force_mock = std::env::var("BRIDGE_MOCK_FORCE_SUCCESS").ok().as_deref() == Some("1");
     if force_mock {
         return Ok(Json(BridgeResponse { bridge_tx_id: "mock_bridge_tx_hash".to_string() }));
     }
 
-    // 5) 真实逻辑（会进行解密/签名）
+    // 5) Real logic (will perform decryption/signing)
     handlers::bridge_assets(State(state.wallet_manager.clone()), Json(payload)).await
 }
 

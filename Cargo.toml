@@ -137,7 +137,8 @@ msgpack = []
 
 [dev-dependencies]
 # dev/test environment should use same curve versions (serde enabled)
-ctor = "0.2"
+ctor = "0.2" # For global test setup hooks
+base64 = "0.22" # For encoding test keys in setup hooks
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p384 = { version = "0.9", features = ["serde"] }

@@ -63,10 +63,20 @@ async fn test_solana_to_ethereum_bridge() -> Result<()> {
     let wallet_data = create_mock_wallet_data();
 
     let result = bridge.transfer_across_chains("solana", "eth", "USDC", "50.0", &wallet_data).await;
-    // 修复：期望一个错误，因为模拟桥接不支持此路径
-    assert!(result.is_err());
-    if let Err(e) = result {
-        assert!(e.to_string().contains("Unsupported bridge from solana to eth"));
+    let mock_forced = std::env::var("BRIDGE_MOCK_FORCE_SUCCESS").is_ok();
+    if mock_forced {
+        // In mock-forced mode we expect the mocked path to succeed.
+        assert!(
+            result.is_ok(),
+            "expected success when BRIDGE_MOCK_FORCE_SUCCESS=1, got: {:?}",
+            result
+        );
+    } else {
+        // otherwise preserve original expectation (error)
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert!(e.to_string().contains("Unsupported bridge from solana to eth"));
+        }
     }
     Ok(())
 }
@@ -85,7 +95,14 @@ async fn test_ethereum_to_bsc_bridge() -> Result<()> {
         );
     } else {
         // 修复：期望一个错误，因为模拟桥接不支持此路径
-        assert!(result.is_err());
+        assert!(
+            result.is_err(),
+            "expected error when BRIDGE_MOCK_FORCE_SUCCESS is not set, got: {:?}",
+            result
+        );
+        if let Err(e) = result {
+            assert!(e.to_string().contains("Unsupported bridge from eth to bsc"));
+        }
     }
     Ok(())
 }
@@ -141,7 +158,14 @@ async fn integration_mock_bridge_variants_and_concurrent() -> Result<()> {
             t1_result.err()
         );
     } else {
-        assert!(t1_result.is_err());
+        assert!(
+            t1_result.is_err(),
+            "expected error for s2e when BRIDGE_MOCK_FORCE_SUCCESS is not set, got: {:?}",
+            t1_result
+        );
+        if let Err(e) = t1_result {
+            assert!(e.to_string().contains("Unsupported bridge from solana to eth"));
+        }
     }
 
     let t2_result = e2b.transfer_across_chains("eth", "bsc", "USDT", "2.0", &w).await;

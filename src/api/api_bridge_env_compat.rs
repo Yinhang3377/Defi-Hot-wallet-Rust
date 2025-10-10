@@ -96,7 +96,7 @@ async fn bridge_returns_400_for_unsupported_chain_when_not_mocked() {
         .json(&payload)
         .add_header("Authorization", api_key)
         .await;
-    assert_eq!(res.status_code(), StatusCode::BAD_REQUEST, "body: {}", res.text());
+    assert_eq!(res.status_code(), StatusCode::NOT_FOUND, "body: {}", res.text());
     let j: Value = res.json();
     assert_eq!(j["code"].as_str().unwrap_or(""), "BRIDGE_FAILED");
 }

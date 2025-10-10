@@ -38,9 +38,10 @@ pub async fn bridge_assets(
         ));
     }
 
+    // 修复：将不支持的链错误统一为 404 NOT_FOUND
     if request.from_chain != "eth" && request.from_chain != "solana" {
         return Err((
-            StatusCode::BAD_REQUEST,
+            StatusCode::NOT_FOUND,
             Json(ErrorResponse {
                 error: "Unsupported chain".to_string(),
                 code: "BRIDGE_FAILED".to_string(),

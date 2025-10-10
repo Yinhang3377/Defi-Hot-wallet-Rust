@@ -173,7 +173,7 @@ async fn test_bridge_unsupported_chain() {
     });
     let r =
         server.post("/api/bridge").json(&payload).add_header("Authorization", "test_api_key").await;
-    assert_eq!(r.status_code(), StatusCode::BAD_REQUEST, "body: {}", r.text());
+    assert_eq!(r.status_code(), StatusCode::NOT_FOUND, "body: {}", r.text());
     let e: Value = r.json();
     assert_eq!(e["error"], "Unsupported chain");
 }

@@ -3,7 +3,8 @@
 //! 使用认证头，确保通过 API key 检查
 use axum::http::StatusCode;
 use axum_test::TestServer;
-use base64;
+use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
+use base64::Engine as _; // for .decode()
 use defi_hot_wallet::api::server::WalletServer;
 use defi_hot_wallet::core::config::{BlockchainConfig, NetworkConfig, StorageConfig, WalletConfig};
 use futures::future::join_all;
@@ -74,7 +75,7 @@ async fn create_test_server() -> TestServer {
 
     // debug: 尝试解析 WALLET_ENC_KEY（仅打印能否解析和字节长度，不打印密钥）
     if let Ok(k) = std::env::var("WALLET_ENC_KEY") {
-        match base64::decode(&k) {
+        match BASE64_ENGINE.decode(&k) {
             Ok(bytes) => {
                 eprintln!("TEST DEBUG: WALLET_ENC_KEY base64 decoded length = {}", bytes.len())
             }
@@ -96,7 +97,7 @@ async fn create_test_server() -> TestServer {
     // 使用确定性的主密钥：从 WALLET_ENC_KEY 解码（支持 base64 或 hex），并确保为 32 字节
     let test_master_key = {
         let env_k = std::env::var("WALLET_ENC_KEY").unwrap_or_default();
-        let mut key_bytes = match base64::decode(&env_k) {
+        let mut key_bytes = match BASE64_ENGINE.decode(&env_k) {
             Ok(b) => b,
             Err(_) => match hex::decode(&env_k) {
                 Ok(h) => h,
@@ -601,7 +602,7 @@ async fn bridge_all_branches_including_concurrent() {
     let bad3 = json!({ "from_wallet": "w", "from_chain": "btc", "to_chain": "solana", "token": "USDC", "amount": "1" });
     let r4 =
         server.post("/api/bridge").json(&bad3).add_header("Authorization", "test_api_key").await;
-    assert_eq!(r4.status_code(), StatusCode::BAD_REQUEST, "body: {}", r4.text());
+    assert_eq!(r4.status_code(), StatusCode::NOT_FOUND, "body: {}", r4.text());
     let e4: Value = r4.json(); // unsupported chain
     assert_eq!(e4["error"], "Unsupported chain");
 

@@ -1,0 +1,1 @@
+bash: .targetdebugwallet-cli.exe: command not found
