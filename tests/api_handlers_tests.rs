@@ -6,7 +6,7 @@ use axum::http::StatusCode;
 use axum_test::TestServer;
 use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
 use base64::Engine as _;
-use ctor::ctor;
+use ctor::ctor; // removed: unused import
 use defi_hot_wallet::{
     api::server::WalletServer,
     api::types::BridgeAssetsRequest,
@@ -17,7 +17,6 @@ use futures::future::join_all;
 use serde_json::json;
 use serde_json::Value;
 use serial_test::serial;
-use std::env;
 use std::sync::Arc;
 use uuid::Uuid;
 
