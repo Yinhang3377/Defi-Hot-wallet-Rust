@@ -1,3 +1,3 @@
 [build]
-rustflags = ["-A warnings"]
-target-dir = "C:/defi-target"
+# Use a relative, cross-platform target dir to avoid embedding OS-specific absolute paths
+target-dir = "defi-target"
