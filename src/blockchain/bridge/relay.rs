@@ -1,4 +1,3 @@
-// filepath: src/blockchain/bridge/relay.rs
 use crate::blockchain::bridge::BridgeTransactionStatus;
 use crate::blockchain::traits::Bridge;
 use crate::core::wallet_info::SecureWalletData;
@@ -130,7 +129,11 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
             }
         }
         3..=4 => {
-            let roll: u32 = if let Some(v) = forced_roll { v } else { rng.gen_range(1..=100) };
+            let roll: u32 = if let Some(v) = forced_roll {
+                v
+            } else {
+                rng.gen_range(1..=100)
+            };
             if roll <= 60 {
                 Ok(BridgeTransactionStatus::InTransit)
             } else if roll <= 95 {
@@ -140,7 +143,11 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
             }
         }
         _ => {
-            let roll: u32 = if let Some(v) = forced_roll { v } else { rng.gen_range(1..=100) };
+            let roll: u32 = if let Some(v) = forced_roll {
+                v
+            } else {
+                rng.gen_range(1..=100)
+            };
             if roll <= 20 {
                 Ok(BridgeTransactionStatus::InTransit)
             } else if roll <= 90 {
@@ -151,3 +158,4 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
         }
     }
 }
+// ...existing code...
