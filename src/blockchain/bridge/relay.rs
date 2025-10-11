@@ -43,17 +43,17 @@ pub async fn mock_bridge_transfer(
 /// 检查是否应该强制 mock 桥接为成功（Accept several env names/values）。
 fn bridge_force_success_enabled() -> bool {
     // accept multiple env var names for robustness in tests/CI/local
-    const KEYS: &[&str] = &[
-        "BRIDGE_MOCK_FORCE_SUCCESS",
-        "BRIDGE_MOCK",
-        "FORCE_BRIDGE_SUCCESS",
-        "BRIDGE_MOCK_FORCE",
-    ];
+    const KEYS: &[&str] =
+        &["BRIDGE_MOCK_FORCE_SUCCESS", "BRIDGE_MOCK", "FORCE_BRIDGE_SUCCESS", "BRIDGE_MOCK_FORCE"];
 
     for &k in KEYS {
         if let Ok(v) = env::var(k) {
             let v = v.trim();
-            if v.is_empty() || v == "1" || v.eq_ignore_ascii_case("true") || v.eq_ignore_ascii_case("yes") {
+            if v.is_empty()
+                || v == "1"
+                || v.eq_ignore_ascii_case("true")
+                || v.eq_ignore_ascii_case("yes")
+            {
                 return true;
             }
         }
@@ -129,11 +129,7 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
             }
         }
         3..=4 => {
-            let roll: u32 = if let Some(v) = forced_roll {
-                v
-            } else {
-                rng.gen_range(1..=100)
-            };
+            let roll: u32 = if let Some(v) = forced_roll { v } else { rng.gen_range(1..=100) };
             if roll <= 60 {
                 Ok(BridgeTransactionStatus::InTransit)
             } else if roll <= 95 {
@@ -143,11 +139,7 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
             }
         }
         _ => {
-            let roll: u32 = if let Some(v) = forced_roll {
-                v
-            } else {
-                rng.gen_range(1..=100)
-            };
+            let roll: u32 = if let Some(v) = forced_roll { v } else { rng.gen_range(1..=100) };
             if roll <= 20 {
                 Ok(BridgeTransactionStatus::InTransit)
             } else if roll <= 90 {
