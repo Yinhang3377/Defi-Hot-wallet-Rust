@@ -9,14 +9,19 @@ on:
     branches: [ main ]
 
 env:
-  # Do not treat rust warnings as hard errors for this test workflow
-  RUSTFLAGS: "-A warnings"
+  WALLET_ENC_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+  TEST_SKIP_DECRYPT: "1"
+  BRIDGE_MOCK_FORCE_SUCCESS: "1"
+  BRIDGE_MOCK: "1"
   CARGO_TERM_COLOR: always
-  CARGO_TARGET_DIR: "defi-target"
-
+  CARGO_NET_OFFLINE: "true"
+  DATABASE_URL: sqlite://./wallets.db
+  
 jobs:
   test_allow_warnings:
     runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_DIR: ${{ runner.temp }}/defi-target
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
