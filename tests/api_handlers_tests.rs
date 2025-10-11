@@ -6,7 +6,7 @@ use axum::http::StatusCode;
 use axum_test::TestServer;
 use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
 use base64::Engine as _;
-use ctor::ctor; // removed: unused import
+use ctor::ctor;
 use defi_hot_wallet::{
     api::server::WalletServer,
     api::types::BridgeAssetsRequest,

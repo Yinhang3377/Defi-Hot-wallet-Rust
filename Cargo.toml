@@ -125,7 +125,6 @@ sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio
 # small helpers
 rstest = "0.18"
 governor = "0.6"
-# add ctor as optional dependency so feature can enable it for library builds
 ctor = { version = "0.2.9", optional = true }
 
 [features]
@@ -133,9 +132,9 @@ default = []
 strict_security = []
 sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"]
 memlock = ["dep:libc", "dep:winapi"]
-std = []
-yaml = []
-msgpack = []
+std = [] # Placeholder for standard library features
+yaml = [] # Placeholder for yaml serialization
+msgpack = [] # Placeholder for msgpack serialization
 # enable ctor when test-env feature is requested
 test-env = ["ctor"]
 
