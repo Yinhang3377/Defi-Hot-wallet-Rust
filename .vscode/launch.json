@@ -1,0 +1,838 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug unit tests in library 'elliptic_curve_tools'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=elliptic-curve-tools"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'serdes_roundtrip'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=serdes_roundtrip",
+                    "--package=elliptic-curve-tools"
+                ]
+            }
+        },
+        {
+            "name": "Debug unit tests in library 'defi_hot_wallet'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'bridge_test'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=bridge_test",
+                    "--package=defi-hot-wallet"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'bridge_test'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=bridge_test",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'hot_wallet'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=hot_wallet",
+                    "--package=defi-hot-wallet"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'hot_wallet'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=hot_wallet",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug executable 'wallet-cli'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--bin=wallet-cli",
+                    "--package=defi-hot-wallet"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in executable 'wallet-cli'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--bin=wallet-cli",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug example 'basic_usage'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "run",
+                    "--example=basic_usage",
+                    "--package=defi-hot-wallet"
+                ]
+            },
+            "args": []
+        },
+        {
+            "name": "Debug unit tests in example 'basic_usage'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--example=basic_usage",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'api_handlers_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=api_handlers_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'api_server_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=api_server_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'api_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=api_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'application_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=application_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'audit_alert_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=audit_alert_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'audit_confirmation_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=audit_confirmation_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'audit_rollback_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=audit_rollback_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'audit_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=audit_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'balance_query'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=balance_query",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'basic_test'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=basic_test",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'blockchain_ethereum_address_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=blockchain_ethereum_address_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'blockchain_ethereum_balance_fee_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=blockchain_ethereum_balance_fee_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'blockchain_ethereum_transaction_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=blockchain_ethereum_transaction_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'bridge'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=bridge",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'bridge_additional_unit_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=bridge_additional_unit_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'bridge_integration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=bridge_integration",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'bridge_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=bridge_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'bridge_unit_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=bridge_unit_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'cli_create'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=cli_create",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'cli_integration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=cli_integration",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'cli_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=cli_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'config_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=config_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'core_wallet_manager_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=core_wallet_manager_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'crypto_shamir_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=crypto_shamir_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'elliptic_curve_sum_of_products_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=elliptic_curve_sum_of_products_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'errors_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=errors_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'ethereum_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=ethereum_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'handlers_unit_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=handlers_unit_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'hello_world'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=hello_world",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'hello_world_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=hello_world_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'integration_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=integration_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'lib_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=lib_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'localization_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=localization_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'logs_output'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=logs_output",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'main_integration'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=main_integration",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'mod'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=mod",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'mvp_checklist'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=mvp_checklist",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'network_rate_limit_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=network_rate_limit_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'network_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=network_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'ops_backup_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=ops_backup_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'ops_health_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=ops_health_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'ops_metrics_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=ops_metrics_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'security_anti_debug_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=security_anti_debug_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'serde_wrappers'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=serde_wrappers",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'serdes'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=serdes",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'serdes_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=serdes_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'shamir_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=shamir_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'simple_hello_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=simple_hello_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'sum_of_products_patch_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=sum_of_products_patch_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'sum_of_products_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=sum_of_products_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'test_request_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=test_request_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'tools_error_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=tools_error_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'tx_confirm'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=tx_confirm",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'tx_construction'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=tx_construction",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'tx_send'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=tx_send",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'tx_signing'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=tx_signing",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'valid_wallet'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=valid_wallet",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        },
+        {
+            "name": "Debug integration test 'wallet_manager_tests'",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--test=wallet_manager_tests",
+                    "--package=defi-hot-wallet"
+                ]
+            }
+        }
+    ]
+}

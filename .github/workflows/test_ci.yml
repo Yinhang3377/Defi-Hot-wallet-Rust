@@ -83,14 +83,14 @@ jobs:
       - name: Run full test suite (allow warnings)
         run: |
           # Run workspace tests; do not fail on warnings because RUSTFLAGS allows them
-          # The `ctor` dependency is now in `dev-dependencies`, so no feature flag is needed.
-          cargo test --workspace --jobs 2
+          # The `ctor` dependency is in `dev-dependencies`, so no feature flag is needed for tests.
+          cargo test --workspace --jobs 2 --all-features
 
       - name: Re-run the previously failing test with logs
         run: |
           # run the specific test file to gather logs and ensure the error reproduces (if present)
-          # The `ctor` dependency is now in `dev-dependencies`, so no feature flag is needed.
-          cargo test --test api_handlers_tests -- --nocapture || true
+          # The `ctor` dependency is in `dev-dependencies`, so no feature flag is needed for tests.
+          cargo test --test api_handlers_tests --all-features -- --nocapture || true
 
       - name: Upload test logs (if any)
         if: failure()

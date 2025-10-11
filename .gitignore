@@ -1,42 +1,28 @@
+# Rust build artifacts
 /target/
-**/*.rs.bk
-*.pdb
-Cargo.lock
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# Generated wallet files (do not commit)
+wallet.json
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment
+# Environment files (secrets — do not commit)
 .env
-.env.local
 
-# Database
-*.db
-*.db-shm
-*.db-wal
-
-# Logs
+# Backup and editor files
+*.rs.bk
+*.swp
+*.sw
 *.log
 
-# Temporary files
-/tmp/
-*.tmp
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
 
-# Keys and certificates
-*.key
-*.pem
-*.crt
-/keys/
+# Binary and debug symbols
+*.exe
+*.pdb
+*.rlib
+*.d
 
-# Backup files
-*.backup
-*.bak
-defi-target/
-target/
+# local cargo target aliases
+/defi-target/

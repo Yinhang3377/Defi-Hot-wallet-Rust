@@ -25,34 +25,64 @@ lazy_static! {
 /// Mock function to simulate a bridge transfer.
 /// This is used by mock bridge implementations.
 pub async fn mock_bridge_transfer(
-    from_chain: &str,
-    to_chain: &str,
-    token: &str,
+    _from_chain: &str,
+    _to_chain: &str,
+    _token: &str,
     amount: &str,
-    bridge_contract: &str,
+    _bridge_contract: &str,
     _wallet_data: &SecureWalletData,
 ) -> Result<String> {
-    info!(
-        "[SIMULATED] Initiating mock bridge transfer of {} {} from {} to {} via contract {}",
-        amount, token, from_chain, to_chain, bridge_contract
-    );
+    info!("[SIMULATED] Initiating mock bridge transfer of {} {}", amount, _token);
+
+    // validate amount: must parse to a non-negative number (allow 0.0), reject negatives and invalid.
+    let amt_trim = amount.trim();
+    let amt_val = match amt_trim.parse::<f64>() {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(anyhow::anyhow!(
+                "invalid amount '{}': must be a non-negative number",
+                amount
+            ));
+        }
+    };
+    if amt_val < 0.0 {
+        return Err(anyhow::anyhow!("invalid amount '{}': must be >= 0", amount));
+    }
+
+    // Only return a simulated tx when mocks are explicitly enabled via env.
+    if !bridge_force_success_enabled() {
+        return Err(anyhow::anyhow!(
+            "mock bridge disabled: set BRIDGE_MOCK_FORCE_SUCCESS (or BRIDGE_MOCK / FORCE_BRIDGE_SUCCESS / BRIDGE_MOCK_FORCE) to enable"
+        ));
+    }
+
     let simulated_tx_hash = format!("0x_simulated_tx_{}", Uuid::new_v4());
     Ok(simulated_tx_hash)
 }
 
 /// 检查是否应该强制 mock 桥接为成功（Accept several env names/values）。
+/// Default: disabled. Enabled only if one of the keys is present and not explicitly false-like.
 fn bridge_force_success_enabled() -> bool {
-    // accept multiple env var names for robustness in tests/CI/local
     const KEYS: &[&str] =
         &["BRIDGE_MOCK_FORCE_SUCCESS", "BRIDGE_MOCK", "FORCE_BRIDGE_SUCCESS", "BRIDGE_MOCK_FORCE"];
 
     for &k in KEYS {
-        if let Ok(v) = env::var(k) {
-            let v = v.trim();
+        if let Ok(val) = env::var(k) {
+            let v = val.trim();
+            // explicit disabled values -> continue checking other keys
+            if v.eq_ignore_ascii_case("0")
+                || v.eq_ignore_ascii_case("false")
+                || v.eq_ignore_ascii_case("no")
+            {
+                continue;
+            }
+            // empty, "1", "true", "yes", "on", or any other non-false string -> enabled
             if v.is_empty()
                 || v == "1"
                 || v.eq_ignore_ascii_case("true")
                 || v.eq_ignore_ascii_case("yes")
+                || v.eq_ignore_ascii_case("on")
+                || !v.is_empty()
             {
                 return true;
             }
@@ -63,7 +93,12 @@ fn bridge_force_success_enabled() -> bool {
 }
 
 pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransactionStatus> {
-    // If tests or explicit env force success, short-circuit and clear any previous counters.
+    // If this is a simulated tx produced by mock_bridge_transfer, always treat as Completed.
+    if tx_hash.starts_with("0x_simulated_tx_") {
+        return Ok(BridgeTransactionStatus::Completed);
+    }
+
+    // If tests explicitly force success via env, short-circuit and clear any previous counters.
     if env::var("RUST_TEST_THREADS").is_ok() || bridge_force_success_enabled() {
         if let Ok(mut checks) = TRANSACTION_CHECKS.lock() {
             checks.clear();
@@ -150,4 +185,3 @@ pub async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransacti
         }
     }
 }
-// ...existing code...

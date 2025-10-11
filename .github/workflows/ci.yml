@@ -12,6 +12,8 @@ env:
   TEST_SKIP_DECRYPT: "1"
   # 强制桥接操作在测试中走模拟成功的路径
   BRIDGE_MOCK_FORCE_SUCCESS: "1"
+  # 确保模拟桥接模式被启用
+  BRIDGE_MOCK: "1"
 
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
