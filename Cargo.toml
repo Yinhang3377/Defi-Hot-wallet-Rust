@@ -93,6 +93,7 @@ reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["limit", "trace"] }
+ctor = { version = "0.2.9", optional = true }
 clap = { version = "4.5", features = ["derive"] }
 
 # misc utilities
@@ -131,6 +132,7 @@ default = []
 strict_security = []
 sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"]
 memlock = ["dep:libc", "dep:winapi"]
+test-env = ["ctor"]
 std = []
 yaml = []
 msgpack = []

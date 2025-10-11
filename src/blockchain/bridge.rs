@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::sync::Arc;
 use thiserror::Error;
 use tracing::info;
@@ -194,7 +195,34 @@ lazy_static! {
         std::sync::Mutex::new(HashMap::new());
 }
 
+/// 检查是否应该强制 mock 桥接为成功（Accept several env names/values）。
+fn bridge_force_success_enabled() -> bool {
+    // accept multiple env var names for robustness in tests/CI/local
+    const KEYS: &[&str] =
+        &["BRIDGE_MOCK_FORCE_SUCCESS", "BRIDGE_MOCK", "FORCE_BRIDGE_SUCCESS", "BRIDGE_MOCK_FORCE"];
+
+    for &k in KEYS {
+        if let Ok(v) = env::var(k) {
+            let v = v.trim();
+            if v.is_empty()
+                || v == "1"
+                || v.eq_ignore_ascii_case("true")
+                || v.eq_ignore_ascii_case("yes")
+            {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
 async fn mock_check_transfer_status(tx_hash: &str) -> Result<BridgeTransactionStatus> {
+    // 如果设置了环境变量，则强制模拟成功
+    if bridge_force_success_enabled() {
+        return Ok(BridgeTransactionStatus::Completed);
+    }
+
     // simulate network delay
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
 
