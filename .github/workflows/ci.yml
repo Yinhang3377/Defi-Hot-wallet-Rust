@@ -54,24 +54,54 @@ jobs:
           name: project-report
           path: project_report.md
 
-  test:
-    name: Run tests
+  conflict-check:
+    name: Check for merge conflicts
     runs-on: ubuntu-latest
     needs: pre-commit-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin main
+          # try normal merge, if it fails because of unrelated histories try with allow-unrelated-histories
+          if git merge --no-commit --no-ff origin/main; then
+            echo "merge check OK"
+            git merge --abort
+          else
+            echo "Attempting merge with --allow-unrelated-histories"
+            if git merge --no-commit --no-ff --allow-unrelated-histories origin/main; then
+              echo "merge (allow-unrelated-histories) succeeded; aborting"
+              git merge --abort
+            else
+              echo '::error ::Merge conflict detected with main branch.'
+              exit 1
+            fi
+          fi
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: conflict-check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Ensure deterministic test envs (persist to runner)
+        run: |
+          echo "WALLET_ENC_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" >> $GITHUB_ENV
+          echo "TEST_SKIP_DECRYPT=1" >> $GITHUB_ENV
+          echo "BRIDGE_MOCK_FORCE_SUCCESS=1" >> $GITHUB_ENV
+          echo "BRIDGE_MOCK=1" >> $GITHUB_ENV
+          echo "DATABASE_URL=sqlite://./wallets.db" >> $GITHUB_ENV
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           components: rustfmt,cargo
-      - name: Fetch dependencies
+      - name: Fetch Rust dependencies (allow network)
         run: cargo fetch
-      - name: Run tests (with explicit env)
-        run: |
-          BRIDGE_MOCK_FORCE_SUCCESS=1 BRIDGE_MOCK=1 DATABASE_URL=sqlite://./wallets.db \
-          cargo test --workspace --jobs 2 --all-features
+      - name: Run tests
+        run: cargo test --workspace --jobs 2 --all-features
       - name: Upload test results (placeholder)
         uses: actions/upload-artifact@v4
         with:
