@@ -70,7 +70,7 @@ jobs:
         run: cargo fetch
       - name: Run tests (with explicit env)
         run: |
-          BRIDGE_MOCK_FORCE_SUCCESS=1 BRIDGE_MOCK=1 \
+          BRIDGE_MOCK_FORCE_SUCCESS=1 BRIDGE_MOCK=1 DATABASE_URL=sqlite://./wallets.db \
           cargo test --all --lib -- --nocapture
       - name: Upload test results (placeholder)
         uses: actions/upload-artifact@v4
