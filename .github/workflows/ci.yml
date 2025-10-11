@@ -55,12 +55,17 @@ jobs:
           path: project_report.md
 
   conflict-check:
+    if: ${{ github.event_name == 'pull_request' }}
     name: Check for merge conflicts
     runs-on: ubuntu-latest
     needs: pre-commit-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
       - name: Check for merge conflicts
         run: |
           git fetch origin main
@@ -82,7 +87,7 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
-    needs: conflict-check
+    # Do not depend on conflict-check; rust-ci.yml covers push builds as well
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

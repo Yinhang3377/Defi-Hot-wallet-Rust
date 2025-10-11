@@ -17,13 +17,8 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Disable Rust checks here (covered by rust-ci.yml)
-          VALIDATE_RUST: false
-          # Keep only YAML for now to reduce noise; disable others to green CI
-          VALIDATE_MARKDOWN: false
+          # Only enable YAML explicitly; leave others unset when VALIDATE_ALL_CODEBASE=false
           VALIDATE_YAML: true
-          VALIDATE_JSON: false
-          VALIDATE_GITHUB_ACTIONS: false
           # Exclude third-party and build outputs from lint scope
           FILTER_REGEX_EXCLUDE: '(^vendor/)|(^target/)|(^defi-target/)|(^\.vscode/)|(^patches/)'
           # Optionally enable others: VALIDATE_DOCKERFILE, VALIDATE_SHELL_SH

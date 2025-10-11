@@ -46,3 +46,10 @@ This brief guide makes AI agents productive here. Be concrete, follow repo patte
 1) `cargo fmt` and `cargo clippy -- -D warnings`. 2) Run targeted tests (`cargo test <name>`). 3) Don’t log secrets; zeroize sensitive buffers. 4) Update README/docs when changing public flags or endpoints.
 
 If any area needs deeper examples (DB layer, WalletManager flows, signing/bridge mocks), ask and reference the exact files above.
+
+### CI notes (important)
+- Tests in CI run with the `test-env` feature so `src/test_env.rs` runs a small ctor initializer that sets:
+	- `WALLET_ENC_KEY` (base64 of 32 zero bytes), `TEST_SKIP_DECRYPT=1`, `BRIDGE_MOCK_FORCE_SUCCESS=1`, `BRIDGE_MOCK=1`.
+- Bridge tests rely on these env vars for deterministic results. If you run locally without the feature, set them yourself or pass `--features test-env`.
+- Super Linter only validates YAML and ignores generated/third-party paths: `vendor/`, `target/`, `defi-target/`, `.vscode/`, `patches/`.
+- Merge-conflict checks are PR-only and non-blocking; they configure a bot Git identity to avoid false failures. Actual conflicts are still reported in PRs.
