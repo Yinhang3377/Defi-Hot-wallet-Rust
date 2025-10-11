@@ -1,0 +1,19 @@
+    Updating `tuna` index
+warning: spurious network error (3 tries remaining): [28] Timeout was reached (Failed to connect to 172.26.240.1 port 15715 after 21046 ms: Could not connect to server); class=Net (12)
+warning: spurious network error (2 tries remaining): [28] Timeout was reached (Failed to connect to 172.26.240.1 port 15715 after 21033 ms: Could not connect to server); class=Net (12)
+warning: spurious network error (1 try remaining): [28] Timeout was reached (Failed to connect to 172.26.240.1 port 15715 after 21033 ms: Could not connect to server); class=Net (12)
+error: Unable to update registry `crates-io`
+
+Caused by:
+  failed to update replaced source registry `crates-io`
+
+Caused by:
+  failed to fetch `https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git`
+
+Caused by:
+  network failure seems to have happened
+  if a proxy or similar is necessary `net.git-fetch-with-cli` may help here
+  https://doc.rust-lang.org/cargo/reference/config.html#netgit-fetch-with-cli
+
+Caused by:
+  [28] Timeout was reached (Failed to connect to 172.26.240.1 port 15715 after 21022 ms: Could not connect to server); class=Net (12)

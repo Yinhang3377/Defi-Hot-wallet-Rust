@@ -1,5 +1,6 @@
-# Rust build artifacts
+# Rust build artifacts & local cargo target aliases
 /target/
+defi-target/
 
 # Generated wallet files (do not commit)
 wallet.json
@@ -7,23 +8,22 @@ wallet.json
 # Environment files (secrets — do not commit)
 .env
 
-# Backup and editor files
-*.rs.bk
-*.swp
-*.sw
-*.log
-
-# OS specific
-Thumbs.db
-Desktop.ini
-.DS_Store
-
-# Binary and debug symbols
+# Rust binary and debug symbols
 *.exe
 *.pdb
 *.rlib
 *.d
 
-# local cargo target aliases
-/defi-target/.vscode/
-defi-target/
+# Ignore build artifacts and logs
+build/
+node_modules/
+dist/
+tests/
+logs/
+.git/
+
+# Allow only specific folders
+!src/
+!contracts/
+!scripts/
+!README.md
