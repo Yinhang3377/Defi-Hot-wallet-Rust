@@ -25,4 +25,4 @@ Desktop.ini
 *.d
 
 # local cargo target aliases
-/defi-target/
+/defi-target/.vscode/
