@@ -17,9 +17,14 @@ jobs:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 关闭 Rust（由 rust-ci.yml 覆盖�?          VALIDATE_RUST: false
-          # 保留常见文档与配置检�?          VALIDATE_MARKDOWN: true
+          # Disable Rust checks here (covered by rust-ci.yml)
+          VALIDATE_RUST: false
+          # Keep common docs & config linters
+          VALIDATE_MARKDOWN: true
           VALIDATE_YAML: true
           VALIDATE_JSON: true
           VALIDATE_GITHUB_ACTIONS: true
-          # 视需要可�? VALIDATE_DOCKERFILE, VALIDATE_SHELL_SH �?
+          # Exclude third-party and build outputs from lint scope
+          FILTER_REGEX_EXCLUDE: |
+            (^vendor/)|(^target/)|(^defi-target/)|(^\.vscode/)
+          # Optionally enable others: VALIDATE_DOCKERFILE, VALIDATE_SHELL_SH

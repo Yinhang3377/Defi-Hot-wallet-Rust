@@ -125,7 +125,7 @@ sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio
 # small helpers
 rstest = "0.18"
 governor = "0.6"
-ctor = { version = "0.2.9", optional = true }
+ctor = { version = "0.2.9" }
 
 [features]
 default = []
@@ -136,10 +136,9 @@ std = []
 yaml = []
 msgpack = []
 # enable ctor when test-env feature is requested
-test-env = ["ctor"]
+test-env = []
 
 [dev-dependencies]
-ctor = "0.1"
 base64 = "0.22"
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }

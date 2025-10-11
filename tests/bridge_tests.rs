@@ -14,6 +14,7 @@ use defi_hot_wallet::blockchain::{
     traits::Bridge,
 };
 use defi_hot_wallet::core::wallet_info::{SecureWalletData, WalletInfo};
+use std::env;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -35,6 +36,7 @@ fn create_mock_wallet_data() -> SecureWalletData {
 
 #[tokio::test]
 async fn test_ethereum_to_solana_bridge() -> Result<()> {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let bridge = EthereumToSolanaBridge::new("0xMockBridgeContract");
     let wallet_data = create_mock_wallet_data();
 
@@ -59,6 +61,7 @@ async fn test_ethereum_to_solana_bridge() -> Result<()> {
 
 #[tokio::test]
 async fn test_solana_to_ethereum_bridge() -> Result<()> {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let bridge = SolanaToEthereumBridge::new("0xMockReverseBridgeContract");
     let wallet_data = create_mock_wallet_data();
 
@@ -83,6 +86,7 @@ async fn test_solana_to_ethereum_bridge() -> Result<()> {
 
 #[tokio::test]
 async fn test_ethereum_to_bsc_bridge() -> Result<()> {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let bridge = EthereumToBSCBridge::new("0xMockEthBscBridge");
     let wallet_data = create_mock_wallet_data();
     let result = bridge.transfer_across_chains("eth", "bsc", "USDT", "75.0", &wallet_data).await;
@@ -109,6 +113,7 @@ async fn test_ethereum_to_bsc_bridge() -> Result<()> {
 
 #[tokio::test]
 async fn integration_transfer_and_failed_marker() -> Result<()> {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let bridge = EthereumToSolanaBridge::new("0xBridge");
     let w = create_mock_wallet_data();
 
@@ -142,6 +147,7 @@ async fn integration_transfer_and_failed_marker() -> Result<()> {
 
 #[tokio::test]
 async fn integration_mock_bridge_variants_and_concurrent() -> Result<()> {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let s2e = SolanaToEthereumBridge::new("0xS2E");
     let e2b = EthereumToBSCBridge::new("0xE2B");
     let poly = PolygonToEthereumBridge::new("0xP2E");

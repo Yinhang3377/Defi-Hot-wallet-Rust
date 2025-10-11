@@ -1,60 +1,48 @@
 ## Copilot instructions for DeFi Hot Wallet (Rust)
 
-This file tells AI coding agents how to be productive in this repository. Be concrete, follow existing code patterns, and reference the files and commands below when making changes.
+This brief guide makes AI agents productive here. Be concrete, follow repo patterns, and cite files/commands from this codebase.
 
-### Big picture (quick)
-- Layered Rust application: API/CLI -> Core services -> Security/crypto modules -> Blockchain clients -> Storage. See `src/lib.rs` for module exports and `src/main.rs` / `src/cli.rs` for entry points.
-- The main orchestration component is the WalletManager in `src/core` (use `WalletManager::new(&WalletConfig).await?` patterns).
-- Ethereum integration uses the `ethers` crate (abigen + rustls); blockchain-specific code lives under `src/blockchain`.
+### Big picture
+- Layered Rust app: API/CLI → Core services → Security/Crypto → Chain clients → Storage. See `src/lib.rs` exports; entry points in `src/main.rs` (bin: `hot_wallet`) and `src/bin/wallet-cli.rs` (bin: `wallet-cli`).
+- Orchestrator: `src/core/wallet_manager.rs` (`WalletManager::new(&WalletConfig).await?`). Chains wired via `blockchain::traits::BlockchainClient`; bridges via `blockchain::bridge` (mockable).
+- ETH integration uses `ethers` (abigen+rustls). Other chains (Solana) have client shims under `src/blockchain/`.
 
-### Where to look for patterns and examples
-- Entry points: `src/main.rs` (binary `hot_wallet`) and `src/cli.rs` (binary `wallet-cli`).
-- Core logic: `src/core/` (wallet lifecycle, WalletManager, config types).
-- Crypto primitives: `src/crypto/` (Shamir, zeroize, quantum-safe stubs).
-- Storage: `src/storage/` and SQLx usage in code/config. Default DB env var is read in `src/main.rs` (look for `DATABASE_URL` fallback `sqlite://./wallets.db`).
-- Monitoring & metrics: `src/monitoring/` and HTTP metrics endpoint exposed in server (`/api/metrics`).
+### Where to look
+- API server: `src/api/server.rs` (routes, auth, Router), handlers in `src/api/handlers.rs`, types in `src/api/types.rs`.
+- Core/config/errors: `src/core/{wallet_manager.rs,config.rs,errors.rs}`. Storage in `src/storage/` (SQLx), metrics in `src/api/handlers.rs::metrics_handler`.
+- Features/deps: see `Cargo.toml` (`strict_security`, `sop_patch_tests`, `test-env`, `[patch.crates-io] elliptic-curve-tools`).
 
-### Coding conventions to follow
-- Async-first: use `tokio` runtime, async functions, and `.await` for IO and crypto where present.
-- Error handling: return `anyhow::Result` in top-level functions and use crate-local error types (see `thiserror` usage in `src/core/errors.rs`).
-- Secrets: follow existing zeroization pattern — use the `zeroize` crate and prefer dropping/zeroing secrets after use.
-- Logging: use `tracing` and `tracing_subscriber`; call `init_logging()` as in `src/main.rs` for consistency.
-- Feature gates: check `Cargo.toml` features (`strict_security`, `sop_patch_tests`, etc.) and respect conditional compilation.
+### Conventions that matter
+- Async-first with `tokio`. Logging via `tracing` + `init_logging()` in `src/main.rs`.
+- Errors: server/main often use `anyhow::Result`, internal logic returns `core::errors::WalletError` (map errors accordingly).
+- Secrets: use `zeroize` types; avoid logging secrets. Sensitive flows go through `SecureWalletData` and are zeroized.
+- Auth: API requires header `Authorization: <API_KEY>` when `API_KEY` env is set. No "Bearer" prefix parsing.
 
-### Tests and CI patterns
-- Unit/integration tests live under `tests/` and use `tokio::test(flavor = "current_thread")` frequently.
-- Use `serial_test` for tests that must not run concurrently with DB/file state.
-- Common commands:
-  - Build: `cargo build` (or `cargo build --release`)
-  - Test: `cargo test` (run specific modules with `cargo test crypto::tests`)
-  - Format: `cargo fmt`
-  - Lint: `cargo clippy -- -D warnings`
-  - Coverage (dev tooling): `cargo tarpaulin --out Html` (see README)
-  - Security audit: `cargo audit`
+### Running and calling the API
+- Server reads `DATABASE_URL` or falls back to `sqlite://./wallets.db`.
+- Start: `cargo run --bin hot_wallet -- server` (defaults to 127.0.0.1:8080).
+- Health/metrics: GET `/api/health`, `/api/metrics`.
+- Wallets: POST `/api/wallets` {name, quantum_safe}, GET `/api/wallets`, DELETE `/api/wallets/:name`.
+- Send/balance: GET `/api/wallets/:name/balance?network=eth`, POST `/api/wallets/:name/send`.
+- Bridge: POST `/api/bridge`. If `BRIDGE_MOCK_FORCE_SUCCESS=1`, returns `{"bridge_tx_id":"mock_bridge_tx_hash"}` without real signing.
 
-### How to run the server / CLI (examples)
-- Run the server (reads env var `DATABASE_URL` or falls back to sqlite):
-  - `cargo run --bin hot_wallet -- server` or build and run release binary `./target/release/hot_wallet server --port 8080`
-- CLI example (create wallet):
-  - `cargo run --bin wallet-cli -- create --name my-wallet`
-- API examples (the server exposes endpoints; see `src/api`):
-  - `curl http://localhost:8080/api/health`
-  - `curl http://localhost:8080/api/metrics`
+### Tests and useful toggles
+- Tests live in `src/api/*_tests.rs`, `tests/`, using `tokio::test`, `serial_test`, and `axum-test`. Avoid live RPCs; use the provided mocks.
+- Test helpers: `WalletServer::new_for_test(...)` injects a deterministic master key via `core::wallet_manager::set_test_master_key_default` for decrypt/sign flows.
+- Optional: feature `test-env` auto-sets `BRIDGE_MOCK_FORCE_SUCCESS=1` in `src/test_env.rs` for stable bridge tests.
 
-### Integration points / external dependencies to be aware of
-- Ethereum RPC: environment variables in docs (`WALLET_ETHEREUM_RPC_URL`) — but code reads `DATABASE_URL` and WalletConfig for DB; search `WALLET_` env usage when changing RPC wiring.
-- Local patches: `patches/elliptic-curve-tools` is used in `Cargo.toml` via `[patch.crates-io]` — prefer using the patched local crate shape.
-- Prometheus: the server exposes metrics; follow `src/monitoring` conventions when adding metrics (use `prometheus` crate and named counters like `wallets_created_total`).
+### Integration points
+- Blockchain RPC clients in `src/blockchain/` (`EthereumClient`, `SolanaClient`). Add networks in `core::config::WalletConfig` and ensure `blockchain_clients` wiring in `WalletManager::new`.
+- Storage uses SQLx (sqlite/postgres features enabled). Default URLs use sqlite.
+- Local patch: `patches/elliptic-curve-tools` via `[patch.crates-io]`; prefer this crate shape when adding curve helpers.
 
-### Small gotchas / repo-specific notes
-- Config vs env: `src/main.rs` reads `DATABASE_URL` (sqlite url string like `sqlite://./wallets.db`). README sometimes refers to `WALLET_DATABASE_URL` — prefer following code (`DATABASE_URL`) or update code and docs together.
-- Tests often mock or simulate heavy crypto/chain interactions. When adding tests, prefer small, fast unit tests and use `httpmock` / `axum-test` or the provided mock helpers rather than hitting live RPC endpoints.
-- Windows build: `Cargo.toml` includes windows-specific dependencies (`windows`, `winapi`) under target-specific sections; respect cross-platform guards.
+### Gotchas specific to this repo
+- Use `DATABASE_URL` (not `WALLET_DATABASE_URL`). SQLite examples: `sqlite://./wallets.db`.
+- Auth header must equal the API key exactly; do not prepend "Bearer ".
+- Unsupported chains return 404 "Unsupported chain" at the bridge endpoint; ensure networks exist in `WalletConfig.blockchain.networks`.
+- Windows: target-specific deps (`windows`, optional `winapi`) are guarded; keep cross-platform `cfg` usage.
 
-### Minimal PR checklist for AI-generated changes
-1. Run `cargo fmt` and `cargo clippy -- -D warnings` locally.
-2. Run targeted tests: `cargo test <module_or_testname>`; prefer not to change global test ordering.
-3. If adding features that touch secrets/crypto, ensure zeroization and no plaintext secrets in logs.
-4. Update README or `docs/` if you change public CLI flags or API endpoints.
+### Minimal PR checklist
+1) `cargo fmt` and `cargo clippy -- -D warnings`. 2) Run targeted tests (`cargo test <name>`). 3) Don’t log secrets; zeroize sensitive buffers. 4) Update README/docs when changing public flags or endpoints.
 
-If anything in this file is unclear or you need examples for a specific area (DB layer, WalletManager flows, or signing logic), tell me which part and I'll expand with concrete, line-referenced examples.
+If any area needs deeper examples (DB layer, WalletManager flows, signing/bridge mocks), ask and reference the exact files above.

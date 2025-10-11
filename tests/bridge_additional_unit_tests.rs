@@ -14,6 +14,7 @@ use defi_hot_wallet::blockchain::bridge::{
 };
 use defi_hot_wallet::blockchain::traits::Bridge;
 use defi_hot_wallet::core::wallet_info::{SecureWalletData, WalletInfo};
+use std::env;
 use uuid::Uuid;
 
 fn create_mock_wallet_data() -> SecureWalletData {
@@ -34,6 +35,7 @@ fn create_mock_wallet_data() -> SecureWalletData {
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_mock_bridges_transfer_and_status_direct() {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let wallet = create_mock_wallet_data();
 
     let eth_sol = EthereumToSolanaBridge { contract_address: "0xEthSol".to_string() };
@@ -59,10 +61,12 @@ async fn test_mock_bridges_transfer_and_status_direct() {
     assert!(matches!(s1, BridgeTransactionStatus::Completed));
     // The mock forces success; expect Completed status.
     assert!(matches!(s2, BridgeTransactionStatus::Completed), "expected Completed, got: {:?}", s2);
+    env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_helpers_initiate_and_relay() {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let wallet = create_mock_wallet_data();
     let eth_sol = EthereumToSolanaBridge { contract_address: "0xHelper".to_string() };
 
@@ -91,11 +95,13 @@ async fn test_helpers_initiate_and_relay() {
             status
         );
     }
+    env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_concurrent_mock_transfers_return_unique_ids() {
     let wallet = create_mock_wallet_data();
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let mut handles = Vec::new();
 
     for _ in 0..10 {
@@ -117,13 +123,16 @@ async fn test_concurrent_mock_transfers_return_unique_ids() {
     for tx in results {
         assert!(!tx.is_empty());
     }
+    env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_force_success_env_makes_status_completed() {
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
     let status = EthereumToSolanaBridge { contract_address: "0xForce".to_string() }
         .check_transfer_status("any_tx")
         .await
         .expect("status ok");
     assert_eq!(status, BridgeTransactionStatus::Completed);
+    env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
 }

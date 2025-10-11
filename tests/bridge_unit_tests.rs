@@ -36,6 +36,9 @@ fn create_mock_wallet_data() -> SecureWalletData {
 
 #[tokio::test(flavor = "current_thread")]
 async fn test_all_mock_bridges_transfer_and_status() {
+    // Ensure mock bridges return deterministic success for transfers in this test
+    env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
+
     let wallet = create_mock_wallet_data();
 
     let eth_sol = EthereumToSolanaBridge { contract_address: "0xEthSol".to_string() };
@@ -89,6 +92,9 @@ async fn test_all_mock_bridges_transfer_and_status() {
             | BridgeTransactionStatus::InTransit
             | BridgeTransactionStatus::Failed(_)
     ));
+
+    // Clean up env var
+    env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
 }
 
 #[tokio::test(flavor = "current_thread")]

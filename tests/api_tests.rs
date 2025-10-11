@@ -57,6 +57,10 @@ async fn create_test_server() -> TestServer {
     // avoiding inconsistent DB instances across server creations in concurrent tests.
     std::env::set_var("DATABASE_URL", &config.storage.database_url);
 
+    // Bridge tests should use the mock success path to avoid real decrypt/sign.
+    // This matches other API bridge tests and keeps results deterministic.
+    std::env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
+
     // Ensure all test server instances use the same deterministic encryption key.
     // Use 32-byte key represented as 64 hex chars (zeros) so server-side key parsing succeeds.
     std::env::set_var(

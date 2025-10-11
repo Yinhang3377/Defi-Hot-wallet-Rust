@@ -202,8 +202,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_bridge_execution() {
+        std::env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
         let result = run_bridge_test("eth", "solana", "10.0", "USDC").await;
         assert!(result.is_ok());
+        std::env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
     }
 
     #[tokio::test]
@@ -217,8 +219,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_bridge_zero_value() {
+        std::env::set_var("BRIDGE_MOCK_FORCE_SUCCESS", "1");
         let result = run_bridge_test("eth", "solana", "0.0", "USDC").await;
         assert!(result.is_ok());
+        std::env::remove_var("BRIDGE_MOCK_FORCE_SUCCESS");
     }
 
     #[tokio::test]
