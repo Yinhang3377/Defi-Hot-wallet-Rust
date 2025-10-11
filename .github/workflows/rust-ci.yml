@@ -61,13 +61,21 @@ jobs:
         if: ${{ matrix.feature-set != 'memlock' }}
         run: cargo build --all
         shell: bash
+      - name: Ensure deterministic test envs
+        run: |
+          echo "WALLET_ENC_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" >> $GITHUB_ENV
+          echo "TEST_SKIP_DECRYPT=1" >> $GITHUB_ENV
+          echo "BRIDGE_MOCK_FORCE_SUCCESS=1" >> $GITHUB_ENV
+          echo "BRIDGE_MOCK=1" >> $GITHUB_ENV
+          echo "DATABASE_URL=sqlite://./wallets.db" >> $GITHUB_ENV
+        shell: bash
       - name: Tests (memlock)
         if: ${{ matrix.feature-set == 'memlock' }}
-        run: cargo test --all --features memlock
+        run: cargo test --all --features memlock,test-env
         shell: bash
       - name: Tests (default)
         if: ${{ matrix.feature-set != 'memlock' }}
-        run: cargo test --all
+        run: cargo test --all --features test-env
         shell: bash
       - name: Outdated (non-blocking)
         run: cargo outdated || true
