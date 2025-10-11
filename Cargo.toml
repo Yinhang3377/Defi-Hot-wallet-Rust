@@ -132,9 +132,9 @@ default = []
 strict_security = []
 sop_patch_tests = ["elliptic-curve-tools/sop_patch_tests"]
 memlock = ["dep:libc", "dep:winapi"]
-std = [] # Placeholder for standard library features
-yaml = [] # Placeholder for yaml serialization
-msgpack = [] # Placeholder for msgpack serialization
+std = []
+yaml = []
+msgpack = []
 # enable ctor when test-env feature is requested
 test-env = ["ctor"]
 
