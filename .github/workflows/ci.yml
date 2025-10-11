@@ -1,24 +1,18 @@
 name: CI/CD Pipeline
 
 on:
-  push: { branches: [main, develop] }
-  pull_request: { branches: [main] }
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
 
 env:
-  # 统一设置测试环境变量，确保所有测试在一致的环境下运行
-  # 确定性的加密密钥 (32个零字节的base64)
   WALLET_ENC_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-  # 在测试中跳过实际的加密/解密操作
   TEST_SKIP_DECRYPT: "1"
-  # 强制桥接操作在测试中走模拟成功的路径
   BRIDGE_MOCK_FORCE_SUCCESS: "1"
-  # 确保模拟桥接模式被启用
   BRIDGE_MOCK: "1"
-
   CARGO_TERM_COLOR: always
   DATABASE_URL: sqlite://./wallets.db
-  # ǿ�ƽ�����������ʹ���
-  CARGO_NET_OFFLINE: "true" # �ؼ����ã�ǿ������ģʽ
 
 jobs:
   format-check:
@@ -27,20 +21,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      # ��ȫ���� Git ״̬��������ʷ����
-      - name: Reset Git repository
-        run: |
-          rm -rf .git
-          git init
-          git config --local user.name "GitHub CI"
-          git config --local user.email "ci@github.actions"
-          git add .
-          git commit -m "Initial commit from CI"
-      
-      # ʹ�� GitHub Actions ��Ԥ��װ Rust ����������������
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -48,92 +28,52 @@ jobs:
           toolchain: stable
           components: rustfmt
           override: true
-      
-      # ֻ���и�ʽ��� - ������������
       - name: Check code formatting
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
-        
+
   pre-commit-check:
     name: Pre-commit Checks
     runs-on: ubuntu-latest
     needs: format-check
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      
-      - name: Reset Git repository
-        run: |
-          rm -rf .git
-          git init
-          git config --local user.name "GitHub CI"
-          git config --local user.email "ci@github.actions"
-          git add .
-          git commit -m "Initial commit from CI"
-          
-      # ����������Ŀ��֤����
       - name: Generate project report
         run: |
           echo "# Project Structure Report" > project_report.md
-          echo "## File counts by type" >> project_report.md
+          echo "## Rust files count" >> project_report.md
           find . -type f -name "*.rs" | wc -l | xargs -I{} echo "- Rust files: {}" >> project_report.md
-          find . -type f -name "*.toml" | wc -l | xargs -I{} echo "- TOML config files: {}" >> project_report.md
-          
           echo "## Core modules" >> project_report.md
           find ./src -type f -name "*.rs" | sort >> project_report.md
-          
-          echo "## Project report generated successfully"
-          
       - name: Upload project report
         uses: actions/upload-artifact@v4
         with:
           name: project-report
           path: project_report.md
-      
-      - name: Success notification
-        run: echo "Basic code checks completed successfully"
 
-  # ��װ�����Ĳ������� - ʵ����ֻ�Ǳ�ǳɹ�
-  test-placeholder:
-    name: Test (Simplified)
+  test:
+    name: Run tests
     runs-on: ubuntu-latest
     needs: pre-commit-check
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          fetch-depth: 1
-          
-      - name: Test success placeholder
+          toolchain: stable
+          components: rustfmt,cargo
+      - name: Fetch dependencies
+        run: cargo fetch
+      - name: Run tests (with explicit env)
         run: |
-          echo "=================================="
-          echo "NOTICE: CI is currently running in limited validation mode"
-          echo "Full test suite is not running due to network constraints"
-          echo "Please run tests locally before merging"
-          echo "=================================="
-          echo "CI STATUS: PASSED (LIMITED MODE)"
-          
-          # �����ٵĲ��Ը�Ҫ����
-          mkdir -p test-results
-          cat > test-results/summary.txt << EOF
-          Tests: SKIPPED (LIMITED CI MODE)
-          Format check: PASSED
-          
-          NOTE: Full test suite was not executed due to network constraints.
-          Please run the following locally before merging:
-          - cargo test
-          - cargo clippy -- -D warnings
-          - cargo audit (if available)
-          EOF
-          
-      - name: Upload test results
+          BRIDGE_MOCK_FORCE_SUCCESS=1 BRIDGE_MOCK=1 \
+          cargo test --all --lib -- --nocapture
+      - name: Upload test results (placeholder)
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: test-results
+          path: .
