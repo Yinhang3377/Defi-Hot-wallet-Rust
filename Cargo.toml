@@ -49,7 +49,7 @@ ring = "0.17.14"
 jsonwebtoken = "9.3.1"
 
 # 添加 elliptic-curve-tools 作为常规依赖，与 features 引用匹配
-elliptic-curve-tools = { version = "0.1.0" }
+elliptic-curve-tools = { version = "0.1.0", features = ["sop_patch_tests"] }
 
 # elliptic / curve crates - unified to 0.13 series and enable serde features
 elliptic-curve = { version = "0.13", features = ["alloc", "serde"] }
@@ -139,8 +139,8 @@ msgpack = []
 test-env = ["ctor"]
 
 [dev-dependencies]
-ctor = "0.2.9"
-base64 = "0.22" # For encoding test keys in setup hooks
+ctor = "0.1"
+base64 = "0.22"
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p384 = { version = "0.9", features = ["serde"] }
