@@ -139,6 +139,7 @@ msgpack = []
 test-env = ["ctor"]
 
 [dev-dependencies]
+ctor = "0.2.9"
 base64 = "0.22" # For encoding test keys in setup hooks
 k256 = { version = "0.13", features = ["arithmetic", "serde"] }
 p256 = { version = "0.13", features = ["arithmetic", "serde"] }
