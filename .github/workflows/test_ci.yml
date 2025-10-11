@@ -16,7 +16,8 @@ env:
   BRIDGE_MOCK: "1"
   CARGO_TERM_COLOR: always
   CARGO_TARGET_DIR: "defi-target"
-  CARGO_NET_OFFLINE: "true"
+  # Must be online to fetch crates like k256 in patched subcrates
+  CARGO_NET_OFFLINE: "false"
   DATABASE_URL: sqlite://./wallets.db
   
 jobs:
@@ -83,14 +84,17 @@ jobs:
       - name: Run full test suite (allow warnings)
         run: |
           # Run workspace tests; do not fail on warnings because RUSTFLAGS allows them
-          # The `ctor` dependency is in `dev-dependencies`, so no feature flag is needed for tests.
-          cargo test --workspace --jobs 2 --all-features
+          export BRIDGE_MOCK_FORCE_SUCCESS=1
+          export BRIDGE_MOCK=1
+          # Enable test-env feature to run src/test_env.rs ctor initializer
+          cargo test --workspace --jobs 2 --features test-env --all-features
 
       - name: Re-run the previously failing test with logs
         run: |
           # run the specific test file to gather logs and ensure the error reproduces (if present)
-          # The `ctor` dependency is in `dev-dependencies`, so no feature flag is needed for tests.
-          cargo test --test api_handlers_tests --all-features -- --nocapture || true
+          export BRIDGE_MOCK_FORCE_SUCCESS=1
+          export BRIDGE_MOCK=1
+          cargo test --test api_handlers_tests --features test-env --all-features -- --nocapture || true
 
       - name: Upload test logs (if any)
         if: failure()
